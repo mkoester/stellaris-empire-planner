@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Trait } from '$lib/server/db';
+	import type { Trait, Modifier } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
 
@@ -162,6 +162,16 @@
 		if (cost < 0) return 'text-emerald-400';
 		return 'text-amber-400';
 	}
+
+	function formatModifier(mod: Modifier): string {
+		const sign = mod.value > 0 ? '+' : '';
+		if (mod.key.endsWith('_add')) {
+			const n = Number.isInteger(mod.value) ? mod.value : parseFloat(mod.value.toFixed(2));
+			return `${sign}${n}`;
+		}
+		const pct = Math.round(mod.value * 100);
+		return `${sign}${pct}%`;
+	}
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
@@ -201,8 +211,18 @@
 					{trait.required_dlc}
 				</span>
 			{/if}
-			<div class="flex min-h-10 flex-col justify-between gap-1">
+			<div class="flex flex-col gap-1">
 				<span class="text-sm leading-tight font-medium {!isSelected && trait.cost !== null && trait.cost < 0 ? 'text-red-400' : ''}">{formatKey(trait.key)}</span>
+				{#if trait.modifiers.length > 0}
+					<ul class="space-y-0.5">
+						{#each trait.modifiers as mod}
+							<li class="flex items-baseline justify-between gap-1 text-[10px]">
+								<span class="opacity-60 leading-tight">{mod.label ?? mod.key}</span>
+								<span class="font-mono shrink-0 {mod.value > 0 ? 'text-emerald-400' : 'text-red-400'}">{formatModifier(mod)}</span>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 				<div class="flex flex-wrap items-center gap-1">
 					<span class="font-mono text-xs {costClass(trait.cost, isSelected)}">
 						{costLabel(trait.cost)} pt

@@ -93,6 +93,12 @@ export function loadArchetypes(): Record<string, Archetype> {
 	);
 }
 
+export interface Modifier {
+	key: string;
+	value: number;
+	label: string | null;
+}
+
 export interface Trait {
 	key: string;
 	cost: number | null;
@@ -104,6 +110,7 @@ export interface Trait {
 	opposites: string[]; // from trait_opposite
 	tags: string[]; // from trait_tag
 	speciesClasses: string[]; // from trait_species_class — empty = no restriction
+	modifiers: Modifier[]; // from trait_modifier + modifier_label
 }
 
 export function loadTraits(): Trait[] {
@@ -151,7 +158,7 @@ export function loadTraits(): Trait[] {
 		species_classes: string | null;
 	}>;
 
-	return rows.map((r) => ({
+	const traits = rows.map((r) => ({
 		key: r.key,
 		cost: r.cost,
 		category: r.category ?? 'phenotype',
@@ -161,6 +168,29 @@ export function loadTraits(): Trait[] {
 		archetypes: r.archetypes ? r.archetypes.split(',') : [],
 		opposites: r.opposites ? r.opposites.split(',') : [],
 		tags: r.tags ? r.tags.split(',') : [],
-		speciesClasses: r.species_classes ? r.species_classes.split(',') : []
+		speciesClasses: r.species_classes ? r.species_classes.split(',') : [],
+		modifiers: [] as Modifier[]
 	}));
+
+	const modRows = db()
+		.prepare(
+			`SELECT tm.trait_key, tm.modifier_key, tm.modifier_value, ml.label
+			 FROM trait_modifier tm
+			 LEFT JOIN modifier_label ml ON tm.modifier_key = ml.modifier_key
+			 ORDER BY tm.trait_key, tm.sort_order`
+		)
+		.all() as Array<{
+		trait_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+	}>;
+
+	const modByTrait = new Map<string, Modifier[]>();
+	for (const r of modRows) {
+		if (!modByTrait.has(r.trait_key)) modByTrait.set(r.trait_key, []);
+		modByTrait.get(r.trait_key)!.push({ key: r.modifier_key, value: r.modifier_value, label: r.label });
+	}
+
+	return traits.map((t) => ({ ...t, modifiers: modByTrait.get(t.key) ?? [] }));
 }
