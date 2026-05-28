@@ -78,7 +78,7 @@
 		return result;
 	});
 
-	let groupPhenotype = $state(false);
+	let groupPhenotype = $state(true);
 
 	const phenotypeGroups = $derived.by(() => {
 		const catTraits = traitsByCategory.get('phenotype') ?? [];
