@@ -163,14 +163,23 @@
 		return 'text-amber-400';
 	}
 
+	// Keys whose values are plain unit counts, not percentages
+	const FLAT_UNIT_KEYS = new Set(['negative_leader_traits_species']);
+
 	function formatModifier(mod: Modifier): string {
 		const sign = mod.value > 0 ? '+' : '';
+		if (FLAT_UNIT_KEYS.has(mod.key)) {
+			return `${sign}${mod.value}`;
+		}
 		if (mod.key.endsWith('_add')) {
+			if (Math.abs(mod.value) < 1) {
+				// Sub-1 _add values are on a 0–1 percentage scale (e.g. habitability floor/ceil)
+				return `${sign}${Math.round(mod.value * 100)}%`;
+			}
 			const n = Number.isInteger(mod.value) ? mod.value : parseFloat(mod.value.toFixed(2));
 			return `${sign}${n}`;
 		}
-		const pct = Math.round(mod.value * 100);
-		return `${sign}${pct}%`;
+		return `${sign}${Math.round(mod.value * 100)}%`;
 	}
 </script>
 
