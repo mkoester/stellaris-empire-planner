@@ -213,7 +213,7 @@
 						{@const isSelected = selected.has(trait.key)}
 						{@const isBlockable = !isSelected && !canToggle(trait)}
 						<button
-							class="card text-left transition-all
+							class="card relative text-left transition-all
 								{isSelected
 								? 'preset-filled-primary-500'
 								: isBlockable
@@ -224,20 +224,20 @@
 							onclick={() => toggle(trait)}
 							disabled={isBlockable}
 						>
+							{#if trait.required_dlc}
+								<span
+									class="absolute right-1.5 top-1.5 rounded px-1 text-[10px] leading-tight bg-secondary-500 text-secondary-contrast-500"
+									title={trait.required_dlc}
+								>
+									DLC
+								</span>
+							{/if}
 							<div class="flex min-h-10 flex-col justify-between gap-1">
 								<span class="text-sm leading-tight font-medium">{formatKey(trait.key)}</span>
 								<div class="flex flex-wrap items-center gap-1">
 									<span class="font-mono text-xs {costClass(trait.cost, isSelected)}">
 										{costLabel(trait.cost)} pt
 									</span>
-									{#if trait.required_dlc}
-										<span
-											class="rounded px-1 text-[10px] leading-tight opacity-70 bg-secondary-500 text-secondary-contrast-500"
-											title={trait.required_dlc}
-										>
-											DLC
-										</span>
-									{/if}
 									{#each trait.speciesClasses as cls}
 										{@const clsLabel = formatClassKey(cls)}
 										{@const clsColor = speciesClassColor(clsLabel)}
