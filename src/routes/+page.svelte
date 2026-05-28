@@ -35,7 +35,15 @@
 		if (pruned.size !== selected.size) selected = pruned;
 	});
 
-	const visibleTraits = $derived(data.traits.filter((t) => t.archetypes.includes(archetype)));
+	const visibleTraits = $derived(
+		data.traits
+			.filter((t) => t.archetypes.includes(archetype))
+			.sort((a, b) => {
+				const costDiff = (b.cost ?? -Infinity) - (a.cost ?? -Infinity);
+				if (costDiff !== 0) return costDiff;
+				return formatKey(a.key).localeCompare(formatKey(b.key));
+			})
+	);
 
 	const traitsByCategory = $derived.by(() => {
 		const groups = new Map<string, Trait[]>();
@@ -266,7 +274,7 @@
 				</span>
 			{/if}
 			<div class="flex min-h-10 flex-col justify-between gap-1">
-				<span class="text-sm leading-tight font-medium">{formatKey(trait.key)}</span>
+				<span class="text-sm leading-tight font-medium {!isSelected && trait.cost !== null && trait.cost < 0 ? 'text-red-400' : ''}">{formatKey(trait.key)}</span>
 				<div class="flex flex-wrap items-center gap-1">
 					<span class="font-mono text-xs {costClass(trait.cost, isSelected)}">
 						{costLabel(trait.cost)} pt
