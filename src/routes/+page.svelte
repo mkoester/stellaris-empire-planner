@@ -100,6 +100,10 @@
 		return { unrestricted, groups: [...classMap.values()] };
 	});
 
+	const categoryColorMap = $derived(
+		new Map(data.traitCategories.map((c) => [c.key, c.colorHex ?? '#888']))
+	);
+
 	const selectedTraits = $derived(data.traits.filter((t) => selected.has(t.key)));
 	const pointsUsed = $derived(selectedTraits.reduce((sum, t) => sum + (t.cost ?? 0), 0));
 	const pointsRemaining = $derived(maxPoints - pointsUsed);
@@ -175,82 +179,6 @@
 		{/each}
 	</div>
 
-	<!-- Budget + selection summary -->
-	<div class="card preset-filled p-4">
-		<div class="mb-3 flex items-center justify-between text-sm">
-			<span>
-				<strong>{traitCount}</strong> / {maxTraits} traits &nbsp;·&nbsp;
-				<strong
-					class={pointsRemaining < 0
-						? 'text-red-400'
-						: pointsRemaining === 0
-							? 'text-amber-400'
-							: ''}
-				>
-					{pointsRemaining}
-				</strong>
-				/ {maxPoints} pts remaining
-			</span>
-			{#if traitCount > 0}
-				<button class="btn text-xs preset-filled" onclick={() => (selected = new Set())}>
-					Clear all
-				</button>
-			{/if}
-		</div>
-
-		<!-- Point budget bar -->
-		<div class="bg-surface-200-800 h-2 w-full overflow-hidden rounded-full">
-			<div
-				class="h-full rounded-full transition-all {pointsRemaining < 0
-					? 'bg-red-500'
-					: 'bg-primary-500'}"
-				style="width: {maxPoints > 0 ? Math.max(0, Math.min(100, (pointsUsed / maxPoints) * 100)) : 0}%"
-			></div>
-		</div>
-
-		<!-- Base trait (always included, free, doesn't count toward picks) -->
-		<div class="mt-3 flex flex-wrap gap-2">
-			{#if baseTrait}
-				<span
-					class="flex cursor-default items-center gap-1 rounded border px-2 py-1 text-xs opacity-50 border-surface-400-500"
-					title="Always included — 0 pts, not counted in picks"
-				>
-					<span>{formatKey(baseTrait)}</span>
-					<span class="opacity-60">(base)</span>
-				</span>
-			{/if}
-			{#each selectedTraits as trait}
-				<button
-					class="flex items-center gap-1 rounded px-2 py-1 text-xs preset-filled-primary-500 hover:opacity-80"
-					onclick={() => toggle(trait)}
-				>
-					<span>{formatKey(trait.key)}</span>
-					<span class="opacity-70">({costLabel(trait.cost)})</span>
-					<span class="ml-1 opacity-50">×</span>
-				</button>
-			{/each}
-			{#if traitCount === 0 && !baseTrait}
-				<p class="text-sm opacity-50">No traits selected. Pick up to {maxTraits} below.</p>
-			{/if}
-		</div>
-	</div>
-
-	<!-- Category legend -->
-	{#if traitsByCategory.size > 0}
-		<div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs opacity-70">
-			{#each data.traitCategories.filter((c) => traitsByCategory.has(c.key)) as cat}
-				<span class="flex items-center gap-1.5">
-					<span
-						class="inline-block h-2.5 w-2.5 rounded-sm"
-						style="background-color: {cat.colorHex ?? '#888'}"
-					></span>
-					{cat.label}
-				</span>
-			{/each}
-		</div>
-	{/if}
-
-	<!-- Trait list by category -->
 	{#snippet traitCard(trait: Trait, borderColor: string)}
 		{@const isSelected = selected.has(trait.key)}
 		{@const isBlockable = !isSelected && !canToggle(trait)}
@@ -295,6 +223,78 @@
 		</button>
 	{/snippet}
 
+	<!-- Budget + selection summary -->
+	<div class="card preset-filled p-4">
+		<div class="mb-3 flex items-center justify-between text-sm">
+			<span>
+				<strong>{traitCount}</strong> / {maxTraits} traits &nbsp;·&nbsp;
+				<strong
+					class={pointsRemaining < 0
+						? 'text-red-400'
+						: pointsRemaining === 0
+							? 'text-amber-400'
+							: ''}
+				>
+					{pointsRemaining}
+				</strong>
+				/ {maxPoints} pts remaining
+			</span>
+			{#if traitCount > 0}
+				<button class="btn text-xs preset-filled" onclick={() => (selected = new Set())}>
+					Clear all
+				</button>
+			{/if}
+		</div>
+
+		<!-- Point budget bar -->
+		<div class="bg-surface-200-800 h-2 w-full overflow-hidden rounded-full">
+			<div
+				class="h-full rounded-full transition-all {pointsRemaining < 0
+					? 'bg-red-500'
+					: 'bg-primary-500'}"
+				style="width: {maxPoints > 0 ? Math.max(0, Math.min(100, (pointsUsed / maxPoints) * 100)) : 0}%"
+			></div>
+		</div>
+
+		<!-- Base trait (always included, free, doesn't count toward picks) -->
+		{#if baseTrait}
+			<div class="mt-3">
+				<span
+					class="flex cursor-default items-center gap-1 rounded border px-2 py-1 text-xs opacity-50 border-surface-400-500"
+					title="Always included — 0 pts, not counted in picks"
+				>
+					<span>{formatKey(baseTrait)}</span>
+					<span class="opacity-60">(base)</span>
+				</span>
+			</div>
+		{/if}
+		{#if traitCount > 0}
+			<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+				{#each selectedTraits as trait}
+					{@render traitCard(trait, categoryColorMap.get(trait.category) ?? '#888')}
+				{/each}
+			</div>
+		{:else if !baseTrait}
+			<p class="mt-3 text-sm opacity-50">No traits selected. Pick up to {maxTraits} below.</p>
+		{/if}
+	</div>
+
+	<!-- Category legend -->
+	{#if traitsByCategory.size > 0}
+		<div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs opacity-70">
+			{#each data.traitCategories.filter((c) => traitsByCategory.has(c.key)) as cat}
+				<span class="flex items-center gap-1.5">
+					<span
+						class="inline-block h-2.5 w-2.5 rounded-sm"
+						style="background-color: {cat.colorHex ?? '#888'}"
+					></span>
+					{cat.label}
+				</span>
+			{/each}
+		</div>
+	{/if}
+
+	<!-- Trait list by category -->
 	{#each data.traitCategories as cat}
 		{#if traitsByCategory.has(cat.key)}
 			{@const color = cat.colorHex ?? '#888'}
