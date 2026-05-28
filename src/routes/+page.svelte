@@ -12,8 +12,30 @@
 		{ key: 'MACHINE', label: 'Machine' }
 	];
 
+	const CLASS_LABELS: Record<string, string> = {
+		INF: 'Infernals',
+		PSIONIC: 'Psionic',
+		TOX: 'Toxoids',
+		NECROID: 'Necroids',
+		AQUATIC: 'Aquatic',
+		PLANT: 'Plant',
+		LITHOID: 'Lithoid',
+		MAM: 'Mammalian',
+		AVI: 'Avian',
+		REP: 'Reptilian',
+		FUN: 'Fungoid',
+		MOL: 'Molluscoid',
+		HUM: 'Humanoid',
+		ART: 'Arthropoid'
+	};
+
+	function formatClassKey(key: string): string {
+		return CLASS_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+	}
+
 	const CATEGORY_LABELS: Record<string, string> = {
 		normal: 'Species Traits',
+		phenotype: 'Phenotype Traits',
 		psionic: 'Psionic Traits',
 		overtuned: 'Overtuned Traits',
 		robotic: 'Synthetic Traits',
@@ -22,7 +44,7 @@
 		mutation: 'Mutation Traits'
 	};
 
-	const CATEGORY_ORDER = ['normal', 'robotic', 'psionic', 'overtuned', 'cyborg', 'malleable', 'mutation'];
+	const CATEGORY_ORDER = ['normal', 'phenotype', 'robotic', 'psionic', 'overtuned', 'cyborg', 'malleable', 'mutation'];
 
 	let archetype = $state<Archetype>('BIOLOGICAL');
 	let selected = $state(new Set<string>());
@@ -203,17 +225,26 @@
 						>
 							<div class="flex min-h-10 flex-col justify-between gap-1">
 								<span class="text-sm leading-tight font-medium">{formatKey(trait.key)}</span>
-								<div class="flex items-center justify-between gap-1">
+								<div class="flex flex-wrap items-center gap-1">
 									<span class="font-mono text-xs {costClass(trait.cost, isSelected)}">
 										{costLabel(trait.cost)} pt
 									</span>
 									{#if trait.required_dlc}
 										<span
 											class="rounded px-1 text-[10px] leading-tight opacity-70 bg-secondary-500 text-secondary-contrast-500"
+											title={trait.required_dlc}
 										>
 											DLC
 										</span>
 									{/if}
+									{#each trait.speciesClasses as cls}
+										<span
+											class="rounded px-1 text-[10px] leading-tight opacity-70 bg-tertiary-500 text-tertiary-contrast-500"
+											title="Requires {formatClassKey(cls)} species"
+										>
+											{formatClassKey(cls)}
+										</span>
+									{/each}
 								</div>
 							</div>
 						</button>

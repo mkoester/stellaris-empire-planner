@@ -56,6 +56,7 @@ export interface Trait {
 	archetypes: string[]; // from trait_archetype
 	opposites: string[]; // from trait_opposite
 	tags: string[]; // from trait_tag
+	speciesClasses: string[]; // from trait_species_class — empty = no restriction
 }
 
 export function loadTraits(): Trait[] {
@@ -71,12 +72,21 @@ export function loadTraits(): Trait[] {
 			t.required_dlc,
 			GROUP_CONCAT(DISTINCT ta.archetype) AS archetypes,
 			GROUP_CONCAT(DISTINCT to2.opposite_key) AS opposites,
-			GROUP_CONCAT(DISTINCT tt.tag) AS tags
+			GROUP_CONCAT(DISTINCT tt.tag) AS tags,
+			GROUP_CONCAT(DISTINCT tsc.species_class_key) AS species_classes
 		FROM trait t
 		LEFT JOIN trait_archetype ta ON t.key = ta.trait_key
 		LEFT JOIN trait_opposite to2 ON t.key = to2.trait_key
 		LEFT JOIN trait_tag tt ON t.key = tt.trait_key
-		WHERE t.initial = 1 AND t.hidden = 0 AND t.category IS NOT NULL
+		LEFT JOIN trait_species_class tsc ON t.key = tsc.trait_key
+		WHERE t.initial = 1 AND t.hidden = 0
+		  AND (
+		    t.category IS NOT NULL
+		    OR (
+		      t.cost IS NOT NULL AND t.cost != 0
+		      AND EXISTS (SELECT 1 FROM trait_archetype ta2 WHERE ta2.trait_key = t.key)
+		    )
+		  )
 		GROUP BY t.key
 		ORDER BY t.category, t.cost
 	`
@@ -91,17 +101,19 @@ export function loadTraits(): Trait[] {
 		archetypes: string | null;
 		opposites: string | null;
 		tags: string | null;
+		species_classes: string | null;
 	}>;
 
 	return rows.map((r) => ({
 		key: r.key,
 		cost: r.cost,
-		category: r.category,
+		category: r.category ?? 'phenotype',
 		initial: r.initial,
 		hidden: r.hidden,
 		required_dlc: r.required_dlc,
 		archetypes: r.archetypes ? r.archetypes.split(',') : [],
 		opposites: r.opposites ? r.opposites.split(',') : [],
-		tags: r.tags ? r.tags.split(',') : []
+		tags: r.tags ? r.tags.split(',') : [],
+		speciesClasses: r.species_classes ? r.species_classes.split(',') : []
 	}));
 }
