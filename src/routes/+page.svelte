@@ -109,6 +109,11 @@
 	const pointsRemaining = $derived(maxPoints - pointsUsed);
 	const traitCount = $derived(selected.size);
 
+	// Negative-cost traits give back points, expanding the effective budget.
+	const negativeBonus = $derived(selectedTraits.reduce((sum, t) => sum + Math.min(0, t.cost ?? 0), 0));
+	const positiveSpend = $derived(selectedTraits.reduce((sum, t) => sum + Math.max(0, t.cost ?? 0), 0));
+	const effectiveBudget = $derived(maxPoints - negativeBonus); // maxPoints + |negativeBonus|
+
 	const blockedByOpposite = $derived.by(() => {
 		const blocked = new Set<string>();
 		for (const key of selected) {
@@ -261,35 +266,41 @@
 
 	<!-- Budget + selection summary -->
 	<div class="card preset-filled p-4">
-		<div class="mb-3 flex items-center justify-between text-sm">
+		<!-- Points & picks dots -->
+		<div class="mb-2 flex items-baseline justify-between text-sm">
 			<span>
-				<strong>{traitCount}</strong> / {maxTraits} traits &nbsp;·&nbsp;
-				<strong
-					class={pointsRemaining < 0
-						? 'text-red-400'
-						: pointsRemaining === 0
-							? 'text-amber-400'
-							: ''}
-				>
+				<strong class={pointsRemaining < 0 ? 'text-red-400' : pointsRemaining === 0 ? 'text-amber-400' : ''}>
 					{pointsRemaining}
 				</strong>
-				/ {maxPoints} pts remaining
+				/ {maxPoints} trait points remaining
 			</span>
-			{#if traitCount > 0}
-				<button class="btn text-xs preset-filled" onclick={() => (selected = new Set())}>
-					Clear all
-				</button>
-			{/if}
+			<span class="flex items-baseline gap-3">
+				<strong>{maxTraits - traitCount}</strong> / {maxTraits} trait picks remaining
+				{#if traitCount > 0}
+					<button class="btn text-xs preset-filled" onclick={() => (selected = new Set())}>
+						Clear all
+					</button>
+				{/if}
+			</span>
 		</div>
-
-		<!-- Point budget bar -->
-		<div class="bg-surface-200-800 h-2 w-full overflow-hidden rounded-full">
-			<div
-				class="h-full rounded-full transition-all {pointsRemaining < 0
-					? 'bg-red-500'
-					: 'bg-primary-500'}"
-				style="width: {maxPoints > 0 ? Math.max(0, Math.min(100, (pointsUsed / maxPoints) * 100)) : 0}%"
-			></div>
+		<div class="flex items-center justify-between">
+			<div class="flex items-center gap-2">
+				{#each Array.from({ length: effectiveBudget }) as _, i}
+					{@const taken = i < Math.min(positiveSpend, effectiveBudget)}
+					<span class="h-4 w-4 rounded-full border-2 transition-all
+						{taken
+						? pointsRemaining < 0 ? 'border-red-500' : 'border-amber-400'
+						: pointsRemaining < 0 ? 'bg-red-500 border-red-500' : 'bg-amber-400 border-amber-400'}"
+					></span>
+				{/each}
+			</div>
+			<div class="flex items-center gap-2">
+				{#each Array.from({ length: maxTraits }) as _, i}
+					<span class="h-4 w-4 rounded-full border-2 transition-all
+						{i < traitCount ? 'border-primary-500' : 'bg-primary-500 border-primary-500'}"
+					></span>
+				{/each}
+			</div>
 		</div>
 
 		<!-- Base trait (always included, free, doesn't count toward picks) -->
