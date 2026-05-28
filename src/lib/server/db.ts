@@ -28,6 +28,7 @@ export interface TraitCategory {
 export interface SpeciesClass {
 	key: string;
 	label: string;
+	archetype: string;
 }
 
 export function loadTraitCategories(): TraitCategory[] {
@@ -60,9 +61,89 @@ export function loadTraitCategories(): TraitCategory[] {
 
 export function loadSpeciesClasses(): SpeciesClass[] {
 	const rows = db()
-		.prepare(`SELECT key, label FROM species_class WHERE label IS NOT NULL ORDER BY label`)
-		.all() as Array<{ key: string; label: string }>;
-	return rows.map((r) => ({ key: r.key, label: r.label }));
+		.prepare(
+			`SELECT key, label, archetype FROM species_class
+			 WHERE label IS NOT NULL AND archetype IN ('BIOLOGICAL', 'LITHOID', 'MACHINE')
+			 ORDER BY archetype, label`
+		)
+		.all() as Array<{ key: string; label: string; archetype: string }>;
+	return rows.map((r) => ({ key: r.key, label: r.label, archetype: r.archetype }));
+}
+
+export function loadTraitsForKeys(keys: string[]): Trait[] {
+	if (keys.length === 0) return [];
+	const ph = keys.map(() => '?').join(',');
+	const rows = db()
+		.prepare(
+			`SELECT
+				t.key, t.cost, t.category, t.initial, t.hidden, t.required_dlc,
+				GROUP_CONCAT(DISTINCT ta.archetype) AS archetypes,
+				GROUP_CONCAT(DISTINCT to2.opposite_key) AS opposites,
+				GROUP_CONCAT(DISTINCT tt.tag) AS tags,
+				GROUP_CONCAT(DISTINCT tsc.species_class_key) AS species_classes
+			FROM trait t
+			LEFT JOIN trait_archetype ta ON t.key = ta.trait_key
+			LEFT JOIN trait_opposite to2 ON t.key = to2.trait_key
+			LEFT JOIN trait_tag tt ON t.key = tt.trait_key
+			LEFT JOIN trait_species_class tsc ON t.key = tsc.trait_key
+			WHERE t.key IN (${ph})
+			GROUP BY t.key`
+		)
+		.all(...keys) as Array<{
+		key: string;
+		cost: number | null;
+		category: string;
+		initial: number;
+		hidden: number;
+		required_dlc: string | null;
+		archetypes: string | null;
+		opposites: string | null;
+		tags: string | null;
+		species_classes: string | null;
+	}>;
+
+	const traits = rows.map((r) => ({
+		key: r.key,
+		cost: r.cost,
+		category: r.category ?? 'phenotype',
+		initial: r.initial,
+		hidden: r.hidden,
+		required_dlc: r.required_dlc,
+		archetypes: r.archetypes ? r.archetypes.split(',') : [],
+		opposites: r.opposites ? r.opposites.split(',') : [],
+		tags: r.tags ? r.tags.split(',') : [],
+		speciesClasses: r.species_classes ? r.species_classes.split(',') : [],
+		modifiers: [] as Modifier[]
+	}));
+
+	const modRows = db()
+		.prepare(
+			`SELECT tm.trait_key, tm.modifier_key, tm.modifier_value, ml.label, ml.positive_is_good
+			 FROM trait_modifier tm
+			 LEFT JOIN modifier_label ml ON tm.modifier_key = ml.modifier_key
+			 WHERE tm.trait_key IN (${ph})
+			 ORDER BY tm.trait_key, tm.sort_order`
+		)
+		.all(...keys) as Array<{
+		trait_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+
+	const modByTrait = new Map<string, Modifier[]>();
+	for (const r of modRows) {
+		if (!modByTrait.has(r.trait_key)) modByTrait.set(r.trait_key, []);
+		modByTrait.get(r.trait_key)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+
+	return traits.map((t) => ({ ...t, modifiers: modByTrait.get(t.key) ?? [] }));
 }
 
 export function loadArchetypes(): Record<string, Archetype> {

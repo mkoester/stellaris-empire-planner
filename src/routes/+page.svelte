@@ -4,11 +4,10 @@
 
 	let { data }: { data: PageData } = $props();
 
-	type Archetype = 'BIOLOGICAL' | 'LITHOID' | 'MACHINE';
-
-	const ARCHETYPES: { key: Archetype; label: string }[] = [
+	// Top-level choice: Biological (includes Lithoid) or Machine
+	type ArchetypeGroup = 'BIOLOGICAL' | 'MACHINE';
+	const ARCHETYPE_GROUPS: { key: ArchetypeGroup; label: string }[] = [
 		{ key: 'BIOLOGICAL', label: 'Biological' },
-		{ key: 'LITHOID', label: 'Lithoid' },
 		{ key: 'MACHINE', label: 'Machine' }
 	];
 
@@ -18,7 +17,8 @@
 		return classLabelMap.get(key) ?? key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
 	}
 
-	let archetype = $state<Archetype>('BIOLOGICAL');
+	let archetypeGroup = $state<ArchetypeGroup>('BIOLOGICAL');
+	let selectedClassKey = $state<string | null>(null);
 	let selected = $state(new Set<string>());
 	let activeTags = $state(new Set<string>());
 
@@ -37,29 +37,62 @@
 
 	const POLARITY_TAGS = new Set(['positive', 'negative']);
 
+	// Species classes shown in the picker for the current group
+	const displayedSpeciesClasses = $derived(
+		data.speciesClasses.filter((sc) =>
+			archetypeGroup === 'MACHINE' ? sc.archetype === 'MACHINE' : sc.archetype !== 'MACHINE'
+		)
+	);
+
+	const selectedClass = $derived(
+		selectedClassKey ? (data.speciesClasses.find((sc) => sc.key === selectedClassKey) ?? null) : null
+	);
+
+	// Actual archetype used for trait filtering (Lithoid class overrides BIOLOGICAL group)
+	const archetype = $derived(selectedClass?.archetype ?? archetypeGroup);
+
 	const archetypeConfig = $derived(data.archetypes[archetype]);
 	const maxPoints = $derived(archetypeConfig?.traitPoints ?? 2);
 	const maxTraits = $derived(archetypeConfig?.maxTraits ?? 5);
-	const baseTrait = $derived(archetypeConfig?.baseTrait ?? null);
+	const baseTraitObj = $derived(
+		archetypeConfig?.baseTrait ? (data.baseTraits[archetypeConfig.baseTrait] ?? null) : null
+	);
 
-	// Clear selections incompatible with new archetype when it changes
+	function selectClass(key: string) {
+		if (selectedClassKey === key) {
+			selectedClassKey = null;
+		} else {
+			selectedClassKey = key;
+			const cls = data.speciesClasses.find((sc) => sc.key === key);
+			archetypeGroup = cls?.archetype === 'MACHINE' ? 'MACHINE' : 'BIOLOGICAL';
+		}
+	}
+
+	function selectArchetypeGroup(group: ArchetypeGroup) {
+		archetypeGroup = group;
+		selectedClassKey = null;
+	}
+
+	// Prune selected traits whenever available traits change
 	$effect(() => {
-		const valid = new Set(
-			data.traits.filter((t) => t.archetypes.includes(archetype)).map((t) => t.key)
-		);
+		const valid = new Set(visibleTraits.map((t) => t.key));
 		const pruned = new Set([...selected].filter((k) => valid.has(k)));
 		if (pruned.size !== selected.size) selected = pruned;
 	});
 
-	// Clear tag filters on archetype switch to avoid empty state from inapplicable tags
+	// Clear tag filters when switching archetype group
 	$effect(() => {
-		archetype;
+		archetypeGroup;
 		activeTags = new Set();
 	});
 
 	const visibleTraits = $derived(
 		data.traits
 			.filter((t) => t.archetypes.includes(archetype))
+			.filter((t) => {
+				if (!selectedClassKey || t.category !== 'phenotype') return true;
+				return t.speciesClasses.length === 0 || t.speciesClasses.includes(selectedClassKey);
+			})
 			.sort((a, b) => {
 				const costDiff = (b.cost ?? -Infinity) - (a.cost ?? -Infinity);
 				if (costDiff !== 0) return costDiff;
@@ -241,11 +274,11 @@
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
-	{#snippet traitCard(trait: Trait, borderColor: string)}
-		{@const isSelected = selected.has(trait.key)}
-		{@const isConflicted = !isSelected && blockedByOpposite.has(trait.key)}
-		{@const isBlockable = !isSelected && !canToggle(trait)}
-		{@const debug = data.debugDisableSelection}
+	{#snippet traitCard(trait: Trait, borderColor: string, isBase: boolean = false)}
+		{@const isSelected = !isBase && selected.has(trait.key)}
+		{@const isConflicted = !isBase && !isSelected && blockedByOpposite.has(trait.key)}
+		{@const isBlockable = !isBase && !isSelected && !canToggle(trait)}
+		{@const debug = isBase || data.debugDisableSelection}
 		{@const tooltip = isConflicted
 			? `Conflicts with ${formatKey(blockedByOpposite.get(trait.key)!)}`
 			: isBlockable
@@ -255,7 +288,9 @@
 		<svelte:element
 			this={debug ? 'div' : 'button'}
 			class="card relative text-left transition-all
-				{isSelected && !debug
+				{isBase
+				? 'preset-filled opacity-70 cursor-default'
+				: isSelected && !debug
 				? 'preset-filled-primary-500'
 				: isConflicted && !debug
 					? 'preset-filled opacity-50 cursor-not-allowed ring-2 ring-inset ring-red-500/80'
@@ -266,13 +301,19 @@
 							: 'preset-filled card-hover cursor-pointer'}
 				p-3"
 			style="border-top: 2px solid {borderColor}"
-			title={tooltip}
+			title={isBase ? 'Always included — not counted toward picks or points' : tooltip}
 			onclick={debug ? undefined : () => toggle(trait)}
 			disabled={!debug && isBlockable}
 		>
-			<span class="absolute left-1.5 top-1.5 font-mono text-[10px] leading-tight {costClass(trait.cost, isSelected)}">
-				{costLabel(trait.cost)}
-			</span>
+			{#if isBase}
+				<span class="absolute left-1.5 top-1.5 font-mono text-[10px] leading-tight text-amber-400">
+					Base
+				</span>
+			{:else}
+				<span class="absolute left-1.5 top-1.5 font-mono text-[10px] leading-tight {costClass(trait.cost, isSelected)}">
+					{costLabel(trait.cost)}
+				</span>
+			{/if}
 			{#if trait.required_dlc}
 				<span
 					class="absolute right-1.5 top-1.5 rounded px-1 text-[10px] leading-tight bg-secondary-500 text-secondary-contrast-500"
@@ -331,18 +372,6 @@
 	>
 	<h1 class="text-2xl font-bold">Species Builder</h1>
 
-	<!-- Archetype selector -->
-	<div class="flex flex-wrap gap-2">
-		{#each ARCHETYPES as arch}
-			<button
-				class="btn {archetype === arch.key ? 'preset-filled-primary-500' : 'preset-filled'}"
-				onclick={() => (archetype = arch.key)}
-			>
-				{arch.label}
-			</button>
-		{/each}
-	</div>
-
 	<!-- Budget + selection summary -->
 	<div class="card preset-filled p-4">
 		<!-- Points & picks dots -->
@@ -382,29 +411,46 @@
 			</div>
 		</div>
 
-		<!-- Base trait (always included, free, doesn't count toward picks) -->
-		{#if baseTrait}
-			<div class="mt-3">
-				<span
-					class="flex cursor-default items-center gap-1 rounded border px-2 py-1 text-xs opacity-50 border-surface-400-500"
-					title="Always included — 0 pts, not counted in picks"
-				>
-					<span>{formatKey(baseTrait)}</span>
-					<span class="opacity-60">(base)</span>
-				</span>
-			</div>
-		{/if}
-		{#if traitCount > 0}
+		{#if baseTraitObj || traitCount > 0}
 			<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+				{#if baseTraitObj}
+					{@render traitCard(baseTraitObj, '#d97706', true)}
+				{/if}
 				{#each selectedTraits as trait}
 					{@render traitCard(trait, categoryColorMap.get(trait.category) ?? '#888')}
 				{/each}
 			</div>
-		{:else if !baseTrait}
+		{:else}
 			<p class="mt-3 text-sm opacity-50">No traits selected. Pick up to {maxTraits} below.</p>
 		{/if}
 	</div>
 	</div><!-- end sticky header -->
+
+	<!-- Species selector -->
+	<div class="space-y-2">
+		<div class="flex flex-wrap gap-2">
+			{#each ARCHETYPE_GROUPS as group}
+				<button
+					class="btn {archetypeGroup === group.key ? 'preset-filled-primary-500' : 'preset-filled'}"
+					onclick={() => selectArchetypeGroup(group.key)}
+				>
+					{group.label}
+				</button>
+			{/each}
+		</div>
+		{#if displayedSpeciesClasses.length > 0}
+			<div class="flex flex-wrap gap-1.5">
+				{#each displayedSpeciesClasses as sc}
+					<button
+						class="btn text-sm {selectedClassKey === sc.key ? 'preset-filled-primary-500' : 'preset-filled'}"
+						onclick={() => selectClass(sc.key)}
+					>
+						{sc.label}
+					</button>
+				{/each}
+			</div>
+		{/if}
+	</div>
 
 	<!-- Tag filter -->
 	{#if allTagsInView.length > 0}
@@ -474,7 +520,7 @@
 					<h2 class="pl-3 text-lg font-semibold" style="border-left: 3px solid {color}">
 						{cat.label}
 					</h2>
-					{#if cat.key === 'phenotype'}
+					{#if cat.key === 'phenotype' && !selectedClassKey}
 						<div class="flex gap-1">
 							<button
 								class="btn text-xs {!groupPhenotype ? 'preset-filled-primary-500' : 'preset-filled'}"
@@ -492,7 +538,7 @@
 					{/if}
 				</div>
 
-				{#if cat.key === 'phenotype' && groupPhenotype}
+				{#if cat.key === 'phenotype' && groupPhenotype && !selectedClassKey}
 					{#if phenotypeGroups.unrestricted.length > 0}
 						<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 							{#each phenotypeGroups.unrestricted as trait}
