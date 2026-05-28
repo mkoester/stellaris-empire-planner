@@ -235,7 +235,7 @@
 						{#each trait.modifiers as mod}
 							<li class="flex items-baseline justify-between gap-1 text-[10px]">
 								<span class="opacity-60 leading-tight">{mod.label ?? mod.key}</span>
-								<span class="font-mono shrink-0 {mod.value > 0 ? 'text-emerald-400' : 'text-red-400'}">{formatModifier(mod)}</span>
+								<span class="font-mono shrink-0 {(mod.value > 0) === mod.positiveIsGood ? 'text-emerald-400' : 'text-red-400'}">{formatModifier(mod)}</span>
 							</li>
 						{/each}
 					</ul>

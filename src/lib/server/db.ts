@@ -97,6 +97,7 @@ export interface Modifier {
 	key: string;
 	value: number;
 	label: string | null;
+	positiveIsGood: boolean;
 }
 
 export interface Trait {
@@ -174,7 +175,7 @@ export function loadTraits(): Trait[] {
 
 	const modRows = db()
 		.prepare(
-			`SELECT tm.trait_key, tm.modifier_key, tm.modifier_value, ml.label
+			`SELECT tm.trait_key, tm.modifier_key, tm.modifier_value, ml.label, ml.positive_is_good
 			 FROM trait_modifier tm
 			 LEFT JOIN modifier_label ml ON tm.modifier_key = ml.modifier_key
 			 ORDER BY tm.trait_key, tm.sort_order`
@@ -184,12 +185,18 @@ export function loadTraits(): Trait[] {
 		modifier_key: string;
 		modifier_value: number;
 		label: string | null;
+		positive_is_good: number | null;
 	}>;
 
 	const modByTrait = new Map<string, Modifier[]>();
 	for (const r of modRows) {
 		if (!modByTrait.has(r.trait_key)) modByTrait.set(r.trait_key, []);
-		modByTrait.get(r.trait_key)!.push({ key: r.modifier_key, value: r.modifier_value, label: r.label });
+		modByTrait.get(r.trait_key)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
 	}
 
 	return traits.map((t) => ({ ...t, modifiers: modByTrait.get(t.key) ?? [] }));
