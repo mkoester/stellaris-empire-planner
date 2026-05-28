@@ -4,12 +4,11 @@
 
 	let { data }: { data: PageData } = $props();
 
-	type Archetype = 'BIOLOGICAL' | 'LITHOID' | 'ROBOT' | 'MACHINE';
+	type Archetype = 'BIOLOGICAL' | 'LITHOID' | 'MACHINE';
 
 	const ARCHETYPES: { key: Archetype; label: string }[] = [
 		{ key: 'BIOLOGICAL', label: 'Biological' },
 		{ key: 'LITHOID', label: 'Lithoid' },
-		{ key: 'ROBOT', label: 'Robot' },
 		{ key: 'MACHINE', label: 'Machine' }
 	];
 
