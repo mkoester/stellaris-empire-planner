@@ -274,13 +274,13 @@
 				</strong>
 				/ {maxPoints} trait points remaining
 			</span>
-			<span class="flex items-baseline gap-3">
+			{#if traitCount > 0}
+				<button class="btn text-xs preset-filled" onclick={() => (selected = new Set())}>
+					Clear all
+				</button>
+			{/if}
+			<span>
 				<strong>{maxTraits - traitCount}</strong> / {maxTraits} trait picks remaining
-				{#if traitCount > 0}
-					<button class="btn text-xs preset-filled" onclick={() => (selected = new Set())}>
-						Clear all
-					</button>
-				{/if}
 			</span>
 		</div>
 		<div class="flex items-center justify-between">
