@@ -209,6 +209,9 @@
 			onclick={debug ? undefined : () => toggle(trait)}
 			disabled={!debug && isBlockable}
 		>
+			<span class="absolute left-1.5 top-1.5 font-mono text-[10px] leading-tight {costClass(trait.cost, isSelected)}">
+				{costLabel(trait.cost)}
+			</span>
 			{#if trait.required_dlc}
 				<span
 					class="absolute right-1.5 top-1.5 rounded px-1 text-[10px] leading-tight bg-secondary-500 text-secondary-contrast-500"
@@ -216,7 +219,7 @@
 					{trait.required_dlc}
 				</span>
 			{/if}
-			<div class="flex flex-col gap-1">
+			<div class="flex flex-col gap-1 pt-4">
 				<span class="text-sm leading-tight font-medium {!isSelected && trait.cost !== null && trait.cost < 0 ? 'text-red-400' : ''}">{formatKey(trait.key)}</span>
 				{#if trait.modifiers.length > 0}
 					<ul class="space-y-0.5">
@@ -228,22 +231,21 @@
 						{/each}
 					</ul>
 				{/if}
-				<div class="flex flex-wrap items-center gap-1">
-					<span class="font-mono text-xs {costClass(trait.cost, isSelected)}">
-						{costLabel(trait.cost)} pt
-					</span>
-					{#each trait.speciesClasses as cls}
-						{@const clsLabel = formatClassKey(cls)}
-						{@const clsColor = speciesClassColor(clsLabel)}
-						<span
-							class="rounded px-1 text-[10px] leading-tight opacity-80"
-							style="background-color: {clsColor}33; border: 1px solid {clsColor}88; color: {clsColor}"
-							title="Requires {clsLabel} species"
-						>
-							{clsLabel}
-						</span>
-					{/each}
-				</div>
+				{#if trait.speciesClasses.length > 0}
+					<div class="flex flex-wrap items-center gap-1">
+						{#each trait.speciesClasses as cls}
+							{@const clsLabel = formatClassKey(cls)}
+							{@const clsColor = speciesClassColor(clsLabel)}
+							<span
+								class="rounded px-1 text-[10px] leading-tight opacity-80"
+								style="background-color: {clsColor}33; border: 1px solid {clsColor}88; color: {clsColor}"
+								title="Requires {clsLabel} species"
+							>
+								{clsLabel}
+							</span>
+						{/each}
+					</div>
+				{/if}
 			</div>
 		</svelte:element>
 	{/snippet}
