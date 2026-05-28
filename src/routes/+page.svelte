@@ -190,20 +190,6 @@
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
-	<h1 class="text-2xl font-bold">Species Builder</h1>
-
-	<!-- Archetype selector -->
-	<div class="flex flex-wrap gap-2">
-		{#each ARCHETYPES as arch}
-			<button
-				class="btn {archetype === arch.key ? 'preset-filled-primary-500' : 'preset-filled'}"
-				onclick={() => (archetype = arch.key)}
-			>
-				{arch.label}
-			</button>
-		{/each}
-	</div>
-
 	{#snippet traitCard(trait: Trait, borderColor: string)}
 		{@const isSelected = selected.has(trait.key)}
 		{@const isConflicted = !isSelected && blockedByOpposite.has(trait.key)}
@@ -274,6 +260,24 @@
 		</svelte:element>
 	{/snippet}
 
+	<div
+		class="space-y-6 [@media(min-height:700px)]:sticky [@media(min-height:700px)]:top-0 [@media(min-height:700px)]:z-10 [@media(min-height:700px)]:pb-2"
+		style="background-color: var(--color-surface-50-950)"
+	>
+	<h1 class="text-2xl font-bold">Species Builder</h1>
+
+	<!-- Archetype selector -->
+	<div class="flex flex-wrap gap-2">
+		{#each ARCHETYPES as arch}
+			<button
+				class="btn {archetype === arch.key ? 'preset-filled-primary-500' : 'preset-filled'}"
+				onclick={() => (archetype = arch.key)}
+			>
+				{arch.label}
+			</button>
+		{/each}
+	</div>
+
 	<!-- Budget + selection summary -->
 	<div class="card preset-filled p-4">
 		<!-- Points & picks dots -->
@@ -335,6 +339,7 @@
 			<p class="mt-3 text-sm opacity-50">No traits selected. Pick up to {maxTraits} below.</p>
 		{/if}
 	</div>
+	</div><!-- end sticky header -->
 
 	<!-- Category legend -->
 	{#if traitsByCategory.size > 0}
