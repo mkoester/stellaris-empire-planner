@@ -114,11 +114,12 @@
 	const positiveSpend = $derived(selectedTraits.reduce((sum, t) => sum + Math.max(0, t.cost ?? 0), 0));
 	const effectiveBudget = $derived(maxPoints - negativeBonus); // maxPoints + |negativeBonus|
 
+	// Maps blocked trait key → the first selected trait causing the conflict
 	const blockedByOpposite = $derived.by(() => {
-		const blocked = new Set<string>();
+		const blocked = new Map<string, string>();
 		for (const key of selected) {
 			const trait = data.traits.find((t) => t.key === key);
-			if (trait) for (const opp of trait.opposites) blocked.add(opp);
+			if (trait) for (const opp of trait.opposites) if (!blocked.has(opp)) blocked.set(opp, key);
 		}
 		return blocked;
 	});
@@ -205,21 +206,30 @@
 
 	{#snippet traitCard(trait: Trait, borderColor: string)}
 		{@const isSelected = selected.has(trait.key)}
+		{@const isConflicted = !isSelected && blockedByOpposite.has(trait.key)}
 		{@const isBlockable = !isSelected && !canToggle(trait)}
 		{@const debug = data.debugDisableSelection}
+		{@const tooltip = isConflicted
+			? `Conflicts with ${formatKey(blockedByOpposite.get(trait.key)!)}`
+			: isBlockable
+				? traitCount >= maxTraits ? 'No trait picks remaining' : 'Not enough points remaining'
+				: undefined}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<svelte:element
 			this={debug ? 'div' : 'button'}
 			class="card relative text-left transition-all
 				{isSelected && !debug
 				? 'preset-filled-primary-500'
-				: isBlockable && !debug
-					? 'preset-filled opacity-35 cursor-not-allowed'
-					: debug
-						? 'preset-filled cursor-text select-text'
-						: 'preset-filled card-hover cursor-pointer'}
+				: isConflicted && !debug
+					? 'preset-filled opacity-50 cursor-not-allowed ring-2 ring-inset ring-red-500/80'
+					: isBlockable && !debug
+						? 'preset-filled opacity-35 cursor-not-allowed'
+						: debug
+							? 'preset-filled cursor-text select-text'
+							: 'preset-filled card-hover cursor-pointer'}
 				p-3"
 			style="border-top: 2px solid {borderColor}"
+			title={tooltip}
 			onclick={debug ? undefined : () => toggle(trait)}
 			disabled={!debug && isBlockable}
 		>
