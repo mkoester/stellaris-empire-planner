@@ -12,39 +12,11 @@
 		{ key: 'MACHINE', label: 'Machine' }
 	];
 
-	const CLASS_LABELS: Record<string, string> = {
-		INF: 'Infernals',
-		PSIONIC: 'Psionic',
-		TOX: 'Toxoids',
-		NECROID: 'Necroids',
-		AQUATIC: 'Aquatic',
-		PLANT: 'Plant',
-		LITHOID: 'Lithoid',
-		MAM: 'Mammalian',
-		AVI: 'Avian',
-		REP: 'Reptilian',
-		FUN: 'Fungoid',
-		MOL: 'Molluscoid',
-		HUM: 'Humanoid',
-		ART: 'Arthropoid'
-	};
+	const classLabelMap = $derived(new Map(data.speciesClasses.map((sc) => [sc.key, sc.label])));
 
 	function formatClassKey(key: string): string {
-		return CLASS_LABELS[key] ?? key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
+		return classLabelMap.get(key) ?? key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
 	}
-
-	const CATEGORY_LABELS: Record<string, string> = {
-		normal: 'Species Traits',
-		phenotype: 'Phenotype Traits',
-		psionic: 'Psionic Traits',
-		overtuned: 'Overtuned Traits',
-		robotic: 'Synthetic Traits',
-		cyborg: 'Cybernetic Traits',
-		malleable: 'Malleable Traits',
-		mutation: 'Mutation Traits'
-	};
-
-	const CATEGORY_ORDER = ['normal', 'phenotype', 'robotic', 'psionic', 'overtuned', 'cyborg', 'malleable', 'mutation'];
 
 	let archetype = $state<Archetype>('BIOLOGICAL');
 	let selected = $state(new Set<string>());
@@ -117,6 +89,13 @@
 	function costLabel(cost: number | null): string {
 		if (cost === null) return '?';
 		return cost > 0 ? `+${cost}` : `${cost}`;
+	}
+
+	function speciesClassColor(label: string): string {
+		// DJB2 hash → hue, fixed saturation/lightness for readability in any theme
+		let h = 5381;
+		for (let i = 0; i < label.length; i++) h = (((h << 5) + h) ^ label.charCodeAt(i)) >>> 0;
+		return `hsl(${h % 360}, 55%, 52%)`;
 	}
 
 	function costClass(cost: number | null, selected: boolean): string {
@@ -202,12 +181,33 @@
 		</div>
 	</div>
 
+	<!-- Category legend -->
+	{#if traitsByCategory.size > 0}
+		<div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs opacity-70">
+			{#each data.traitCategories.filter((c) => traitsByCategory.has(c.key)) as cat}
+				<span class="flex items-center gap-1.5">
+					<span
+						class="inline-block h-2.5 w-2.5 rounded-sm"
+						style="background-color: {cat.colorHex ?? '#888'}"
+					></span>
+					{cat.label}
+				</span>
+			{/each}
+		</div>
+	{/if}
+
 	<!-- Trait list by category -->
-	{#each CATEGORY_ORDER as category}
-		{#if traitsByCategory.has(category)}
-			{@const traits = traitsByCategory.get(category)!}
+	{#each data.traitCategories as cat}
+		{#if traitsByCategory.has(cat.key)}
+			{@const traits = traitsByCategory.get(cat.key)!}
+			{@const color = cat.colorHex ?? '#888'}
 			<section>
-				<h2 class="mb-3 text-lg font-semibold">{CATEGORY_LABELS[category] ?? category}</h2>
+				<h2
+					class="mb-3 pl-3 text-lg font-semibold"
+					style="border-left: 3px solid {color}"
+				>
+					{cat.label}
+				</h2>
 				<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 					{#each traits as trait}
 						{@const isSelected = selected.has(trait.key)}
@@ -220,6 +220,7 @@
 									? 'preset-filled opacity-35 cursor-not-allowed'
 									: 'preset-filled card-hover cursor-pointer'}
 								p-3"
+							style="border-top: 2px solid {color}"
 							onclick={() => toggle(trait)}
 							disabled={isBlockable}
 						>
@@ -238,11 +239,14 @@
 										</span>
 									{/if}
 									{#each trait.speciesClasses as cls}
+										{@const clsLabel = formatClassKey(cls)}
+										{@const clsColor = speciesClassColor(clsLabel)}
 										<span
-											class="rounded px-1 text-[10px] leading-tight opacity-70 bg-tertiary-500 text-tertiary-contrast-500"
-											title="Requires {formatClassKey(cls)} species"
+											class="rounded px-1 text-[10px] leading-tight opacity-80"
+											style="background-color: {clsColor}33; border: 1px solid {clsColor}88; color: {clsColor}"
+											title="Requires {clsLabel} species"
 										>
-											{formatClassKey(cls)}
+											{clsLabel}
 										</span>
 									{/each}
 								</div>

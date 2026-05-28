@@ -1,6 +1,9 @@
-import { loadArchetypes, loadTraits } from '$lib/server/db';
+import { loadArchetypes, loadTraitCategories, loadSpeciesClasses, loadTraits } from '$lib/server/db';
 import type { PageServerLoad } from './$types';
 
-export const load: PageServerLoad = () => {
-	return { traits: loadTraits(), archetypes: loadArchetypes() };
-};
+export const load: PageServerLoad = () => ({
+	traits: loadTraits(),
+	archetypes: loadArchetypes(),
+	traitCategories: loadTraitCategories(),
+	speciesClasses: loadSpeciesClasses()
+});

@@ -18,6 +18,53 @@ export interface Archetype {
 	baseTrait: string | null;
 }
 
+export interface TraitCategory {
+	key: string;
+	label: string;
+	colorHex: string | null;
+	displayOrder: number;
+}
+
+export interface SpeciesClass {
+	key: string;
+	label: string;
+}
+
+export function loadTraitCategories(): TraitCategory[] {
+	const rows = db()
+		.prepare(
+			`SELECT tc.key, tc.label, tc.display_order, nc.r, nc.g, nc.b
+			 FROM trait_category tc
+			 LEFT JOIN named_color nc ON nc.key = tc.color_key
+			 ORDER BY tc.display_order`
+		)
+		.all() as Array<{
+		key: string;
+		label: string;
+		display_order: number;
+		r: number | null;
+		g: number | null;
+		b: number | null;
+	}>;
+
+	return rows.map((r) => ({
+		key: r.key,
+		label: r.label,
+		colorHex:
+			r.r !== null
+				? `#${r.r.toString(16).padStart(2, '0')}${r.g!.toString(16).padStart(2, '0')}${r.b!.toString(16).padStart(2, '0')}`
+				: null,
+		displayOrder: r.display_order
+	}));
+}
+
+export function loadSpeciesClasses(): SpeciesClass[] {
+	const rows = db()
+		.prepare(`SELECT key, label FROM species_class WHERE label IS NOT NULL ORDER BY label`)
+		.all() as Array<{ key: string; label: string }>;
+	return rows.map((r) => ({ key: r.key, label: r.label }));
+}
+
 export function loadArchetypes(): Record<string, Archetype> {
 	const rows = db()
 		.prepare(
