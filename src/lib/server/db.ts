@@ -10,6 +10,42 @@ function db(): Database.Database {
 	return _db;
 }
 
+export interface Archetype {
+	key: string;
+	traitPoints: number;
+	maxTraits: number;
+	robotic: boolean;
+	baseTrait: string | null;
+}
+
+export function loadArchetypes(): Record<string, Archetype> {
+	const rows = db()
+		.prepare(
+			`SELECT key, trait_points, max_traits, robotic, base_trait
+			 FROM species_archetype`
+		)
+		.all() as Array<{
+		key: string;
+		trait_points: number | null;
+		max_traits: number | null;
+		robotic: number;
+		base_trait: string | null;
+	}>;
+
+	return Object.fromEntries(
+		rows.map((r) => [
+			r.key,
+			{
+				key: r.key,
+				traitPoints: r.trait_points ?? 0,
+				maxTraits: r.max_traits ?? 5,
+				robotic: r.robotic === 1,
+				baseTrait: r.base_trait
+			}
+		])
+	);
+}
+
 export interface Trait {
 	key: string;
 	cost: number | null;

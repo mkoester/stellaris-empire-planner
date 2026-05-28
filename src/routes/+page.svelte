@@ -25,11 +25,13 @@
 
 	const CATEGORY_ORDER = ['normal', 'robotic', 'psionic', 'overtuned', 'cyborg', 'malleable', 'mutation'];
 
-	const MAX_POINTS = 2;
-	const MAX_TRAITS = 5;
-
 	let archetype = $state<Archetype>('BIOLOGICAL');
 	let selected = $state(new Set<string>());
+
+	const archetypeConfig = $derived(data.archetypes[archetype]);
+	const maxPoints = $derived(archetypeConfig?.traitPoints ?? 2);
+	const maxTraits = $derived(archetypeConfig?.maxTraits ?? 5);
+	const baseTrait = $derived(archetypeConfig?.baseTrait ?? null);
 
 	// Clear selections incompatible with new archetype when it changes
 	$effect(() => {
@@ -53,7 +55,7 @@
 
 	const selectedTraits = $derived(data.traits.filter((t) => selected.has(t.key)));
 	const pointsUsed = $derived(selectedTraits.reduce((sum, t) => sum + (t.cost ?? 0), 0));
-	const pointsRemaining = $derived(MAX_POINTS - pointsUsed);
+	const pointsRemaining = $derived(maxPoints - pointsUsed);
 	const traitCount = $derived(selected.size);
 
 	const blockedByOpposite = $derived.by(() => {
@@ -67,8 +69,8 @@
 
 	function canToggle(trait: Trait): boolean {
 		if (selected.has(trait.key)) return true;
-		if (traitCount >= MAX_TRAITS) return false;
-		if (pointsUsed + (trait.cost ?? 0) > MAX_POINTS) return false;
+		if (traitCount >= maxTraits) return false;
+		if (pointsUsed + (trait.cost ?? 0) > maxPoints) return false;
 		if (blockedByOpposite.has(trait.key)) return false;
 		return true;
 	}
@@ -123,7 +125,7 @@
 	<div class="card preset-filled p-4">
 		<div class="mb-3 flex items-center justify-between text-sm">
 			<span>
-				<strong>{traitCount}</strong> / {MAX_TRAITS} traits &nbsp;·&nbsp;
+				<strong>{traitCount}</strong> / {maxTraits} traits &nbsp;·&nbsp;
 				<strong
 					class={pointsRemaining < 0
 						? 'text-red-400'
@@ -133,7 +135,7 @@
 				>
 					{pointsRemaining}
 				</strong>
-				/ {MAX_POINTS} pts remaining
+				/ {maxPoints} pts remaining
 			</span>
 			{#if traitCount > 0}
 				<button class="btn text-xs preset-filled" onclick={() => (selected = new Set())}>
@@ -148,27 +150,35 @@
 				class="h-full rounded-full transition-all {pointsRemaining < 0
 					? 'bg-red-500'
 					: 'bg-primary-500'}"
-				style="width: {Math.max(0, Math.min(100, (pointsUsed / MAX_POINTS) * 100))}%"
+				style="width: {maxPoints > 0 ? Math.max(0, Math.min(100, (pointsUsed / maxPoints) * 100)) : 0}%"
 			></div>
 		</div>
 
-		<!-- Selected trait chips -->
-		{#if traitCount > 0}
-			<div class="mt-3 flex flex-wrap gap-2">
-				{#each selectedTraits as trait}
-					<button
-						class="flex items-center gap-1 rounded px-2 py-1 text-xs preset-filled-primary-500 hover:opacity-80"
-						onclick={() => toggle(trait)}
-					>
-						<span>{formatKey(trait.key)}</span>
-						<span class="opacity-70">({costLabel(trait.cost)})</span>
-						<span class="ml-1 opacity-50">×</span>
-					</button>
-				{/each}
-			</div>
-		{:else}
-			<p class="mt-3 text-sm opacity-50">No traits selected. Pick up to {MAX_TRAITS} below.</p>
-		{/if}
+		<!-- Base trait (always included, free, doesn't count toward picks) -->
+		<div class="mt-3 flex flex-wrap gap-2">
+			{#if baseTrait}
+				<span
+					class="flex cursor-default items-center gap-1 rounded border px-2 py-1 text-xs opacity-50 border-surface-400-500"
+					title="Always included — 0 pts, not counted in picks"
+				>
+					<span>{formatKey(baseTrait)}</span>
+					<span class="opacity-60">(base)</span>
+				</span>
+			{/if}
+			{#each selectedTraits as trait}
+				<button
+					class="flex items-center gap-1 rounded px-2 py-1 text-xs preset-filled-primary-500 hover:opacity-80"
+					onclick={() => toggle(trait)}
+				>
+					<span>{formatKey(trait.key)}</span>
+					<span class="opacity-70">({costLabel(trait.cost)})</span>
+					<span class="ml-1 opacity-50">×</span>
+				</button>
+			{/each}
+			{#if traitCount === 0 && !baseTrait}
+				<p class="text-sm opacity-50">No traits selected. Pick up to {maxTraits} below.</p>
+			{/if}
+		</div>
 	</div>
 
 	<!-- Trait list by category -->
@@ -192,7 +202,7 @@
 							onclick={() => toggle(trait)}
 							disabled={isBlockable}
 						>
-							<div class="flex min-h-[2.5rem] flex-col justify-between gap-1">
+							<div class="flex min-h-10 flex-col justify-between gap-1">
 								<span class="text-sm leading-tight font-medium">{formatKey(trait.key)}</span>
 								<div class="flex items-center justify-between gap-1">
 									<span class="font-mono text-xs {costClass(trait.cost, isSelected)}">
