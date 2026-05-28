@@ -192,17 +192,22 @@
 	{#snippet traitCard(trait: Trait, borderColor: string)}
 		{@const isSelected = selected.has(trait.key)}
 		{@const isBlockable = !isSelected && !canToggle(trait)}
-		<button
+		{@const debug = data.debugDisableSelection}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<svelte:element
+			this={debug ? 'div' : 'button'}
 			class="card relative text-left transition-all
-				{isSelected
+				{isSelected && !debug
 				? 'preset-filled-primary-500'
-				: isBlockable
+				: isBlockable && !debug
 					? 'preset-filled opacity-35 cursor-not-allowed'
-					: 'preset-filled card-hover cursor-pointer'}
+					: debug
+						? 'preset-filled cursor-text select-text'
+						: 'preset-filled card-hover cursor-pointer'}
 				p-3"
 			style="border-top: 2px solid {borderColor}"
-			onclick={() => toggle(trait)}
-			disabled={isBlockable}
+			onclick={debug ? undefined : () => toggle(trait)}
+			disabled={!debug && isBlockable}
 		>
 			{#if trait.required_dlc}
 				<span
@@ -240,7 +245,7 @@
 					{/each}
 				</div>
 			</div>
-		</button>
+		</svelte:element>
 	{/snippet}
 
 	<!-- Budget + selection summary -->
