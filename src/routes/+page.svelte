@@ -227,9 +227,8 @@
 							{#if trait.required_dlc}
 								<span
 									class="absolute right-1.5 top-1.5 rounded px-1 text-[10px] leading-tight bg-secondary-500 text-secondary-contrast-500"
-									title={trait.required_dlc}
 								>
-									DLC
+									{trait.required_dlc}
 								</span>
 							{/if}
 							<div class="flex min-h-10 flex-col justify-between gap-1">
