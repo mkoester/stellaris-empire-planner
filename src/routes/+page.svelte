@@ -20,6 +20,22 @@
 
 	let archetype = $state<Archetype>('BIOLOGICAL');
 	let selected = $state(new Set<string>());
+	let activeTags = $state(new Set<string>());
+
+	// Tags that convey no additional info on the card (archetype/polarity classification)
+	const HIDDEN_CARD_TAGS = new Set([
+		'positive', 'negative', 'special', 'automod', 'background',
+		'interesting', 'modularity', 'individual',
+		'organic', 'machine', 'synthetic', 'cybernetic', 'psionic', 'lithoid'
+	]);
+
+	const SPECIES_PHENOTYPE_TAGS = new Set([
+		'aquatic', 'arthropoid', 'avian', 'fungoid', 'humanoid', 'lithoid',
+		'mammalian', 'molluscoid', 'necroid', 'organic', 'plantoid', 'reptilian',
+		'species', 'toxoid'
+	]);
+
+	const POLARITY_TAGS = new Set(['positive', 'negative']);
 
 	const archetypeConfig = $derived(data.archetypes[archetype]);
 	const maxPoints = $derived(archetypeConfig?.traitPoints ?? 2);
@@ -35,6 +51,12 @@
 		if (pruned.size !== selected.size) selected = pruned;
 	});
 
+	// Clear tag filters on archetype switch to avoid empty state from inapplicable tags
+	$effect(() => {
+		archetype;
+		activeTags = new Set();
+	});
+
 	const visibleTraits = $derived(
 		data.traits
 			.filter((t) => t.archetypes.includes(archetype))
@@ -45,9 +67,34 @@
 			})
 	);
 
+	const allTagsInView = $derived.by(() => {
+		const tags = new Set<string>();
+		for (const t of visibleTraits) for (const tag of t.tags) tags.add(tag);
+		return [...tags].sort();
+	});
+
+	const mainFilterTags = $derived(allTagsInView.filter((t) => !SPECIES_PHENOTYPE_TAGS.has(t) && !POLARITY_TAGS.has(t)));
+	const speciesFilterTags = $derived(allTagsInView.filter((t) => SPECIES_PHENOTYPE_TAGS.has(t)));
+	const speciesLeadTag = $derived(speciesFilterTags.includes('species') ? 'species' : null);
+	const speciesRestTags = $derived(speciesFilterTags.filter((t) => t !== 'species'));
+	const polarityFilterTags = $derived(['positive', 'negative'].filter((t) => allTagsInView.includes(t)));
+
+	function toggleTag(tag: string) {
+		const next = new Set(activeTags);
+		if (next.has(tag)) next.delete(tag);
+		else next.add(tag);
+		activeTags = next;
+	}
+
+	const filteredVisibleTraits = $derived(
+		activeTags.size === 0
+			? visibleTraits
+			: visibleTraits.filter((t) => t.tags.some((tag) => activeTags.has(tag)))
+	);
+
 	const traitsByCategory = $derived.by(() => {
 		const groups = new Map<string, Trait[]>();
-		for (const t of visibleTraits) {
+		for (const t of filteredVisibleTraits) {
 			if (!groups.has(t.category)) groups.set(t.category, []);
 			groups.get(t.category)!.push(t);
 		}
@@ -148,6 +195,10 @@
 			.split('_')
 			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
 			.join(' ');
+	}
+
+	function formatTag(tag: string): string {
+		return tag.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
 	}
 
 	function costLabel(cost: number | null): string {
@@ -256,6 +307,20 @@
 						{/each}
 					</div>
 				{/if}
+				{#each [trait.tags.filter((t) => !HIDDEN_CARD_TAGS.has(t))] as visibleTags}
+					{#if visibleTags.length > 0}
+						<div class="flex flex-wrap items-center gap-0.5 mt-0.5">
+							{#each visibleTags as tag}
+								<span
+									class="rounded px-1 text-[9px] leading-tight
+										{activeTags.has(tag) ? 'opacity-90 bg-primary-500/20 text-primary-300' : 'opacity-50 bg-surface-500/20'}"
+								>
+									{formatTag(tag)}
+								</span>
+							{/each}
+						</div>
+					{/if}
+				{/each}
 			</div>
 		</svelte:element>
 	{/snippet}
@@ -340,6 +405,50 @@
 		{/if}
 	</div>
 	</div><!-- end sticky header -->
+
+	<!-- Tag filter -->
+	{#if allTagsInView.length > 0}
+		{#snippet tagBtn(tag: string)}
+			<button
+				class="btn text-xs px-2 py-0.5 leading-tight {activeTags.has(tag) ? 'preset-filled-primary-500' : 'preset-filled'}"
+				onclick={() => toggleTag(tag)}
+			>
+				{formatTag(tag)}
+			</button>
+		{/snippet}
+		<div class="space-y-1">
+			{#if mainFilterTags.length > 0}
+				<div class="flex flex-wrap items-center gap-1">
+					<span class="w-16 shrink-0 text-xs opacity-40">Tags</span>
+					{#each mainFilterTags as tag}{@render tagBtn(tag)}{/each}
+				</div>
+			{/if}
+			{#if speciesFilterTags.length > 0}
+				<div class="flex flex-wrap items-center gap-1">
+					<span class="w-16 shrink-0 text-xs opacity-40">Species</span>
+					{#if speciesLeadTag}{@render tagBtn(speciesLeadTag)}{/if}
+					{#if speciesLeadTag && speciesRestTags.length > 0}
+						<span class="select-none text-xs opacity-20">|</span>
+					{/if}
+					{#each speciesRestTags as tag}{@render tagBtn(tag)}{/each}
+				</div>
+			{/if}
+			{#if polarityFilterTags.length > 0}
+				<div class="flex flex-wrap items-center gap-1">
+					<span class="w-16 shrink-0 text-xs opacity-40">Polarity</span>
+					{#each polarityFilterTags as tag}{@render tagBtn(tag)}{/each}
+				</div>
+			{/if}
+			{#if activeTags.size > 0}
+				<div class="flex items-center gap-1">
+					<span class="w-16 shrink-0"></span>
+					<button class="btn text-xs preset-filled opacity-60" onclick={() => (activeTags = new Set())}>
+						Clear all
+					</button>
+				</div>
+			{/if}
+		</div>
+	{/if}
 
 	<!-- Category legend -->
 	{#if traitsByCategory.size > 0}
