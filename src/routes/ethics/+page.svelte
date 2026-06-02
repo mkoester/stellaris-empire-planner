@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Ethic, Modifier } from '$lib/server/db';
+	import type { Ethic, Modifier, EthicImplication } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
 
@@ -99,6 +99,79 @@
 			}
 		}
 		return [...map.values()];
+	});
+
+	// Deduplicated implications from all selected ethics, with source tracking
+	const combinedImplications = $derived.by(() => {
+		const seen = new Map<string, { label: string; sources: string[] }>();
+		for (const ethic of selectedEthics) {
+			for (const imp of ethic.implications) {
+				if (seen.has(imp.tag)) {
+					seen.get(imp.tag)!.sources.push(ethic.label ?? ethic.key);
+				} else {
+					seen.set(imp.tag, { label: imp.label, sources: [ethic.label ?? ethic.key] });
+				}
+			}
+		}
+		return [...seen.values()];
+	});
+
+	// All unique tags across all non-gestalt ethics, for the reference table
+	const allImplicationTags = $derived.by(() => {
+		const tags: { tag: string; label: string }[] = [];
+		for (const e of nonGestaltEthics) {
+			for (const imp of e.implications) {
+				if (!tags.some((t) => t.tag === imp.tag)) tags.push(imp);
+			}
+		}
+		return tags;
+	});
+
+	// Gestalt implications (shown separately since gestalt has no fanatic/regular split)
+	const gestaltImplications = $derived(
+		data.ethics.find((e: Ethic) => e.gestalt)?.implications ?? []
+	);
+
+	// Policy-based restrictions not captured in the ethics tags system.
+	// Extracted from valid{} blocks in common/policies/*.txt.
+	type PolicyRestriction = { id: string; label: string; blockedFor: string[] };
+	const POLICY_RESTRICTIONS: PolicyRestriction[] = [
+		// War philosophy
+		{ id: 'no_unrestricted_wars',   label: 'Cannot use Unrestricted Wars',                     blockedFor: ['ethic_pacifist', 'ethic_fanatic_pacifist'] },
+		{ id: 'no_liberation_wars',     label: 'Cannot declare Liberation Wars',                    blockedFor: ['ethic_fanatic_pacifist'] },
+		// Orbital bombardment
+		{ id: 'no_bombardment_indisc',  label: 'Cannot use Indiscriminate Orbital Bombardment',    blockedFor: ['ethic_pacifist', 'ethic_fanatic_pacifist'] },
+		// Native interference (pre-FTL)
+		{ id: 'no_interference_aggr',   label: 'Cannot use Aggressive Native Interference (cannot invade pre-FTL planets)', blockedFor: ['ethic_pacifist', 'ethic_fanatic_pacifist', 'ethic_xenophile', 'ethic_fanatic_xenophile'] },
+		{ id: 'no_interference_none',   label: 'Cannot choose Non-Interference with primitives (must interfere)', blockedFor: ['ethic_fanatic_xenophobe'] },
+		{ id: 'no_interference_subtle', label: 'Cannot use Subtle Native Interference',             blockedFor: ['ethic_fanatic_xenophobe'] },
+		// Primitive enlightenment
+		{ id: 'no_enlightenment',       label: 'Cannot enlighten primitives (Covert or Allowed)',   blockedFor: ['ethic_fanatic_xenophobe'] },
+		// Leader enhancement
+		{ id: 'no_selected_lineages',   label: 'Cannot use Selected Lineages leader enhancement',   blockedFor: ['ethic_fanatic_egalitarian'] },
+		{ id: 'no_capacity_boosters',   label: 'Cannot use Capacity Boosters leader enhancement',   blockedFor: ['ethic_egalitarian', 'ethic_fanatic_egalitarian'] },
+		// Pre-sapient species
+		{ id: 'no_presap_eat',          label: 'Cannot use pre-sapients as Livestock (Hunted)',     blockedFor: ['ethic_xenophile', 'ethic_fanatic_xenophile'] },
+		{ id: 'no_presap_purge',        label: 'Cannot exterminate pre-sapient species',            blockedFor: ['ethic_xenophile', 'ethic_fanatic_xenophile'] },
+		// Refugees
+		{ id: 'no_no_refugees',         label: 'Cannot disable Refugee policy (always accept)',     blockedFor: ['ethic_xenophile', 'ethic_fanatic_xenophile'] },
+	];
+
+	// Policy restrictions that apply to the current selection
+	const selectedPolicyRestrictions = $derived.by(() => {
+		const seen = new Map<string, { label: string; sources: string[] }>();
+		for (const restriction of POLICY_RESTRICTIONS) {
+			const sources: string[] = [];
+			for (const ethic of selectedEthics) {
+				if (restriction.blockedFor.includes(ethic.key)) {
+					sources.push(ethic.label ?? ethic.key);
+				}
+			}
+			if (sources.length > 0) {
+				seen.set(restriction.id, { label: restriction.label, sources });
+			}
+		}
+		return [...seen.values()];
 	});
 
 	// ── Comparison tables ────────────────────────────────────────────────────
@@ -282,10 +355,11 @@
 
 	<!-- Selected ethics effects -->
 	{#if selectedEthics.length > 0}
-		<section>
-			<h2 class="mb-2 text-lg font-semibold">
+		<section class="space-y-4">
+			<h2 class="text-lg font-semibold">
 				{selectedEthics.map(ethicLabel).join(' + ')}
 			</h2>
+
 			<ul class="space-y-1 max-w-sm">
 				{#each combinedModifiers as { modifier, sources }}
 					<li class="flex items-baseline justify-between gap-4 text-sm">
@@ -296,6 +370,26 @@
 					</li>
 				{/each}
 			</ul>
+
+			{#if combinedImplications.length > 0 || selectedPolicyRestrictions.length > 0}
+				<div>
+					<h3 class="mb-2 text-sm font-medium opacity-60">Gameplay Implications</h3>
+					<ul class="space-y-1 max-w-lg">
+						{#each combinedImplications as { label, sources }}
+							<li class="text-sm">
+								<span class="opacity-70">{label}</span>
+								<span class="opacity-40 text-xs"> ({sources.join(', ')})</span>
+							</li>
+						{/each}
+						{#each selectedPolicyRestrictions as { label, sources }}
+							<li class="text-sm">
+								<span class="opacity-70">{label}</span>
+								<span class="opacity-40 text-xs"> ({sources.join(', ')})</span>
+							</li>
+						{/each}
+					</ul>
+				</div>
+			{/if}
 		</section>
 	{/if}
 
@@ -303,24 +397,24 @@
 	{#if allModifierKeys.length > 0}
 		<section>
 			<h2 class="mb-3 text-lg font-semibold">Effects by Ethic</h2>
-			<div class="overflow-x-auto">
+			<div class="overflow-auto max-h-128">
 				<table class="w-full text-xs">
 					<thead>
 						<tr class="border-b border-surface-400-500/40">
-							<th class="py-1.5 pr-4 text-left font-medium opacity-60 w-48">Modifier</th>
+							<th class="sticky top-0 z-10 py-1.5 pr-4 text-left font-medium opacity-60 w-48" style="background-color: var(--color-surface-50-950)">Modifier</th>
 							{#each tableEthicPairs as { regular, fanatic }}
 								{@const active = selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
 								<th
-									class="py-1.5 px-2 text-center font-medium leading-tight {active ? 'text-primary-400' : 'opacity-60'}"
-									style="min-width: 5rem"
+									class="sticky top-0 z-10 py-1.5 px-2 text-center font-medium leading-tight {active ? 'text-primary-400' : 'opacity-60'}"
+									style="min-width: 5rem; background-color: var(--color-surface-50-950)"
 								>
 									{ethicLabel(regular)}
 								</th>
 							{/each}
 						</tr>
 						<tr class="border-b border-surface-400-500/20">
-							<th class="pb-1 pr-4 text-left font-normal opacity-30 text-[10px]">reg (fanatic)</th>
-							{#each tableEthicPairs as _}<th></th>{/each}
+							<th class="sticky top-7.5 z-10 pb-1 pr-4 text-left font-normal opacity-30 text-[10px]" style="background-color: var(--color-surface-50-950)">reg (fanatic)</th>
+							{#each tableEthicPairs as _}<th class="sticky top-7.5 z-10" style="background-color: var(--color-surface-50-950)"></th>{/each}
 						</tr>
 					</thead>
 					<tbody>
@@ -352,17 +446,99 @@
 		</section>
 	{/if}
 
+	<!-- Gameplay implications reference table -->
+	{#if allImplicationTags.length > 0}
+		<section>
+			<h2 class="mb-3 text-lg font-semibold">Gameplay Implications by Ethic</h2>
+			<div class="overflow-auto max-h-128">
+				<table class="w-full text-xs">
+					<thead>
+						<tr class="border-b border-surface-400-500/40">
+							<th class="sticky top-0 z-10 py-1.5 pr-4 text-left font-medium opacity-60 w-64" style="background-color: var(--color-surface-50-950)">Implication</th>
+							{#each tableEthicPairs as { regular, fanatic }}
+								{@const active = selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
+								<th
+									class="sticky top-0 z-10 py-1.5 px-2 text-center font-medium leading-tight {active ? 'text-primary-400' : 'opacity-60'}"
+									style="min-width: 4.5rem; background-color: var(--color-surface-50-950)"
+								>
+									{ethicLabel(regular)}
+								</th>
+							{/each}
+						</tr>
+					</thead>
+					<tbody>
+						{#each allImplicationTags as { tag, label }}
+							<tr class="border-b border-surface-400-500/20 hover:bg-surface-500/10">
+								<td class="py-1.5 pr-4 opacity-70 leading-tight">{label}</td>
+								{#each tableEthicPairs as { regular, fanatic }}
+									{@const hasReg = regular.implications.some((i: EthicImplication) => i.tag === tag)}
+									{@const hasFan = fanatic?.implications.some((i: EthicImplication) => i.tag === tag) ?? false}
+									{@const active = selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
+									<td class="py-1.5 px-2 text-center text-[11px]">
+										{#if hasReg && hasFan}
+											<span class="{active ? 'text-primary-400 font-bold' : 'opacity-60'}">●</span>
+										{:else if hasReg}
+											<span class="{active ? 'text-primary-400 font-bold' : 'opacity-50'}" title="Regular only">reg</span>
+										{:else if hasFan}
+											<span class="{active ? 'text-primary-400 font-bold' : 'opacity-50'}" title="Fanatic only">fan</span>
+										{:else}
+											<span class="opacity-15">—</span>
+										{/if}
+									</td>
+								{/each}
+							</tr>
+						{/each}
+						<!-- Policy-based restrictions (from valid{} blocks in policies files) -->
+						<tr class="border-b border-surface-400-500/40">
+							<td colspan={1 + tableEthicPairs.length} class="py-1 pr-4 text-[10px] opacity-30 italic">
+								Policy restrictions
+							</td>
+						</tr>
+						{#each POLICY_RESTRICTIONS as restriction}
+							<tr class="border-b border-surface-400-500/20 hover:bg-surface-500/10">
+								<td class="py-1.5 pr-4 opacity-70 leading-tight">{restriction.label}</td>
+								{#each tableEthicPairs as { regular, fanatic }}
+									{@const hasReg = restriction.blockedFor.includes(regular.key)}
+									{@const hasFan = fanatic ? restriction.blockedFor.includes(fanatic.key) : false}
+									{@const active = selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
+									<td class="py-1.5 px-2 text-center text-[11px]">
+										{#if hasReg && hasFan}
+											<span class="{active ? 'text-primary-400 font-bold' : 'opacity-60'}">●</span>
+										{:else if hasReg}
+											<span class="{active ? 'text-primary-400 font-bold' : 'opacity-50'}" title="Regular only">reg</span>
+										{:else if hasFan}
+											<span class="{active ? 'text-primary-400 font-bold' : 'opacity-50'}" title="Fanatic only">fan</span>
+										{:else}
+											<span class="opacity-15">—</span>
+										{/if}
+									</td>
+								{/each}
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			</div>
+			{#if gestaltImplications.length > 0}
+				<div class="mt-3 text-xs opacity-60">
+					<span class="font-medium">Gestalt Consciousness:</span>
+					{gestaltImplications.map((i: EthicImplication) => i.label).join(' · ')}
+				</div>
+			{/if}
+		</section>
+	{/if}
+
 	<!-- Monument bonuses per 100 civilians -->
 	<section>
 		<h2 class="mb-1 text-lg font-semibold">Monument Bonuses per 100 Civilians</h2>
 		<p class="mb-4 text-sm opacity-50">All monument buildings apply these per-100-civilian bonuses based on the empire's governing ethics.</p>
+		<div class="overflow-auto max-h-128">
 		<table class="w-full text-xs">
 			<thead>
 				<tr class="border-b border-surface-400-500/40">
-					<th class="py-1.5 pr-4 text-left font-medium opacity-60 w-40">Ethic</th>
-					<th class="py-1.5 px-3 text-left font-medium opacity-60">Effect</th>
-					<th class="py-1.5 px-3 text-center font-medium opacity-60">Regular</th>
-					<th class="py-1.5 px-3 text-center font-medium opacity-60">Fanatic</th>
+					<th class="sticky top-0 z-10 py-1.5 pr-4 text-left font-medium opacity-60 w-40" style="background-color: var(--color-surface-50-950)">Ethic</th>
+					<th class="sticky top-0 z-10 py-1.5 px-3 text-left font-medium opacity-60" style="background-color: var(--color-surface-50-950)">Effect</th>
+					<th class="sticky top-0 z-10 py-1.5 px-3 text-center font-medium opacity-60" style="background-color: var(--color-surface-50-950)">Regular</th>
+					<th class="sticky top-0 z-10 py-1.5 px-3 text-center font-medium opacity-60" style="background-color: var(--color-surface-50-950)">Fanatic</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -389,5 +565,6 @@
 				{/each}
 			</tbody>
 		</table>
+		</div>
 	</section>
 </main>

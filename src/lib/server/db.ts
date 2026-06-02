@@ -195,6 +195,11 @@ export interface Trait {
 	modifiers: Modifier[]; // from trait_modifier + modifier_label
 }
 
+export interface EthicImplication {
+	tag: string;
+	label: string;
+}
+
 export interface Ethic {
 	key: string;
 	label: string | null;
@@ -203,6 +208,7 @@ export interface Ethic {
 	fanatic_variant: string | null;
 	regular_variant: string | null;
 	modifiers: Modifier[];
+	implications: EthicImplication[];
 }
 
 export function loadEthics(): Ethic[] {
@@ -248,6 +254,22 @@ export function loadEthics(): Ethic[] {
 		});
 	}
 
+	const tagRows = db()
+		.prepare(
+			`SELECT et.ethic_key, et.tag, etl.label
+			 FROM ethic_tag et
+			 LEFT JOIN ethic_tag_label etl ON et.tag = etl.tag
+			 ORDER BY et.ethic_key, et.sort_order`
+		)
+		.all() as Array<{ ethic_key: string; tag: string; label: string | null }>;
+
+	const tagsByEthic = new Map<string, EthicImplication[]>();
+	for (const r of tagRows) {
+		if (!r.label) continue; // skip tags without a readable label
+		if (!tagsByEthic.has(r.ethic_key)) tagsByEthic.set(r.ethic_key, []);
+		tagsByEthic.get(r.ethic_key)!.push({ tag: r.tag, label: r.label });
+	}
+
 	return rows.map((r) => ({
 		key: r.key,
 		label: r.label,
@@ -255,7 +277,8 @@ export function loadEthics(): Ethic[] {
 		gestalt: r.gestalt === 1,
 		fanatic_variant: r.fanatic_variant,
 		regular_variant: r.regular_variant,
-		modifiers: modByEthic.get(r.key) ?? []
+		modifiers: modByEthic.get(r.key) ?? [],
+		implications: tagsByEthic.get(r.key) ?? []
 	}));
 }
 
