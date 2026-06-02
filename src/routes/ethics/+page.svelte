@@ -117,7 +117,16 @@
 	const civilianCombined = $derived(combinedModifiers.filter((e: { modifier: Modifier; sources: string[] }) => CIVILIAN_KEYS.has(e.modifier.key)));
 	const otherCombined = $derived(combinedModifiers.filter((e: { modifier: Modifier; sources: string[] }) => !CIVILIAN_KEYS.has(e.modifier.key)));
 
-	// ── Civilian comparison table (all non-gestalt ethics) ──────────────────
+	// ── Civilian comparison table ────────────────────────────────────────────
+	// One column per ethic family (regular + fanatic paired), following AXES order
+	const tableEthicPairs = $derived(
+		AXES.flatMap(([leftKey, rightKey]) =>
+			[leftKey, rightKey]
+				.map((baseKey) => ({ regular: ethicMap.get(baseKey), fanatic: getFanatic(baseKey) }))
+				.filter((p): p is { regular: Ethic; fanatic: Ethic | undefined } => !!p.regular)
+		)
+	);
+
 	const nonGestaltEthics = $derived(data.ethics.filter((e: Ethic) => !e.gestalt));
 
 	const civilianModifierKeys = $derived.by(() => {
@@ -156,6 +165,11 @@
 
 	function ethicLabel(e: Ethic): string {
 		return e.label ?? e.key;
+	}
+
+	function ethicTooltip(ethic: Ethic): string {
+		if (ethic.modifiers.length === 0) return ethicLabel(ethic);
+		return ethic.modifiers.map((mod) => `${formatValue(mod)}  ${modLabel(mod)}`).join('\n');
 	}
 
 	function costDots(cost: number): string {
@@ -213,6 +227,7 @@
 									{sel ? 'preset-filled-primary-500' : blocked ? 'preset-filled opacity-30 cursor-not-allowed' : 'preset-filled card-hover'}"
 								onclick={() => toggle(ethic!.key)}
 								disabled={blocked && !sel}
+								title={ethicTooltip(ethic!)}
 							>
 								<span>{ethicLabel(ethic!)}</span>
 								<span class="text-[10px] opacity-60 font-mono">{'●'.repeat(ethic!.cost)}</span>
@@ -233,6 +248,7 @@
 									{sel ? 'preset-filled-primary-500' : blocked ? 'preset-filled opacity-30 cursor-not-allowed' : 'preset-filled card-hover'}"
 								onclick={() => toggle(ethic!.key)}
 								disabled={blocked && !sel}
+								title={ethicTooltip(ethic!)}
 							>
 								<span>{ethicLabel(ethic!)}</span>
 								<span class="text-[10px] opacity-60 font-mono">{'●'.repeat(ethic!.cost)}</span>
@@ -254,6 +270,7 @@
 					class="btn text-sm flex-col gap-0.5 leading-tight
 						{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'}"
 					onclick={selectGestalt}
+					title={ethicTooltip(gestaltEthic)}
 				>
 					<span>{ethicLabel(gestaltEthic)}</span>
 					<span class="text-[10px] opacity-60 font-mono">{'●'.repeat(gestaltEthic.cost)}</span>
@@ -275,7 +292,9 @@
 					<ul class="space-y-1">
 						{#each otherCombined as { modifier, sources }}
 							<li class="flex items-baseline justify-between gap-4 text-sm">
-								<span class="opacity-70">{modLabel(modifier)}</span>
+								<span class="opacity-70">
+									{modLabel(modifier)} <span class="opacity-50">({sources.join(', ')})</span>
+								</span>
 								<span class="font-mono shrink-0 {valueColor(modifier)}">{formatValue(modifier)}</span>
 							</li>
 						{/each}
@@ -289,7 +308,9 @@
 					<ul class="space-y-1">
 						{#each civilianCombined as { modifier, sources }}
 							<li class="flex items-baseline justify-between gap-4 text-sm">
-								<span class="opacity-70">{modLabel(modifier)}</span>
+								<span class="opacity-70">
+									{modLabel(modifier)} <span class="opacity-50">({sources.join(', ')})</span>
+								</span>
 								<span class="font-mono shrink-0 {valueColor(modifier)}">{formatValue(modifier)}</span>
 							</li>
 						{/each}
@@ -309,15 +330,19 @@
 					<thead>
 						<tr class="border-b border-surface-400-500/40">
 							<th class="py-1.5 pr-4 text-left font-medium opacity-60 w-48">Modifier</th>
-							{#each nonGestaltEthics as ethic}
+							{#each tableEthicPairs as { regular, fanatic }}
+								{@const active = selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
 								<th
-									class="py-1.5 px-2 text-center font-medium leading-tight
-										{selected.has(ethic.key) ? 'text-primary-400' : 'opacity-60'}"
-									style="min-width: 4rem"
+									class="py-1.5 px-2 text-center font-medium leading-tight {active ? 'text-primary-400' : 'opacity-60'}"
+									style="min-width: 5rem"
 								>
-									{ethicLabel(ethic)}
+									{ethicLabel(regular)}
 								</th>
 							{/each}
+						</tr>
+						<tr class="border-b border-surface-400-500/20">
+							<th class="pb-1 pr-4 text-left font-normal opacity-30 text-[10px]">reg (fanatic)</th>
+							{#each tableEthicPairs as _}<th></th>{/each}
 						</tr>
 					</thead>
 					<tbody>
@@ -325,15 +350,16 @@
 							{@const anyMod = nonGestaltEthics.flatMap((e: Ethic) => e.modifiers).find((m: Modifier) => m.key === modKey)}
 							<tr class="border-b border-surface-400-500/20 hover:bg-surface-500/10">
 								<td class="py-1.5 pr-4 opacity-70">{anyMod ? modLabel(anyMod) : modKey}</td>
-								{#each nonGestaltEthics as ethic}
-									{@const mod = ethic.modifiers.find((m: Modifier) => m.key === modKey)}
+								{#each tableEthicPairs as { regular, fanatic }}
+									{@const regMod = regular.modifiers.find((m: Modifier) => m.key === modKey)}
+									{@const fanMod = fanatic?.modifiers.find((m: Modifier) => m.key === modKey)}
+									{@const active = selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
 									<td class="py-1.5 px-2 text-center font-mono">
-										{#if mod}
-											<span
-												class="{valueColor(mod)}
-													{selected.has(ethic.key) ? 'font-bold' : 'opacity-70'}"
-											>
-												{formatValue(mod)}
+										{#if regMod || fanMod}
+											{@const displayMod = regMod ?? fanMod!}
+											<span class="{valueColor(displayMod)} {active ? 'font-bold' : 'opacity-70'}">
+												{regMod ? formatValue(regMod) : '—'}
+												{#if fanMod}<span class="opacity-60"> ({formatValue(fanMod)})</span>{/if}
 											</span>
 										{:else}
 											<span class="opacity-20">—</span>
