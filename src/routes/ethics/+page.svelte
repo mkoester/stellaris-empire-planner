@@ -12,19 +12,6 @@
 		['ethic_spiritualist', 'ethic_materialist']
 	];
 
-	// Modifier keys that directly affect civilian pops
-	const CIVILIAN_KEYS = new Set([
-		'pop_cat_worker_bonus_workforce_mult',
-		'pop_cat_specialist_bonus_workforce_mult',
-		'pop_cat_ruler_bonus_workforce_mult',
-		'pop_factions_produces_mult',
-		'empire_size_pops_mult',
-		'planet_stability_add',
-		'planet_pops_robotics_upkeep_mult',
-		'founder_species_growth_mult',
-		'planet_jobs_trade_produces_mult'
-	]);
-
 	const ETHIC_BUDGET = 3;
 
 	// ── Lookup helpers ───────────────────────────────────────────────────────
@@ -114,10 +101,7 @@
 		return [...map.values()];
 	});
 
-	const civilianCombined = $derived(combinedModifiers.filter((e: { modifier: Modifier; sources: string[] }) => CIVILIAN_KEYS.has(e.modifier.key)));
-	const otherCombined = $derived(combinedModifiers.filter((e: { modifier: Modifier; sources: string[] }) => !CIVILIAN_KEYS.has(e.modifier.key)));
-
-	// ── Civilian comparison table ────────────────────────────────────────────
+	// ── Comparison tables ────────────────────────────────────────────────────
 	// One column per ethic family (regular + fanatic paired), following AXES order
 	const tableEthicPairs = $derived(
 		AXES.flatMap(([leftKey, rightKey]) =>
@@ -129,17 +113,34 @@
 
 	const nonGestaltEthics = $derived(data.ethics.filter((e: Ethic) => !e.gestalt));
 
-	const civilianModifierKeys = $derived.by(() => {
+	// All modifier keys that appear across any non-gestalt ethic
+	const allModifierKeys = $derived.by(() => {
 		const keys: string[] = [];
 		for (const e of nonGestaltEthics) {
 			for (const mod of e.modifiers) {
-				if (CIVILIAN_KEYS.has(mod.key) && !keys.includes(mod.key)) {
-					keys.push(mod.key);
-				}
+				if (!keys.includes(mod.key)) keys.push(mod.key);
 			}
 		}
 		return keys;
 	});
+
+	// Monument bonuses per 100 civilian pops, by ethic (hard-coded from wiki)
+	type MonumentRow = { label: string; regular: string; fanatic?: string; good: boolean };
+	const MONUMENT_BONUSES: { ethicKey: string; rows: MonumentRow[] }[] = [
+		{ ethicKey: 'ethic_authoritarian',          rows: [{ label: 'Edict Fund',      regular: '+1',      fanatic: '+2',      good: true  }] },
+		{ ethicKey: 'ethic_egalitarian',             rows: [{ label: 'Trade Value',     regular: '+0.5',    fanatic: '+1',      good: true  }] },
+		{ ethicKey: 'ethic_materialist',             rows: [{ label: 'Research',        regular: '+0.1',    fanatic: '+0.2',    good: true  }] },
+		{ ethicKey: 'ethic_spiritualist',            rows: [{ label: 'Unity',           regular: '+0.25',   fanatic: '+0.5',    good: true  }] },
+		{ ethicKey: 'ethic_militarist',              rows: [{ label: 'Naval Capacity',  regular: '+0.125',  fanatic: '+0.25',   good: true  }] },
+		{ ethicKey: 'ethic_pacifist',                rows: [{ label: 'Amenities',       regular: '+100',    fanatic: '+200',    good: true  }] },
+		{ ethicKey: 'ethic_xenophobe',               rows: [{ label: 'Happiness',       regular: '+0.625%', fanatic: '+1.25%',  good: true  }] },
+		{ ethicKey: 'ethic_xenophile',               rows: [{ label: 'Pop Upkeep',      regular: '−0.625%', fanatic: '−1.25%', good: true  }] },
+		{ ethicKey: 'ethic_gestalt_consciousness',   rows: [
+			{ label: 'Unity',            regular: '+0.1',  good: true  },
+			{ label: 'Trade Value',      regular: '+0.1',  good: true  },
+			{ label: 'Minerals Upkeep', regular: '+0.2',  good: false },
+		]},
+	];
 
 	// ── Formatting ───────────────────────────────────────────────────────────
 	function formatValue(mod: Modifier): string {
@@ -281,50 +282,27 @@
 
 	<!-- Selected ethics effects -->
 	{#if selectedEthics.length > 0}
-		<section class="space-y-4">
-			<h2 class="text-lg font-semibold">
+		<section>
+			<h2 class="mb-2 text-lg font-semibold">
 				{selectedEthics.map(ethicLabel).join(' + ')}
 			</h2>
-
-			{#if otherCombined.length > 0}
-				<div>
-					<h3 class="mb-2 text-sm font-medium opacity-60">Empire Effects</h3>
-					<ul class="space-y-1">
-						{#each otherCombined as { modifier, sources }}
-							<li class="flex items-baseline justify-between gap-4 text-sm">
-								<span class="opacity-70">
-									{modLabel(modifier)} <span class="opacity-50">({sources.join(', ')})</span>
-								</span>
-								<span class="font-mono shrink-0 {valueColor(modifier)}">{formatValue(modifier)}</span>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			{/if}
-
-			{#if civilianCombined.length > 0}
-				<div>
-					<h3 class="mb-2 text-sm font-medium opacity-60">Civilian Effects</h3>
-					<ul class="space-y-1">
-						{#each civilianCombined as { modifier, sources }}
-							<li class="flex items-baseline justify-between gap-4 text-sm">
-								<span class="opacity-70">
-									{modLabel(modifier)} <span class="opacity-50">({sources.join(', ')})</span>
-								</span>
-								<span class="font-mono shrink-0 {valueColor(modifier)}">{formatValue(modifier)}</span>
-							</li>
-						{/each}
-					</ul>
-				</div>
-			{/if}
+			<ul class="space-y-1 max-w-sm">
+				{#each combinedModifiers as { modifier, sources }}
+					<li class="flex items-baseline justify-between gap-4 text-sm">
+						<span class="opacity-70">
+							{modLabel(modifier)} <span class="opacity-50">({sources.join(', ')})</span>
+						</span>
+						<span class="font-mono shrink-0 {valueColor(modifier)}">{formatValue(modifier)}</span>
+					</li>
+				{/each}
+			</ul>
 		</section>
 	{/if}
 
-	<!-- Civilian modifiers comparison table -->
-	{#if civilianModifierKeys.length > 0}
+	<!-- All effects comparison table -->
+	{#if allModifierKeys.length > 0}
 		<section>
-			<h2 class="mb-3 text-lg font-semibold">Civilian Modifiers by Ethic</h2>
-			<p class="mb-4 text-sm opacity-50">Pop-level effects — not shown as a dedicated section in the game.</p>
+			<h2 class="mb-3 text-lg font-semibold">Effects by Ethic</h2>
 			<div class="overflow-x-auto">
 				<table class="w-full text-xs">
 					<thead>
@@ -346,7 +324,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each civilianModifierKeys as modKey}
+						{#each allModifierKeys as modKey}
 							{@const anyMod = nonGestaltEthics.flatMap((e: Ethic) => e.modifiers).find((m: Modifier) => m.key === modKey)}
 							<tr class="border-b border-surface-400-500/20 hover:bg-surface-500/10">
 								<td class="py-1.5 pr-4 opacity-70">{anyMod ? modLabel(anyMod) : modKey}</td>
@@ -373,4 +351,43 @@
 			</div>
 		</section>
 	{/if}
+
+	<!-- Monument bonuses per 100 civilians -->
+	<section>
+		<h2 class="mb-1 text-lg font-semibold">Monument Bonuses per 100 Civilians</h2>
+		<p class="mb-4 text-sm opacity-50">All monument buildings apply these per-100-civilian bonuses based on the empire's governing ethics.</p>
+		<table class="w-full text-xs">
+			<thead>
+				<tr class="border-b border-surface-400-500/40">
+					<th class="py-1.5 pr-4 text-left font-medium opacity-60 w-40">Ethic</th>
+					<th class="py-1.5 px-3 text-left font-medium opacity-60">Effect</th>
+					<th class="py-1.5 px-3 text-center font-medium opacity-60">Regular</th>
+					<th class="py-1.5 px-3 text-center font-medium opacity-60">Fanatic</th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each MONUMENT_BONUSES as { ethicKey, rows }}
+					{@const ethic = ethicMap.get(ethicKey)}
+					{@const active = selected.has(ethicKey) || !!(ethic?.regular_variant && selected.has(ethic.regular_variant)) || !!(ethic?.fanatic_variant && selected.has(ethic.fanatic_variant))}
+					{#each rows as row, i}
+						<tr class="border-b border-surface-400-500/20 hover:bg-surface-500/10">
+							{#if i === 0}
+								<td
+									class="py-1.5 pr-4 font-medium {active ? 'text-primary-400' : 'opacity-70'}"
+									rowspan={rows.length}
+								>
+									{ethic ? ethicLabel(ethic) : ethicKey}
+								</td>
+							{/if}
+							<td class="py-1.5 px-3 opacity-70">{row.label}</td>
+							<td class="py-1.5 px-3 text-center font-mono {row.good ? 'text-emerald-400' : 'text-red-400'} {active ? '' : 'opacity-70'}">{row.regular}</td>
+							<td class="py-1.5 px-3 text-center font-mono {row.fanatic ? (row.good ? 'text-emerald-400' : 'text-red-400') : 'opacity-20'} {active ? '' : 'opacity-70'}">
+								{row.fanatic ?? '—'}
+							</td>
+						</tr>
+					{/each}
+				{/each}
+			</tbody>
+		</table>
+	</section>
 </main>
