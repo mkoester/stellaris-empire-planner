@@ -195,6 +195,70 @@ export interface Trait {
 	modifiers: Modifier[]; // from trait_modifier + modifier_label
 }
 
+export interface Ethic {
+	key: string;
+	label: string | null;
+	cost: number;
+	gestalt: boolean;
+	fanatic_variant: string | null;
+	regular_variant: string | null;
+	modifiers: Modifier[];
+}
+
+export function loadEthics(): Ethic[] {
+	const rows = db()
+		.prepare(
+			`SELECT key, label, cost, gestalt, fanatic_variant, regular_variant
+			 FROM ethic
+			 WHERE cost >= 1
+			 ORDER BY gestalt ASC, cost DESC, key ASC`
+		)
+		.all() as Array<{
+		key: string;
+		label: string | null;
+		cost: number;
+		gestalt: number;
+		fanatic_variant: string | null;
+		regular_variant: string | null;
+	}>;
+
+	const modRows = db()
+		.prepare(
+			`SELECT em.ethic_key, em.modifier_key, em.modifier_value, ml.label, ml.positive_is_good
+			 FROM ethic_modifier em
+			 LEFT JOIN modifier_label ml ON em.modifier_key = ml.modifier_key
+			 ORDER BY em.ethic_key, em.sort_order`
+		)
+		.all() as Array<{
+		ethic_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+
+	const modByEthic = new Map<string, Modifier[]>();
+	for (const r of modRows) {
+		if (!modByEthic.has(r.ethic_key)) modByEthic.set(r.ethic_key, []);
+		modByEthic.get(r.ethic_key)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+
+	return rows.map((r) => ({
+		key: r.key,
+		label: r.label,
+		cost: r.cost,
+		gestalt: r.gestalt === 1,
+		fanatic_variant: r.fanatic_variant,
+		regular_variant: r.regular_variant,
+		modifiers: modByEthic.get(r.key) ?? []
+	}));
+}
+
 export function loadTraits(): Trait[] {
 	const rows = db()
 		.prepare(

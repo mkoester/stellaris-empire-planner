@@ -370,7 +370,12 @@
 		class="space-y-6 [@media(min-height:700px)]:sticky [@media(min-height:700px)]:top-0 [@media(min-height:700px)]:z-10 [@media(min-height:700px)]:pb-2"
 		style="background-color: var(--color-surface-50-950)"
 	>
-	<h1 class="text-2xl font-bold">Species Builder</h1>
+	<div class="flex items-baseline gap-4">
+		<h1 class="text-2xl font-bold">Species Builder</h1>
+		<nav class="flex gap-3 text-sm opacity-50">
+			<a href="/ethics" class="hover:opacity-100 transition-opacity">Ethics →</a>
+		</nav>
+	</div>
 
 	<!-- Budget + selection summary -->
 	<div class="card preset-filled p-4">
