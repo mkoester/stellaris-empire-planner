@@ -200,6 +200,12 @@ export interface EthicImplication {
 	label: string;
 }
 
+export interface PolicyRestriction {
+	policyKey: string;
+	optionKey: string;
+	optionLabel: string | null;
+}
+
 export interface Ethic {
 	key: string;
 	label: string | null;
@@ -209,6 +215,7 @@ export interface Ethic {
 	regular_variant: string | null;
 	modifiers: Modifier[];
 	implications: EthicImplication[];
+	policyRestrictions: PolicyRestriction[];
 }
 
 export function loadEthics(): Ethic[] {
@@ -270,6 +277,29 @@ export function loadEthics(): Ethic[] {
 		tagsByEthic.get(r.ethic_key)!.push({ tag: r.tag, label: r.label });
 	}
 
+	const prRows = db()
+		.prepare(
+			`SELECT ethic_key, policy_key, option_key, option_label
+			 FROM ethic_policy_restriction
+			 ORDER BY ethic_key, policy_key, option_key`
+		)
+		.all() as Array<{
+		ethic_key: string;
+		policy_key: string;
+		option_key: string;
+		option_label: string | null;
+	}>;
+
+	const prByEthic = new Map<string, PolicyRestriction[]>();
+	for (const r of prRows) {
+		if (!prByEthic.has(r.ethic_key)) prByEthic.set(r.ethic_key, []);
+		prByEthic.get(r.ethic_key)!.push({
+			policyKey: r.policy_key,
+			optionKey: r.option_key,
+			optionLabel: r.option_label
+		});
+	}
+
 	return rows.map((r) => ({
 		key: r.key,
 		label: r.label,
@@ -278,7 +308,8 @@ export function loadEthics(): Ethic[] {
 		fanatic_variant: r.fanatic_variant,
 		regular_variant: r.regular_variant,
 		modifiers: modByEthic.get(r.key) ?? [],
-		implications: tagsByEthic.get(r.key) ?? []
+		implications: tagsByEthic.get(r.key) ?? [],
+		policyRestrictions: prByEthic.get(r.key) ?? []
 	}));
 }
 

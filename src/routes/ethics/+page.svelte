@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Ethic, Modifier, EthicImplication } from '$lib/server/db';
+	import type { Ethic, Modifier, EthicImplication, PolicyRestriction } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
 
@@ -132,43 +132,32 @@
 		data.ethics.find((e: Ethic) => e.gestalt)?.implications ?? []
 	);
 
-	// Policy-based restrictions not captured in the ethics tags system.
-	// Extracted from valid{} blocks in common/policies/*.txt.
-	type PolicyRestriction = { id: string; label: string; blockedFor: string[] };
-	const POLICY_RESTRICTIONS: PolicyRestriction[] = [
-		// War philosophy
-		{ id: 'no_unrestricted_wars',   label: 'Cannot use Unrestricted Wars',                     blockedFor: ['ethic_pacifist', 'ethic_fanatic_pacifist'] },
-		{ id: 'no_liberation_wars',     label: 'Cannot declare Liberation Wars',                    blockedFor: ['ethic_fanatic_pacifist'] },
-		// Orbital bombardment
-		{ id: 'no_bombardment_indisc',  label: 'Cannot use Indiscriminate Orbital Bombardment',    blockedFor: ['ethic_pacifist', 'ethic_fanatic_pacifist'] },
-		// Native interference (pre-FTL)
-		{ id: 'no_interference_aggr',   label: 'Cannot use Aggressive Native Interference (cannot invade pre-FTL planets)', blockedFor: ['ethic_pacifist', 'ethic_fanatic_pacifist', 'ethic_xenophile', 'ethic_fanatic_xenophile'] },
-		{ id: 'no_interference_none',   label: 'Cannot choose Non-Interference with primitives (must interfere)', blockedFor: ['ethic_fanatic_xenophobe'] },
-		{ id: 'no_interference_subtle', label: 'Cannot use Subtle Native Interference',             blockedFor: ['ethic_fanatic_xenophobe'] },
-		// Primitive enlightenment
-		{ id: 'no_enlightenment',       label: 'Cannot enlighten primitives (Covert or Allowed)',   blockedFor: ['ethic_fanatic_xenophobe'] },
-		// Leader enhancement
-		{ id: 'no_selected_lineages',   label: 'Cannot use Selected Lineages leader enhancement',   blockedFor: ['ethic_fanatic_egalitarian'] },
-		{ id: 'no_capacity_boosters',   label: 'Cannot use Capacity Boosters leader enhancement',   blockedFor: ['ethic_egalitarian', 'ethic_fanatic_egalitarian'] },
-		// Pre-sapient species
-		{ id: 'no_presap_eat',          label: 'Cannot use pre-sapients as Livestock (Hunted)',     blockedFor: ['ethic_xenophile', 'ethic_fanatic_xenophile'] },
-		{ id: 'no_presap_purge',        label: 'Cannot exterminate pre-sapient species',            blockedFor: ['ethic_xenophile', 'ethic_fanatic_xenophile'] },
-		// Refugees
-		{ id: 'no_no_refugees',         label: 'Cannot disable Refugee policy (always accept)',     blockedFor: ['ethic_xenophile', 'ethic_fanatic_xenophile'] },
-	];
-
-	// Policy restrictions that apply to the current selection
+	// Policy restrictions for the current selection, deduplicated by option key
 	const selectedPolicyRestrictions = $derived.by(() => {
 		const seen = new Map<string, { label: string; sources: string[] }>();
-		for (const restriction of POLICY_RESTRICTIONS) {
-			const sources: string[] = [];
-			for (const ethic of selectedEthics) {
-				if (restriction.blockedFor.includes(ethic.key)) {
-					sources.push(ethic.label ?? ethic.key);
+		for (const ethic of selectedEthics) {
+			for (const pr of ethic.policyRestrictions) {
+				const id = `${pr.policyKey}:${pr.optionKey}`;
+				const label = pr.optionLabel ?? pr.optionKey;
+				if (seen.has(id)) {
+					seen.get(id)!.sources.push(ethic.label ?? ethic.key);
+				} else {
+					seen.set(id, { label, sources: [ethic.label ?? ethic.key] });
 				}
 			}
-			if (sources.length > 0) {
-				seen.set(restriction.id, { label: restriction.label, sources });
+		}
+		return [...seen.values()];
+	});
+
+	// All unique policy restrictions across non-gestalt ethics, for the reference table
+	const allPolicyRestrictions = $derived.by(() => {
+		const seen = new Map<string, { policyKey: string; optionKey: string; label: string }>();
+		for (const e of nonGestaltEthics) {
+			for (const pr of e.policyRestrictions) {
+				const id = `${pr.policyKey}:${pr.optionKey}`;
+				if (!seen.has(id)) {
+					seen.set(id, { policyKey: pr.policyKey, optionKey: pr.optionKey, label: pr.optionLabel ?? pr.optionKey });
+				}
 			}
 		}
 		return [...seen.values()];
@@ -488,33 +477,36 @@
 								{/each}
 							</tr>
 						{/each}
-						<!-- Policy-based restrictions (from valid{} blocks in policies files) -->
-						<tr class="border-b border-surface-400-500/40">
-							<td colspan={1 + tableEthicPairs.length} class="py-1 pr-4 text-[10px] opacity-30 italic">
-								Policy restrictions
-							</td>
-						</tr>
-						{#each POLICY_RESTRICTIONS as restriction}
-							<tr class="border-b border-surface-400-500/20 hover:bg-surface-500/10">
-								<td class="py-1.5 pr-4 opacity-70 leading-tight">{restriction.label}</td>
-								{#each tableEthicPairs as { regular, fanatic }}
-									{@const hasReg = restriction.blockedFor.includes(regular.key)}
-									{@const hasFan = fanatic ? restriction.blockedFor.includes(fanatic.key) : false}
-									{@const active = selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
-									<td class="py-1.5 px-2 text-center text-[11px]">
-										{#if hasReg && hasFan}
-											<span class="{active ? 'text-primary-400 font-bold' : 'opacity-60'}">●</span>
-										{:else if hasReg}
-											<span class="{active ? 'text-primary-400 font-bold' : 'opacity-50'}" title="Regular only">reg</span>
-										{:else if hasFan}
-											<span class="{active ? 'text-primary-400 font-bold' : 'opacity-50'}" title="Fanatic only">fan</span>
-										{:else}
-											<span class="opacity-15">—</span>
-										{/if}
-									</td>
-								{/each}
+						<!-- Policy-based restrictions (extracted from valid{} blocks in common/policies/*.txt) -->
+						{#if allPolicyRestrictions.length > 0}
+							<tr class="border-b border-surface-400-500/40">
+								<td colspan={1 + tableEthicPairs.length} class="py-1 pr-4 text-[10px] opacity-30 italic">
+									Policy restrictions
+								</td>
 							</tr>
-						{/each}
+							{#each allPolicyRestrictions as pr}
+								<tr class="border-b border-surface-400-500/20 hover:bg-surface-500/10">
+									<td class="py-1.5 pr-4 opacity-70 leading-tight"
+										title="{pr.policyKey} policy">{pr.label}</td>
+									{#each tableEthicPairs as { regular, fanatic }}
+										{@const hasReg = regular.policyRestrictions.some((r: PolicyRestriction) => r.policyKey === pr.policyKey && r.optionKey === pr.optionKey)}
+										{@const hasFan = fanatic?.policyRestrictions.some((r: PolicyRestriction) => r.policyKey === pr.policyKey && r.optionKey === pr.optionKey) ?? false}
+										{@const active = selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
+										<td class="py-1.5 px-2 text-center text-[11px]">
+											{#if hasReg && hasFan}
+												<span class="{active ? 'text-primary-400 font-bold' : 'opacity-60'}">●</span>
+											{:else if hasReg}
+												<span class="{active ? 'text-primary-400 font-bold' : 'opacity-50'}" title="Regular only">reg</span>
+											{:else if hasFan}
+												<span class="{active ? 'text-primary-400 font-bold' : 'opacity-50'}" title="Fanatic only">fan</span>
+											{:else}
+												<span class="opacity-15">—</span>
+											{/if}
+										</td>
+									{/each}
+								</tr>
+							{/each}
+						{/if}
 					</tbody>
 				</table>
 			</div>
