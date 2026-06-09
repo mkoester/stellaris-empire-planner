@@ -144,3 +144,12 @@ Key functions:
 - Phase 2 modifiers: triggered/conditional modifiers, `custom_tooltip`, `inline_script`.
 - Portrait picker (data already in DB).
 - Species name generation (`common/species_names/`).
+
+---
+
+## Companion repo: Stellaris Modding Insights
+
+A sibling repo collects hard-won, poorly-documented Stellaris findings — engine quirks, parser/format gotchas, things only obvious in hindsight:
+`../stellaris-modding-insights` (`/home/mk/Projects/stellaris-modding-insights`, https://github.com/mkoester/stellaris-modding-insights). It's community-facing notes organised as `docs/NN-topic.md` with a TL;DR index in `README.md`. Especially relevant here: how vanilla game scripts (traits, ethics, species classes, `localisation/`) are structured, since this planner consumes that extracted data.
+
+**When you discover something noteworthy** — a surprising bit of how the game data is modelled, an undocumented localisation/format detail, a non-obvious gotcha, or anything that cost real time to figure out — proactively suggest recording it in the insights repo. Don't write there silently: propose what to add (which `docs/` file, a one-line TL;DR) and let the user confirm, since it's a separate, published repo. Keep planner/app-specific notes in this file; route generally-useful Stellaris modding knowledge to the insights repo.
