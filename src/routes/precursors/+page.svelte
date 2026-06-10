@@ -72,6 +72,11 @@
 	</li>
 {/snippet}
 
+<!-- One half of a section heading rule (a section header is: rule · LABEL · rule) -->
+{#snippet hrule()}
+	<span class="border-surface-400-500/40 h-0 flex-1 border-t"></span>
+{/snippet}
+
 <main class="mx-auto max-w-7xl space-y-8 p-4">
 	<div class="flex items-baseline gap-4">
 		<h1 class="text-2xl font-bold">Precursors</h1>
@@ -123,176 +128,190 @@
 
 			<div class="grid gap-4 lg:grid-cols-2">
 				{#each group.items as p (p.key)}
-					<article class="rounded-lg border border-surface-400-500/30 p-4">
-						<!-- Card header -->
-						<header class="mb-3">
-							<h3 class="text-lg font-semibold">{p.name ?? p.key}</h3>
-							<div class="mt-0.5 flex items-center gap-2 text-[11px] opacity-50">
-								{#if p.relic}<span>Relic</span>{/if}
-								{#if p.buildings.length}<span>· Building</span>{/if}
-								{#if p.numDigsites}<span>· {p.numDigsites} dig sites</span>{/if}
-								<span>· {p.systems.length} system{p.systems.length === 1 ? '' : 's'}</span>
-							</div>
-						</header>
-
-						<!-- Permanent empire effect (reward modifiers) -->
-						{#if p.rewards.length}
-							<div class="mb-3">
-								<h4 class="mb-1 text-xs font-medium tracking-wide uppercase opacity-40">
-									Permanent effect
-								</h4>
-								{#if p.rewards.length > 1}
-									<p class="mb-1.5 text-[11px] italic opacity-40">
-										Only one applies, by empire type / choice:
-									</p>
-								{/if}
-								<div class="space-y-2">
-									{#each p.rewards as reward}
-										{@const applies = activeType
-											? variantApplies(reward.variant, activeType)
-											: null}
-										<div class={applies === false ? 'opacity-40' : ''}>
-											{#if p.rewards.length > 1}
-												<div
-													class="text-[11px] font-medium {applies === true
-														? 'text-primary-400'
-														: 'opacity-60'}"
-												>
-													{variantLabel(reward)}
-													{#if reward.name}<span class="font-normal opacity-40"
-															>· {reward.name}</span
-														>{/if}
-													{#if applies === true}<span class="opacity-70"> ✓</span>{/if}
-												</div>
-											{/if}
-											<ul class="space-y-0.5">
-												{#each reward.modifiers as mod}
-													<li class="flex items-baseline justify-between gap-3 text-sm">
-														<span class="opacity-70">{modLabel(mod)}</span>
-														<span class="shrink-0 font-mono {valueColor(mod)}"
-															>{formatValue(mod)}</span
-														>
-													</li>
-												{/each}
-											</ul>
-										</div>
-									{/each}
+					<article class="border-surface-400-500/30 rounded-lg border p-4">
+						<div class="space-y-4">
+							<!-- Card header -->
+							<header>
+								<h3 class="text-lg font-semibold">{p.name ?? p.key}</h3>
+								<div class="mt-0.5 flex items-center gap-2 text-[11px] opacity-50">
+									{#if p.relic}<span>Relic</span>{/if}
+									{#if p.buildings.length}<span>· Building</span>{/if}
+									{#if p.numDigsites}<span>· {p.numDigsites} dig sites</span>{/if}
+									<span>· {p.systems.length} system{p.systems.length === 1 ? '' : 's'}</span>
 								</div>
-							</div>
-						{/if}
+							</header>
 
-						<!-- Relic -->
-						{#if p.relic}
-							<div class="mb-3">
-								<h4 class="mb-1 text-xs font-medium tracking-wide uppercase opacity-40">
-									Relic — <span class="text-amber-300/80 normal-case"
-										>{p.relic.name ?? p.relic.relicKey}</span
+							<!-- Permanent empire effect (reward modifiers) -->
+							{#if p.rewards.length}
+								<div>
+									<div
+										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
 									>
-								</h4>
-								{#if p.relic.passives.length}
-									<ul class="space-y-0.5">
-										{#each p.relic.passives as passive}
-											{@const cond = conditionLabel(passive.condition)}
+										{@render hrule()}<span>Permanent effect</span>{@render hrule()}
+									</div>
+									{#if p.rewards.length > 1}
+										<p class="mb-1.5 text-[11px] italic opacity-40">
+											Only one applies, by empire type / choice:
+										</p>
+									{/if}
+									<div class="space-y-2">
+										{#each p.rewards as reward}
 											{@const applies = activeType
-												? conditionApplies(passive.condition, activeType)
+												? variantApplies(reward.variant, activeType)
 												: null}
-											<li
-												class="flex items-baseline justify-between gap-3 text-sm {applies === false
-													? 'opacity-30'
-													: ''}"
-											>
-												<span class="opacity-70">
-													{modLabel(passive)}
-													{#if cond}<span
-															class="text-[10px] {applies === true
-																? 'text-primary-400'
-																: 'opacity-40'}">({cond})</span
-														>{/if}
-												</span>
-												<span class="shrink-0 font-mono {valueColor(passive)}"
-													>{formatValue(passive)}</span
+											<div class={applies === false ? 'opacity-40' : ''}>
+												{#if p.rewards.length > 1}
+													<div
+														class="text-[11px] font-medium {applies === true
+															? 'text-primary-400'
+															: 'opacity-60'}"
+													>
+														{variantLabel(reward)}
+														{#if reward.name}<span class="font-normal opacity-40"
+																>· {reward.name}</span
+															>{/if}
+														{#if applies === true}<span class="opacity-70"> ✓</span>{/if}
+													</div>
+												{/if}
+												<ul class="space-y-0.5">
+													{#each reward.modifiers as mod}
+														<li class="flex items-baseline justify-between gap-3 text-sm">
+															<span class="opacity-70">{modLabel(mod)}</span>
+															<span class="shrink-0 font-mono {valueColor(mod)}"
+																>{formatValue(mod)}</span
+															>
+														</li>
+													{/each}
+												</ul>
+											</div>
+										{/each}
+									</div>
+								</div>
+							{/if}
+
+							<!-- Relic -->
+							{#if p.relic}
+								<div>
+									<div
+										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
+									>
+										{@render hrule()}<span
+											>Relic — <span class="text-amber-300/80 normal-case"
+												>{p.relic.name ?? p.relic.relicKey}</span
+											></span
+										>{@render hrule()}
+									</div>
+									{#if p.relic.passives.length}
+										<ul class="space-y-0.5">
+											{#each p.relic.passives as passive}
+												{@const cond = conditionLabel(passive.condition)}
+												{@const applies = activeType
+													? conditionApplies(passive.condition, activeType)
+													: null}
+												<li
+													class="flex items-baseline justify-between gap-3 text-sm {applies ===
+													false
+														? 'opacity-30'
+														: ''}"
 												>
+													<span class="opacity-70">
+														{modLabel(passive)}
+														{#if cond}<span
+																class="text-[10px] {applies === true
+																	? 'text-primary-400'
+																	: 'opacity-40'}">({cond})</span
+															>{/if}
+													</span>
+													<span class="shrink-0 font-mono {valueColor(passive)}"
+														>{formatValue(passive)}</span
+													>
+												</li>
+											{/each}
+										</ul>
+									{/if}
+									{#if p.relic.activeEffect}
+										<p class="mt-1.5 text-xs opacity-55">
+											<span class="opacity-40">Active:</span>
+											{p.relic.activeEffect}
+										</p>
+									{/if}
+								</div>
+							{/if}
+
+							<!-- Buildings -->
+							{#if p.buildings.length}
+								<div>
+									<div
+										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
+									>
+										{@render hrule()}<span>Building</span>{@render hrule()}
+									</div>
+									<ul class="space-y-0.5 text-sm">
+										{#each p.buildings as b}
+											<li class="opacity-70">
+												{b.name ?? b.buildingKey}
+												{#if b.scope}<span class="text-[10px] opacity-40"> ({b.scope})</span>{/if}
 											</li>
 										{/each}
 									</ul>
-								{/if}
-								{#if p.relic.activeEffect}
-									<p class="mt-1.5 text-xs opacity-55">
-										<span class="opacity-40">Active:</span>
-										{p.relic.activeEffect}
-									</p>
-								{/if}
-							</div>
-						{/if}
-
-						<!-- Buildings -->
-						{#if p.buildings.length}
-							<div class="mb-3">
-								<h4 class="mb-1 text-xs font-medium tracking-wide uppercase opacity-40">
-									Building
-								</h4>
-								<ul class="space-y-0.5 text-sm">
-									{#each p.buildings as b}
-										<li class="opacity-70">
-											{b.name ?? b.buildingKey}
-											{#if b.scope}<span class="text-[10px] opacity-40"> ({b.scope})</span>{/if}
-										</li>
-									{/each}
-								</ul>
-							</div>
-						{/if}
-
-						<!-- Home system(s): relevant bodies shown, rest behind "show more" -->
-						{#if p.systems.length}
-							<div class="mt-3">
-								<h4 class="mb-1 text-xs font-medium tracking-wide uppercase opacity-40">
-									Home system{p.systems.length === 1 ? '' : 's'}
-								</h4>
-								<div class="space-y-2">
-									{#each p.systems as sys}
-										{@const shown = shownPlanets(sys.planets)}
-										{@const relevant = shown.filter(isRelevant)}
-										{@const rest = shown.filter((pl) => !isRelevant(pl))}
-										<div class="border-surface-400-500/20 rounded border p-2">
-											<div class="mb-1 flex flex-wrap items-baseline gap-2">
-												<span class="text-sm font-medium">{sys.name ?? sys.initializer}</span>
-												{#each sys.megastructures as ms}
-													<span
-														class="rounded bg-violet-500/15 px-1.5 py-0.5 text-[10px] text-violet-300"
-													>
-														{megaLabel(ms)}
-													</span>
-												{/each}
-											</div>
-											{#if relevant.length}
-												<ul class="space-y-1">
-													{#each relevant as planet}{@render planetRow(planet)}{/each}
-												</ul>
-											{:else if sys.megastructures.length === 0}
-												<p class="text-xs italic opacity-40">
-													No habitable worlds or notable deposits.
-												</p>
-											{/if}
-											{#if rest.length}
-												<details class="group mt-1.5">
-													<summary
-														class="cursor-pointer list-none text-[11px] opacity-40 hover:opacity-70"
-													>
-														<span class="inline-block transition-transform group-open:rotate-90"
-															>▸</span
-														>
-														{rest.length} more {rest.length === 1 ? 'body' : 'bodies'}
-													</summary>
-													<ul class="mt-1 space-y-1">
-														{#each rest as planet}{@render planetRow(planet)}{/each}
-													</ul>
-												</details>
-											{/if}
-										</div>
-									{/each}
 								</div>
-							</div>
-						{/if}
+							{/if}
+
+							<!-- Home system(s): relevant bodies shown, rest behind "show more" -->
+							{#if p.systems.length}
+								<div>
+									<div
+										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
+									>
+										{@render hrule()}<span>Home system{p.systems.length === 1 ? '' : 's'}</span
+										>{@render hrule()}
+									</div>
+									<div class="space-y-2">
+										{#each p.systems as sys}
+											{@const shown = shownPlanets(sys.planets)}
+											{@const relevant = shown.filter(isRelevant)}
+											{@const rest = shown.filter((pl) => !isRelevant(pl))}
+											<div class="border-surface-400-500/20 rounded border p-2">
+												<div class="mb-1 flex flex-wrap items-baseline gap-2">
+													<span class="text-sm font-medium">{sys.name ?? sys.initializer}</span>
+													{#each sys.megastructures as ms}
+														<span
+															class="rounded bg-violet-500/15 px-1.5 py-0.5 text-[10px] text-violet-300"
+														>
+															{megaLabel(ms)}
+														</span>
+													{/each}
+												</div>
+												{#if relevant.length}
+													<ul class="space-y-1">
+														{#each relevant as planet}{@render planetRow(planet)}{/each}
+													</ul>
+												{:else if sys.megastructures.length === 0}
+													<p class="text-xs italic opacity-40">
+														No habitable worlds or notable deposits.
+													</p>
+												{/if}
+												{#if rest.length}
+													<details class="group mt-1.5">
+														<summary
+															class="cursor-pointer list-none text-[11px] opacity-40 hover:opacity-70"
+														>
+															<span class="inline-block transition-transform group-open:rotate-90"
+																>▸</span
+															>
+															{rest.length} more {rest.length === 1 ? 'body' : 'bodies'}
+														</summary>
+														<ul class="mt-1 space-y-1">
+															{#each rest as planet}{@render planetRow(planet)}{/each}
+														</ul>
+													</details>
+												{/if}
+											</div>
+										{/each}
+									</div>
+								</div>
+							{/if}
+						</div>
 					</article>
 				{/each}
 			</div>
