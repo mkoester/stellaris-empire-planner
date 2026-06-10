@@ -313,6 +313,349 @@ export function loadEthics(): Ethic[] {
 	}));
 }
 
+// ── Precursors ─────────────────────────────────────────────────────────────
+
+export interface RelicModifier extends Modifier {
+	condition: string | null; // null = always applies; else e.g. "is_machine_empire = yes"
+}
+
+export interface PrecursorRelic {
+	relicKey: string;
+	name: string | null;
+	portrait: string | null;
+	score: number | null;
+	description: string | null;
+	activeEffect: string | null;
+	passives: RelicModifier[]; // triggered_country_modifier effects
+}
+
+export interface PrecursorReward {
+	staticModifier: string;
+	variant: string;
+	name: string | null;
+	modifiers: Modifier[];
+}
+
+export interface PrecursorBuilding {
+	buildingKey: string;
+	name: string | null;
+	scope: string | null; // "planet" | "starbase"
+}
+
+export interface DepositResource {
+	kind: string; // "produces" | "cost" | "upkeep"
+	resource: string;
+	amount: number;
+}
+
+export interface PlanetDeposit {
+	depositKey: string;
+	name: string | null;
+	isBlocker: boolean;
+	resources: DepositResource[];
+}
+
+export interface PrecursorPlanet {
+	id: string;
+	name: string | null;
+	planetClass: string | null;
+	planetClassLabel: string | null;
+	size: number | null;
+	isMoon: boolean;
+	isHomeworld: boolean;
+	deposits: PlanetDeposit[];
+	modifiers: Modifier[];
+}
+
+export interface PrecursorMegastructure {
+	type: string;
+	label: string | null;
+}
+
+export interface PrecursorSystem {
+	initializer: string;
+	name: string | null;
+	starClass: string | null;
+	planets: PrecursorPlanet[];
+	megastructures: PrecursorMegastructure[];
+}
+
+export interface Precursor {
+	key: string;
+	name: string | null;
+	requiredDlc: string | null;
+	picture: string | null;
+	numDigsites: number | null;
+	relic: PrecursorRelic | null;
+	rewards: PrecursorReward[];
+	buildings: PrecursorBuilding[];
+	systems: PrecursorSystem[];
+}
+
+export function loadPrecursors(): Precursor[] {
+	const d = db();
+
+	const baseRows = d
+		.prepare(
+			`SELECT key, name, required_dlc, picture, num_digsites
+			 FROM precursor ORDER BY sort_order`
+		)
+		.all() as Array<{
+		key: string;
+		name: string | null;
+		required_dlc: string | null;
+		picture: string | null;
+		num_digsites: number | null;
+	}>;
+
+	// ── Relics (0..1 per precursor) + their passive modifiers ──
+	const relicRows = d
+		.prepare(
+			`SELECT precursor_key, relic_key, name, portrait, score, description, active_effect
+			 FROM precursor_relic`
+		)
+		.all() as Array<{
+		precursor_key: string;
+		relic_key: string;
+		name: string | null;
+		portrait: string | null;
+		score: number | null;
+		description: string | null;
+		active_effect: string | null;
+	}>;
+
+	const relicModRows = d
+		.prepare(
+			`SELECT rm.relic_key, rm.modifier_key, rm.modifier_value, rm.condition,
+			        ml.label, ml.positive_is_good
+			 FROM precursor_relic_modifier rm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = rm.modifier_key
+			 ORDER BY rm.relic_key, rm.sort_order`
+		)
+		.all() as Array<{
+		relic_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		condition: string | null;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+
+	const passivesByRelic = new Map<string, RelicModifier[]>();
+	for (const r of relicModRows) {
+		if (!passivesByRelic.has(r.relic_key)) passivesByRelic.set(r.relic_key, []);
+		passivesByRelic.get(r.relic_key)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0,
+			condition: r.condition
+		});
+	}
+
+	const relicByPrecursor = new Map<string, PrecursorRelic>();
+	for (const r of relicRows) {
+		relicByPrecursor.set(r.precursor_key, {
+			relicKey: r.relic_key,
+			name: r.name,
+			portrait: r.portrait,
+			score: r.score,
+			description: r.description,
+			activeEffect: r.active_effect,
+			passives: passivesByRelic.get(r.relic_key) ?? []
+		});
+	}
+
+	// ── Reward modifiers (the permanent empire effect), grouped by variant ──
+	const rewardRows = d
+		.prepare(
+			`SELECT prm.precursor_key, prm.static_modifier, prm.variant, prm.name,
+			        prm.modifier_key, prm.modifier_value, ml.label, ml.positive_is_good
+			 FROM precursor_reward_modifier prm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = prm.modifier_key
+			 ORDER BY prm.precursor_key, prm.variant, prm.sort_order`
+		)
+		.all() as Array<{
+		precursor_key: string;
+		static_modifier: string;
+		variant: string;
+		name: string | null;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+
+	const rewardsByPrecursor = new Map<string, Map<string, PrecursorReward>>();
+	for (const r of rewardRows) {
+		if (!rewardsByPrecursor.has(r.precursor_key)) rewardsByPrecursor.set(r.precursor_key, new Map());
+		const byVariant = rewardsByPrecursor.get(r.precursor_key)!;
+		if (!byVariant.has(r.static_modifier)) {
+			byVariant.set(r.static_modifier, {
+				staticModifier: r.static_modifier,
+				variant: r.variant,
+				name: r.name,
+				modifiers: []
+			});
+		}
+		byVariant.get(r.static_modifier)!.modifiers.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+
+	// ── Buildings ──
+	const buildingRows = d
+		.prepare(`SELECT precursor_key, building_key, name, scope FROM precursor_building`)
+		.all() as Array<{ precursor_key: string; building_key: string; name: string | null; scope: string | null }>;
+	const buildingsByPrecursor = new Map<string, PrecursorBuilding[]>();
+	for (const r of buildingRows) {
+		if (!buildingsByPrecursor.has(r.precursor_key)) buildingsByPrecursor.set(r.precursor_key, []);
+		buildingsByPrecursor.get(r.precursor_key)!.push({
+			buildingKey: r.building_key,
+			name: r.name,
+			scope: r.scope
+		});
+	}
+
+	// ── Systems → planets → deposits / modifiers, + megastructures ──
+	const sysRows = d
+		.prepare(
+			`SELECT precursor_key, initializer, name, star_class
+			 FROM precursor_system ORDER BY precursor_key, sort_order`
+		)
+		.all() as Array<{ precursor_key: string; initializer: string; name: string | null; star_class: string | null }>;
+
+	const planetRows = d
+		.prepare(
+			`SELECT id, precursor_key, initializer, name, planet_class, planet_class_label,
+			        size, is_moon, is_homeworld
+			 FROM precursor_planet ORDER BY initializer, sort_order`
+		)
+		.all() as Array<{
+		id: string;
+		precursor_key: string;
+		initializer: string;
+		name: string | null;
+		planet_class: string | null;
+		planet_class_label: string | null;
+		size: number | null;
+		is_moon: number;
+		is_homeworld: number;
+	}>;
+
+	// Planet deposits joined to the deposit dictionary (+ its resource yields).
+	const planetDepRows = d
+		.prepare(
+			`SELECT ppd.planet_id, ppd.deposit_key, dep.name, dep.is_blocker, ppd.sort_order
+			 FROM precursor_planet_deposit ppd
+			 LEFT JOIN deposit dep ON dep.key = ppd.deposit_key
+			 ORDER BY ppd.planet_id, ppd.sort_order`
+		)
+		.all() as Array<{
+		planet_id: string;
+		deposit_key: string;
+		name: string | null;
+		is_blocker: number | null;
+		sort_order: number;
+	}>;
+
+	const depResRows = d
+		.prepare(`SELECT deposit_key, kind, resource, amount FROM deposit_resource`)
+		.all() as Array<{ deposit_key: string; kind: string; resource: string; amount: number }>;
+	const resByDeposit = new Map<string, DepositResource[]>();
+	for (const r of depResRows) {
+		if (!resByDeposit.has(r.deposit_key)) resByDeposit.set(r.deposit_key, []);
+		resByDeposit.get(r.deposit_key)!.push({ kind: r.kind, resource: r.resource, amount: r.amount });
+	}
+
+	const depositsByPlanet = new Map<string, PlanetDeposit[]>();
+	for (const r of planetDepRows) {
+		if (!depositsByPlanet.has(r.planet_id)) depositsByPlanet.set(r.planet_id, []);
+		depositsByPlanet.get(r.planet_id)!.push({
+			depositKey: r.deposit_key,
+			name: r.name,
+			isBlocker: r.is_blocker === 1,
+			resources: resByDeposit.get(r.deposit_key) ?? []
+		});
+	}
+
+	const planetModRows = d
+		.prepare(
+			`SELECT ppm.planet_id, ppm.modifier_key, ppm.modifier_value, ml.label, ml.positive_is_good
+			 FROM precursor_planet_modifier ppm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = ppm.modifier_key`
+		)
+		.all() as Array<{
+		planet_id: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+	const modsByPlanet = new Map<string, Modifier[]>();
+	for (const r of planetModRows) {
+		if (!modsByPlanet.has(r.planet_id)) modsByPlanet.set(r.planet_id, []);
+		modsByPlanet.get(r.planet_id)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+
+	const planetsByInitializer = new Map<string, PrecursorPlanet[]>();
+	for (const r of planetRows) {
+		if (!planetsByInitializer.has(r.initializer)) planetsByInitializer.set(r.initializer, []);
+		planetsByInitializer.get(r.initializer)!.push({
+			id: r.id,
+			name: r.name,
+			planetClass: r.planet_class,
+			planetClassLabel: r.planet_class_label,
+			size: r.size,
+			isMoon: r.is_moon === 1,
+			isHomeworld: r.is_homeworld === 1,
+			deposits: depositsByPlanet.get(r.id) ?? [],
+			modifiers: modsByPlanet.get(r.id) ?? []
+		});
+	}
+
+	const megaRows = d
+		.prepare(`SELECT precursor_key, initializer, type, type_label FROM precursor_megastructure`)
+		.all() as Array<{ precursor_key: string; initializer: string; type: string; type_label: string | null }>;
+	const megaByInitializer = new Map<string, PrecursorMegastructure[]>();
+	for (const r of megaRows) {
+		if (!megaByInitializer.has(r.initializer)) megaByInitializer.set(r.initializer, []);
+		megaByInitializer.get(r.initializer)!.push({ type: r.type, label: r.type_label });
+	}
+
+	const systemsByPrecursor = new Map<string, PrecursorSystem[]>();
+	for (const r of sysRows) {
+		if (!systemsByPrecursor.has(r.precursor_key)) systemsByPrecursor.set(r.precursor_key, []);
+		systemsByPrecursor.get(r.precursor_key)!.push({
+			initializer: r.initializer,
+			name: r.name,
+			starClass: r.star_class,
+			planets: planetsByInitializer.get(r.initializer) ?? [],
+			megastructures: megaByInitializer.get(r.initializer) ?? []
+		});
+	}
+
+	return baseRows.map((r) => ({
+		key: r.key,
+		name: r.name,
+		requiredDlc: r.required_dlc,
+		picture: r.picture,
+		numDigsites: r.num_digsites,
+		relic: relicByPrecursor.get(r.key) ?? null,
+		rewards: [...(rewardsByPrecursor.get(r.key)?.values() ?? [])],
+		buildings: buildingsByPrecursor.get(r.key) ?? [],
+		systems: systemsByPrecursor.get(r.key) ?? []
+	}));
+}
+
 export function loadTraits(): Trait[] {
 	const rows = db()
 		.prepare(

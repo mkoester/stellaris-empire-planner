@@ -44,19 +44,36 @@ ethic_modifier          — ethic_key, modifier_key, modifier_value, sort_order
 ethic_tag_label         — tag (PK), label  ← DROP+CREATE each run
 ethic_tag               — ethic_key, tag, sort_order
 ethic_policy_restriction — policy_key, option_key, option_label, ethic_key
+precursor               — key, name, required_dlc, system_initializer, picture, num_digsites, sort_order
+precursor_relic         — precursor_key, relic_key, name, portrait, score, description, active_effect
+precursor_relic_modifier — relic_key, modifier_key, modifier_value, condition (null=always), sort_order
+precursor_reward_modifier — precursor_key, static_modifier, variant, name, modifier_key, modifier_value
+precursor_building      — precursor_key, building_key, name, scope (planet/starbase)
+precursor_full          — VIEW: one row/precursor with relic+building pre-joined
+deposit                 — key, name, category, is_blocker, clear_time   (dictionary)
+deposit_resource        — deposit_key, kind (produces/cost/upkeep), resource, amount
+deposit_modifier        — deposit_key, modifier_key, modifier_value
+precursor_system        — precursor_key, initializer, name, star_class, sort_order  (1..n per precursor)
+precursor_planet        — id "<init>#<idx>", precursor_key, initializer, name, planet_class(+_label), size, is_moon, is_homeworld, flags
+precursor_planet_deposit — planet_id, deposit_key (FK→deposit), sort_order
+precursor_planet_modifier — planet_id, static_modifier, modifier_key, modifier_value
+precursor_megastructure — precursor_key, initializer, type, type_label
 ```
+
+All precursor/deposit tables are DROP+CREATE each extraction run.
 
 ---
 
 ## `src/lib/server/db.ts`
 
-Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`.
+Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
 
 Key functions:
 - `loadTraits()` — main trait query + separate modifier query, merged by key. Filters `initial=1 AND hidden=0`.
 - `loadTraitsForKeys(keys)` — loads specific trait keys (used for base traits: organic, lithoid, machine_unit).
 - `loadSpeciesClasses()` — returns `{ key, label, archetype }`, filtered to BIOLOGICAL/LITHOID/MACHINE.
 - `loadEthics()` — returns ethics with `modifiers[]`, `implications[]`, `policyRestrictions[]`.
+- `loadPrecursors()` — fully-stitched `Precursor[]`: each with `relic` (+passives w/ `condition`), `rewards[]` (grouped by variant — Vultaum has 4), `buildings[]`, and `systems[]` → `planets[]` → `deposits[]` (resolved against the `deposit` dictionary) + planet `modifiers[]` + system `megastructures[]`. Several queries stitched in JS by `precursor_key`/`relic_key`/`initializer`/`planet_id`.
 
 `Modifier.positiveIsGood` — false for cost/upkeep/size modifiers (see INVERTED_MODIFIERS in extraction script).
 
@@ -120,6 +137,53 @@ Key functions:
 6. **Monument Bonuses per 100 Civilians** — hard-coded from wiki (game building scripts too complex to parse). 4 columns: Ethic / Effect / Regular / Fanatic.
 
 **Sticky headers:** Apply `sticky top-0 z-10` + `style="background-color: …"` to each `<th>` individually — NOT to `<thead>`. Required for Firefox. Tables must be in `overflow-auto max-h-128` scroll containers (not `overflow-x-auto`) for sticky to work cross-browser.
+
+### `/precursors` — Precursors (`src/routes/precursors/+page.svelte`)
+
+**Page data:** `{ precursors }` — `Precursor[]` from `loadPrecursors()`, fully pre-loaded.
+
+A reference/"wiki-in-one" page: not really empire *planning*, but the in-game
+galaxy setup lets you pick which precursors are available — so the page's one
+piece of state is an **availability toggle** per precursor.
+
+**State:** `enabled: Set<string>` — default all on. `Enable all` / `Disable all`;
+disabled cards dim (`opacity-45`). (Initial set is read from `data` once →
+needs a `// svelte-ignore state_referenced_locally` since it's an intentional
+one-shot default.)
+
+**Layout:** cards grouped by DLC (`Base game` / `Ancient Relics Story Pack` /
+`Cosmic Storms`) in a `lg:grid-cols-2`. Each card shows, always-visible:
+Permanent effect, Relic (name + passive modifiers w/ condition note +
+active-effect text), Building(s), and the **Home system(s)**.
+
+**Reward variants (Vultaum).** Vultaum's `_machine`/`_hive` reward modifiers both
+localise to the same name ("Secrets of the Vultaum"), so a bare name is
+ambiguous. `VARIANT_LABELS` maps the `variant` key → empire-type/choice
+descriptor ("Regular empire — research kept secret", "Machine empire", …); for
+multi-variant rewards the card shows that descriptor + the loc name and an
+"Only one applies, by empire type / choice" note.
+
+**Home system — relevant-first.** `isRelevant(planet)` = homeworld OR has a
+resource (non-blocker) deposit OR has a modifier OR class ∈ `RELEVANT_CLASSES`
+(habitable/colonizable, the special precursor worlds, ringworld sections) OR ∈
+`TERRAFORM_CANDIDATE` (`pc_toxic`). Relevant bodies render by default; the rest
+(barren/asteroids/gas giants w/o deposits) sit behind a "N more bodies"
+`<details>`. The `planetRow` snippet renders each: type/size, a `terraformable`
+tag, deposit chips via `depositChips()` (resource yields green & individual;
+blockers collapsed by name with `×count`; homeworld ★) + `precursor_planet_modifier`
+rows. Megastructures are violet chips on the system header. The empty-state note
+("No habitable worlds…") is suppressed when a megastructure is present (e.g.
+Cybrex Alpha's ruined ring world).
+
+These planet-class sets are **hardcoded** in the component (like the home page's
+phenotype-tag sets) — not data-driven. Extend if a precursor world isn't shown.
+
+**Formatting helpers** mirror the ethics page: `formatValue` (sign; `_add` →
+integer, else `×100%`), `valueColor` (`positiveIsGood`), `modLabel` (strips
+`[...]` tags). Plus `resourceLabel` (deposit yields), `conditionLabel` (relic
+`potential` → short note), `variantLabel` (reward variant display name).
+
+**Nav chain:** Species Builder → Ethics → Precursors (footer/header links).
 
 ---
 

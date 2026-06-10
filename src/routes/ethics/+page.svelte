@@ -245,6 +245,7 @@
 		<h1 class="text-2xl font-bold">Ethics</h1>
 		<nav class="flex gap-3 text-sm opacity-50">
 			<a href="/" class="hover:opacity-100 transition-opacity">← Species Builder</a>
+			<a href="/precursors" class="hover:opacity-100 transition-opacity">Precursors →</a>
 		</nav>
 	</div>
 
