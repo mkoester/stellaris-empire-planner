@@ -24,30 +24,11 @@
 
 	const precursors = $derived(data.precursors as Precursor[]);
 
-	// ── Availability selection (mirrors choosing precursors at galaxy setup) ──
-	// Default: all available. Reading initial `data` here is intentional (one-shot default).
-	// svelte-ignore state_referenced_locally
-	let enabled = $state(new Set((data.precursors as Precursor[]).map((p) => p.key)));
-	const enabledCount = $derived(enabled.size);
-
-	function toggle(key: string) {
-		const next = new Set(enabled);
-		if (next.has(key)) next.delete(key);
-		else next.add(key);
-		enabled = next;
-	}
-	function enableAll() {
-		enabled = new Set(precursors.map((p) => p.key));
-	}
-	function disableAll() {
-		enabled = new Set();
-	}
-
 	// ── Empire-type filter ───────────────────────────────────────────────────
-	// 'planner' is a placeholder default (will eventually read the empire from the
-	// Species Builder) and applies no highlighting. See $lib/precursors for the
-	// applies-logic (variantApplies / conditionApplies).
-	let empireFilter = $state<'planner' | EmpireType>('planner');
+	// Highlights the effects that apply to the chosen empire type. 'planner' is a
+	// placeholder (will eventually read the empire from the Species Builder) and
+	// applies no highlighting. See $lib/precursors for the applies-logic.
+	let empireFilter = $state<'planner' | EmpireType>('regular');
 	const activeType = $derived<EmpireType | null>(empireFilter === 'planner' ? null : empireFilter);
 
 	// ── Group by DLC (base first), precursors sorted alphabetically within each ──
@@ -102,18 +83,8 @@
 	<p class="max-w-3xl text-sm opacity-60">
 		The ancient civilisations whose archaeology chains you can uncover. Each grants a
 		<strong>permanent empire effect</strong>, usually a <strong>relic</strong>, sometimes a
-		<strong>building</strong>, and a unique <strong>home system</strong>. Toggle which ones are
-		available in your game.
+		<strong>building</strong>, and a unique <strong>home system</strong>.
 	</p>
-
-	<!-- Availability toolbar -->
-	<div class="flex flex-wrap items-center gap-3">
-		<span class="text-sm opacity-60">
-			<strong>{enabledCount}</strong> / {precursors.length} available
-		</span>
-		<button class="btn preset-filled text-xs" onclick={enableAll}>Enable all</button>
-		<button class="btn preset-filled text-xs" onclick={disableAll}>Disable all</button>
-	</div>
 
 	<!-- Empire-type filter: highlights the effects that apply to the chosen type -->
 	<div class="flex flex-wrap items-center gap-2">
@@ -152,32 +123,16 @@
 
 			<div class="grid gap-4 lg:grid-cols-2">
 				{#each group.items as p (p.key)}
-					{@const on = enabled.has(p.key)}
-					<article
-						class="rounded-lg border p-4 transition-all {on
-							? 'border-primary-500/40 bg-surface-500/5'
-							: 'border-surface-400-500/20 opacity-45'}"
-					>
+					<article class="rounded-lg border border-surface-400-500/30 p-4">
 						<!-- Card header -->
-						<header class="mb-3 flex items-start justify-between gap-3">
-							<div>
-								<h3 class="text-lg font-semibold">{p.name ?? p.key}</h3>
-								<div class="mt-0.5 flex items-center gap-2 text-[11px] opacity-50">
-									{#if p.relic}<span>Relic</span>{/if}
-									{#if p.buildings.length}<span>· Building</span>{/if}
-									{#if p.numDigsites}<span>· {p.numDigsites} dig sites</span>{/if}
-									<span>· {p.systems.length} system{p.systems.length === 1 ? '' : 's'}</span>
-								</div>
+						<header class="mb-3">
+							<h3 class="text-lg font-semibold">{p.name ?? p.key}</h3>
+							<div class="mt-0.5 flex items-center gap-2 text-[11px] opacity-50">
+								{#if p.relic}<span>Relic</span>{/if}
+								{#if p.buildings.length}<span>· Building</span>{/if}
+								{#if p.numDigsites}<span>· {p.numDigsites} dig sites</span>{/if}
+								<span>· {p.systems.length} system{p.systems.length === 1 ? '' : 's'}</span>
 							</div>
-							<label class="flex shrink-0 cursor-pointer items-center gap-2 text-xs">
-								<input
-									type="checkbox"
-									class="checkbox"
-									checked={on}
-									onchange={() => toggle(p.key)}
-								/>
-								<span class="opacity-60">{on ? 'Available' : 'Off'}</span>
-							</label>
 						</header>
 
 						<!-- Permanent empire effect (reward modifiers) -->
