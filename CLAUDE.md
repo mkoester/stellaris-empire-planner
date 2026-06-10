@@ -57,7 +57,7 @@ precursor_system        — precursor_key, initializer, name, star_class, sort_o
 precursor_planet        — id "<init>#<idx>", precursor_key, initializer, name, planet_class(+_label), size, is_moon, is_homeworld, flags
 precursor_planet_deposit — planet_id, deposit_key (FK→deposit), sort_order
 precursor_planet_modifier — planet_id, static_modifier, modifier_key, modifier_value
-precursor_megastructure — precursor_key, initializer, type, type_label
+precursor_megastructure — precursor_key, initializer, type, type_label, count (e.g. 4 ruined ring sections)
 ```
 
 All precursor/deposit tables are DROP+CREATE each extraction run.
@@ -152,9 +152,27 @@ needs a `// svelte-ignore state_referenced_locally` since it's an intentional
 one-shot default.)
 
 **Layout:** cards grouped by DLC (`Base game` / `Ancient Relics Story Pack` /
-`Cosmic Storms`) in a `lg:grid-cols-2`. Each card shows, always-visible:
+`Cosmic Storms`) in a `lg:grid-cols-2` via `groupByDlc()` — base game first, then
+DLCs in first-appearance order, **precursors sorted alphabetically by name within
+each group** (deterministic; covered by tests). Each card shows, always-visible:
 Permanent effect, Relic (name + passive modifiers w/ condition note +
 active-effect text), Building(s), and the **Home system(s)**.
+
+**Empire-type filter.** A toolbar highlights the effects that apply to a chosen
+empire type. `empireFilter: 'planner' | EmpireType`; `'planner'` is the default
+**placeholder** (no highlighting — will later read the empire from the Species
+Builder). `activeType` (derived) is null for `'planner'`. When a type is picked:
+non-applicable reward variants / relic passives dim (`opacity-40`/`30`),
+applicable ones get a `text-primary-400` accent (+ ✓ on the variant).
+- `variantApplies(variant, type)` — reward variants (controlled vocab):
+  `suppressed`/`public` → regular/wilderness, `machine`→machine, `hive`→hive,
+  `hive_machine`→hive/machine, `default`→all.
+- `conditionApplies(condition, type)` — parses the relic-passive condition string
+  (AND = comma; OR = parenthesised `(a OR b)`) against `EMPIRE_FLAGS`
+  (`is_machine_empire`/`is_wilderness_empire`; hive reads same as regular).
+  `conditionLabel` is now derived from `applicableTypes()` ("regular / hive",
+  "non-wilderness"), replacing the old hardcoded string map. **Depends on the
+  extraction emitting parseable OR conditions** (see extraction CLAUDE.md).
 
 **Reward variants (Vultaum).** Vultaum's `_machine`/`_hive` reward modifiers both
 localise to the same name ("Secrets of the Vultaum"), so a bare name is
@@ -171,9 +189,10 @@ resource (non-blocker) deposit OR has a modifier OR class ∈ `RELEVANT_CLASSES`
 `<details>`. The `planetRow` snippet renders each: type/size, a `terraformable`
 tag, deposit chips via `depositChips()` (resource yields green & individual;
 blockers collapsed by name with `×count`; homeworld ★) + `precursor_planet_modifier`
-rows. Megastructures are violet chips on the system header. The empty-state note
-("No habitable worlds…") is suppressed when a megastructure is present (e.g.
-Cybrex Alpha's ruined ring world).
+rows. Megastructures are violet chips on the system header via `megaLabel()`,
+which appends `×N` when `count > 1` (e.g. Cybrex Alpha's "Ruined Ring Section ×4").
+The empty-state note ("No habitable worlds…") is suppressed when a megastructure
+is present (e.g. Cybrex Alpha's ruined ring world).
 
 These planet-class sets are **hardcoded** in the component (like the home page's
 phenotype-tag sets) — not data-driven. Extend if a precursor world isn't shown.
@@ -184,6 +203,32 @@ integer, else `×100%`), `valueColor` (`positiveIsGood`), `modLabel` (strips
 `potential` → short note), `variantLabel` (reward variant display name).
 
 **Nav chain:** Species Builder → Ethics → Precursors (footer/header links).
+
+**Pure helpers live in [`src/lib/precursors.ts`](src/lib/precursors.ts)** (not the
+component): the empire-type applies-logic (`variantApplies`, `conditionApplies`,
+`clauseMatches`, `applicableTypes`, `conditionLabel`), modifier formatting
+(`formatValue`, `valueColor`, `modLabel`), `variantLabel`, `resourceLabel`, and
+the planet/deposit helpers (`shownPlanets`, `isRelevant`, `isTerraformable`,
+`depositChips`, `RELEVANT_CLASSES`, `TERRAFORM_CANDIDATE`), plus `dlcBadge`. The
+component keeps only reactive state/derived (`enabled`, `empireFilter`,
+`activeType`, `groups`) and the `planetRow` snippet. Types are imported
+type-only from `$lib/server/db` (erased at runtime, so the file is client-safe).
+
+---
+
+## Testing
+
+**Vitest** (`pnpm test`, `pnpm test:watch`). Config: `test` block in
+[vite.config.ts](vite.config.ts) (`defineConfig` from `vitest/config`); specs are
+`src/**/*.{test,spec}.ts`.
+
+[`src/lib/precursors.test.ts`](src/lib/precursors.test.ts) covers the pure
+helpers — the empire-type truth table is the high-value part (e.g. Baol's
+AND/OR `potential` branches → which empire types each relic passive applies to;
+Vultaum/Inetian reward variants). Tests import the module **relatively**
+(`./precursors`) and build fixtures from the `$lib/server/db` types, so they need
+no `$lib` alias or DB at runtime. Pure presentation logic only — no component
+rendering, no DB. Add cases here when extending `precursors.ts`.
 
 ---
 

@@ -370,6 +370,7 @@ export interface PrecursorPlanet {
 export interface PrecursorMegastructure {
 	type: string;
 	label: string | null;
+	count: number;
 }
 
 export interface PrecursorSystem {
@@ -488,7 +489,8 @@ export function loadPrecursors(): Precursor[] {
 
 	const rewardsByPrecursor = new Map<string, Map<string, PrecursorReward>>();
 	for (const r of rewardRows) {
-		if (!rewardsByPrecursor.has(r.precursor_key)) rewardsByPrecursor.set(r.precursor_key, new Map());
+		if (!rewardsByPrecursor.has(r.precursor_key))
+			rewardsByPrecursor.set(r.precursor_key, new Map());
 		const byVariant = rewardsByPrecursor.get(r.precursor_key)!;
 		if (!byVariant.has(r.static_modifier)) {
 			byVariant.set(r.static_modifier, {
@@ -509,7 +511,12 @@ export function loadPrecursors(): Precursor[] {
 	// ── Buildings ──
 	const buildingRows = d
 		.prepare(`SELECT precursor_key, building_key, name, scope FROM precursor_building`)
-		.all() as Array<{ precursor_key: string; building_key: string; name: string | null; scope: string | null }>;
+		.all() as Array<{
+		precursor_key: string;
+		building_key: string;
+		name: string | null;
+		scope: string | null;
+	}>;
 	const buildingsByPrecursor = new Map<string, PrecursorBuilding[]>();
 	for (const r of buildingRows) {
 		if (!buildingsByPrecursor.has(r.precursor_key)) buildingsByPrecursor.set(r.precursor_key, []);
@@ -526,7 +533,12 @@ export function loadPrecursors(): Precursor[] {
 			`SELECT precursor_key, initializer, name, star_class
 			 FROM precursor_system ORDER BY precursor_key, sort_order`
 		)
-		.all() as Array<{ precursor_key: string; initializer: string; name: string | null; star_class: string | null }>;
+		.all() as Array<{
+		precursor_key: string;
+		initializer: string;
+		name: string | null;
+		star_class: string | null;
+	}>;
 
 	const planetRows = d
 		.prepare(
@@ -623,12 +635,22 @@ export function loadPrecursors(): Precursor[] {
 	}
 
 	const megaRows = d
-		.prepare(`SELECT precursor_key, initializer, type, type_label FROM precursor_megastructure`)
-		.all() as Array<{ precursor_key: string; initializer: string; type: string; type_label: string | null }>;
+		.prepare(
+			`SELECT precursor_key, initializer, type, type_label, count FROM precursor_megastructure`
+		)
+		.all() as Array<{
+		precursor_key: string;
+		initializer: string;
+		type: string;
+		type_label: string | null;
+		count: number;
+	}>;
 	const megaByInitializer = new Map<string, PrecursorMegastructure[]>();
 	for (const r of megaRows) {
 		if (!megaByInitializer.has(r.initializer)) megaByInitializer.set(r.initializer, []);
-		megaByInitializer.get(r.initializer)!.push({ type: r.type, label: r.type_label });
+		megaByInitializer
+			.get(r.initializer)!
+			.push({ type: r.type, label: r.type_label, count: r.count });
 	}
 
 	const systemsByPrecursor = new Map<string, PrecursorSystem[]>();
