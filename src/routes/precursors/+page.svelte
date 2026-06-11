@@ -17,6 +17,9 @@
 		buildingLimitLabel,
 		buildingConditionLabel,
 		buildingScopeLabel,
+		habitableWorldCount,
+		terraformableWorldCount,
+		countLabel,
 		formatValue,
 		valueColor,
 		modLabel,
@@ -87,6 +90,11 @@
 <!-- One half of a section heading rule (a section header is: rule · LABEL · rule) -->
 {#snippet hrule()}
 	<span class="border-surface-400-500/40 h-0 flex-1 border-t"></span>
+{/snippet}
+
+<!-- A summary badge in a precursor card header (e.g. "Relic", "Buildings ×2"). -->
+{#snippet badge(text: string, cls: string)}
+	<span class="rounded px-1.5 py-0.5 text-[10px] font-medium {cls}">{text}</span>
 {/snippet}
 
 <!-- One precursor building: restrictions, resources, jobs, modifiers. Shared by the
@@ -213,18 +221,39 @@
 
 			<div class="grid gap-4 lg:grid-cols-2">
 				{#each group.items as p (p.key)}
+					{@const planetBuildings = p.buildings.filter((b) => b.scope !== 'starbase')}
+					{@const stationBuildings = p.buildings.filter((b) => b.scope === 'starbase')}
 					<article class="border-surface-400-500/30 rounded-lg border p-4">
 						<div class="space-y-4">
 							<!-- Card header -->
 							<header>
 								<h3 class="text-lg font-semibold">{p.name ?? p.key}</h3>
-								<div class="mt-0.5 flex items-center gap-2 text-[11px] opacity-50">
-									{#if p.relic}<span>Relic</span>{/if}
-									{#if p.buildings.some((b) => b.source === 'homeworld')}<span>· Building</span
-										>{/if}
-									{#if p.technology}<span>· Technology</span>{/if}
-									{#if p.numDigsites}<span>· {p.numDigsites} dig sites</span>{/if}
-									<span>· {p.systems.length} system{p.systems.length === 1 ? '' : 's'}</span>
+								<div class="mt-1 flex flex-wrap items-center gap-1.5">
+									{#if p.relic}{@render badge('Relic', 'bg-amber-500/15 text-amber-300/90')}{/if}
+									{#if planetBuildings.length}{@render badge(
+											countLabel('Building', planetBuildings.length),
+											'bg-sky-500/15 text-sky-300/90'
+										)}{/if}
+									{#if stationBuildings.length}{@render badge(
+											countLabel('Station building', stationBuildings.length),
+											'bg-cyan-500/15 text-cyan-300/90'
+										)}{/if}
+									{#if p.systems.length}{@render badge(
+											countLabel('System', p.systems.length),
+											'bg-violet-500/15 text-violet-300/90'
+										)}{/if}
+									{#if habitableWorldCount(p) > 0}{@render badge(
+											countLabel('Habitable world', habitableWorldCount(p)),
+											'bg-emerald-500/15 text-emerald-300/90'
+										)}{/if}
+									{#if terraformableWorldCount(p) > 0}{@render badge(
+											countLabel('Toxic world', terraformableWorldCount(p)),
+											'bg-lime-500/15 text-lime-300/90'
+										)}{/if}
+									{#if p.numDigsites}{@render badge(
+											countLabel('Dig site', p.numDigsites),
+											'bg-surface-500/25 opacity-70'
+										)}{/if}
 								</div>
 							</header>
 

@@ -6,7 +6,8 @@ import type {
 	RelicModifier,
 	DepositResource,
 	PlanetDeposit,
-	PrecursorPlanet
+	PrecursorPlanet,
+	PrecursorMegastructure
 } from '$lib/server/db';
 import {
 	conditionApplies,
@@ -32,6 +33,9 @@ import {
 	cooldownLabel,
 	dlcBadge,
 	groupByDlc,
+	habitableWorldCount,
+	terraformableWorldCount,
+	countLabel,
 	ALL_TYPES,
 	type EmpireType
 } from './precursors';
@@ -341,6 +345,68 @@ describe('isTerraformable', () => {
 	it('flags toxic worlds only', () => {
 		expect(isTerraformable(planet({ planetClass: 'pc_toxic' }))).toBe(true);
 		expect(isTerraformable(planet({ planetClass: 'pc_continental' }))).toBe(false);
+	});
+});
+
+describe('countLabel', () => {
+	it('uses the singular for one and pluralises with ×N for several', () => {
+		expect(countLabel('Building', 1)).toBe('Building');
+		expect(countLabel('Building', 2)).toBe('Buildings ×2');
+		expect(countLabel('Habitable world', 3)).toBe('Habitable worlds ×3');
+	});
+});
+
+const mega = (type: string, count: number): PrecursorMegastructure => ({
+	type,
+	label: null,
+	count
+});
+const sys = (planets: PrecursorPlanet[], megastructures: PrecursorMegastructure[] = []) => ({
+	initializer: 'x',
+	name: null,
+	starClass: null,
+	planets,
+	megastructures
+});
+
+describe('habitableWorldCount', () => {
+	it('counts colonizable worlds across systems, ignoring stars/barren/gas', () => {
+		const p = {
+			systems: [
+				sys([
+					planet({ planetClass: 'pc_continental' }),
+					planet({ planetClass: 'pc_barren' }),
+					planet({ planetClass: 'star' })
+				]),
+				sys([planet({ planetClass: 'pc_relic' }), planet({ planetClass: 'pc_gas_giant' })])
+			]
+		};
+		expect(habitableWorldCount(p)).toBe(2);
+	});
+	it('counts a repairable ruined ring section as habitable (×count), not a hyper relay', () => {
+		expect(habitableWorldCount({ systems: [sys([], [mega('ring_world_ruined', 4)])] })).toBe(4);
+		expect(habitableWorldCount({ systems: [sys([], [mega('hyper_relay_ruined', 1)])] })).toBe(0);
+	});
+	it('does not count terraform candidates or hazard worlds as habitable', () => {
+		const p = {
+			systems: [sys([planet({ planetClass: 'pc_toxic' }), planet({ planetClass: 'pc_broken' })])]
+		};
+		expect(habitableWorldCount(p)).toBe(0);
+	});
+});
+
+describe('terraformableWorldCount', () => {
+	it('counts toxic worlds (terraformable with the Toxoid AP)', () => {
+		const p = {
+			systems: [
+				sys([
+					planet({ planetClass: 'pc_toxic' }),
+					planet({ planetClass: 'pc_toxic' }),
+					planet({ planetClass: 'pc_continental' })
+				])
+			]
+		};
+		expect(terraformableWorldCount(p)).toBe(2);
 	});
 });
 

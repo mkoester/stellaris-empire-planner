@@ -358,11 +358,10 @@ export function buildingConditionLabel(condition: string | null): string | null 
 	return condition ? `with ${ascensionPerkName(condition)}` : null;
 }
 
-// A building scope ("planet" | "starbase") → display word.
+// A building scope tag for the detail view: starbase buildings are flagged as a
+// "station building"; planetary ones need no tag (they're the default).
 export function buildingScopeLabel(scope: string | null): string | null {
-	if (scope === 'starbase') return 'orbital';
-	if (scope === 'planet') return 'planetary';
-	return scope;
+	return scope === 'starbase' ? 'station building' : null;
 }
 
 // The triumph's temporary modifiers, grouped by their (consecutive) `groupLabel`.
@@ -450,6 +449,56 @@ export function isRelevant(p: PrecursorPlanet): boolean {
 
 export const isTerraformable = (p: PrecursorPlanet): boolean =>
 	TERRAFORM_CANDIDATE.has(p.planetClass ?? '');
+
+// Colonizable world classes: the nine standard climates plus the special habitable
+// types (Gaia, Tomb/Relic worlds, gestalt & ecumenopolis worlds). Excludes the
+// artificial (habitat/ring) and hazard (broken/shrouded/toxic) classes.
+const HABITABLE_CLASSES = new Set([
+	'pc_desert',
+	'pc_arid',
+	'pc_savannah',
+	'pc_tropical',
+	'pc_continental',
+	'pc_ocean',
+	'pc_tundra',
+	'pc_arctic',
+	'pc_alpine',
+	'pc_gaia',
+	'pc_nuked',
+	'pc_relic',
+	'pc_cybrex',
+	'pc_hive',
+	'pc_machine',
+	'pc_city'
+]);
+
+// Ruined megastructures that become habitable worlds once repaired — a Ruined Ring
+// Section is restored into a habitable ringworld segment (Cybrex Alpha has 4).
+const HABITABLE_MEGASTRUCTURES = new Set(['ring_world_ruined']);
+
+// How many colonizable worlds sit in a precursor's home system(s): habitable-class
+// planets (moons included) plus repairable ring-world sections.
+export function habitableWorldCount(p: Pick<Precursor, 'systems'>): number {
+	let n = 0;
+	for (const sys of p.systems) {
+		for (const planet of sys.planets) if (HABITABLE_CLASSES.has(planet.planetClass ?? '')) n++;
+		for (const ms of sys.megastructures) if (HABITABLE_MEGASTRUCTURES.has(ms.type)) n += ms.count;
+	}
+	return n;
+}
+
+// Worlds not habitable as-is but terraformable into a colony with the right
+// ascension perk (Toxic → Toxoid). For the "Toxic world" badge.
+export function terraformableWorldCount(p: Pick<Precursor, 'systems'>): number {
+	let n = 0;
+	for (const sys of p.systems) for (const planet of sys.planets) if (isTerraformable(planet)) n++;
+	return n;
+}
+
+// "Building" → "Building" (n=1) or "Buildings ×3" (n>1). For header count badges.
+export function countLabel(singular: string, n: number): string {
+	return n === 1 ? singular : `${singular}s ×${n}`;
+}
 
 export interface DepositChips {
 	resources: string[];
