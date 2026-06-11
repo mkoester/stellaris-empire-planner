@@ -10,7 +10,8 @@ import type {
 	ActiveModifier,
 	RelicResource,
 	DepositResource,
-	PrecursorPlanet
+	PrecursorPlanet,
+	PrecursorHomeworldReward
 } from '$lib/server/db';
 
 // ── Grouping / ordering ──────────────────────────────────────────────────────
@@ -298,6 +299,18 @@ export function relicResourceLabel(resources: RelicResource[]): string {
 	if (!resources.length) return '';
 	const base = resources.map((r) => `${r.amount} ${titleCase(r.resource)}`).join(', ');
 	return resources.some((r) => r.scales) ? `${base} (grows with each use)` : base;
+}
+
+// Format one home-world discovery reward. A scaled resource burst reads as
+// "120× monthly Unity output (240–9,999)" — the multiplier is applied to the
+// empire's current monthly output of that resource, clamped to the range; the
+// flat minor-artifacts payout reads as "Minor Artifacts (750–1,500)".
+export function homeworldRewardLabel(r: PrecursorHomeworldReward): string {
+	const name = titleCase(r.resource.replace(/_research$/, ''));
+	const range = `${r.minAmount.toLocaleString('en-US')}–${r.maxAmount.toLocaleString('en-US')}`;
+	return r.multiplier === null
+		? `${name} (${range})`
+		: `${r.multiplier}× monthly ${name} output (${range})`;
 }
 
 // The triumph's temporary modifiers, grouped by their (consecutive) `groupLabel`.

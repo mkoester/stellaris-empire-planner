@@ -380,6 +380,17 @@ export interface PrecursorBuilding {
 	scope: string | null; // "planet" | "starbase"
 }
 
+// The one-time reward for discovering the precursor home world. A scaled resource
+// burst has `multiplier` set (× the empire's current monthly output of `resource`,
+// clamped to [minAmount, maxAmount]); the flat minor-artifacts payout has
+// `multiplier === null` (minAmount/maxAmount are the random bounds, e.g. 750–1500).
+export interface PrecursorHomeworldReward {
+	resource: string;
+	multiplier: number | null;
+	minAmount: number;
+	maxAmount: number;
+}
+
 export interface DepositResource {
 	kind: string; // "produces" | "cost" | "upkeep"
 	resource: string;
@@ -428,6 +439,7 @@ export interface Precursor {
 	relic: PrecursorRelic | null;
 	rewards: PrecursorReward[];
 	buildings: PrecursorBuilding[];
+	homeworldRewards: PrecursorHomeworldReward[];
 	systems: PrecursorSystem[];
 }
 
@@ -640,6 +652,31 @@ export function loadPrecursors(): Precursor[] {
 		});
 	}
 
+	// ── Home-world discovery rewards (resource bursts + minor artifacts) ──
+	const hwRewardRows = d
+		.prepare(
+			`SELECT precursor_key, resource, multiplier, min_amount, max_amount
+			 FROM precursor_homeworld_reward ORDER BY precursor_key, sort_order`
+		)
+		.all() as Array<{
+		precursor_key: string;
+		resource: string;
+		multiplier: number | null;
+		min_amount: number;
+		max_amount: number;
+	}>;
+	const homeworldRewardsByPrecursor = new Map<string, PrecursorHomeworldReward[]>();
+	for (const r of hwRewardRows) {
+		if (!homeworldRewardsByPrecursor.has(r.precursor_key))
+			homeworldRewardsByPrecursor.set(r.precursor_key, []);
+		homeworldRewardsByPrecursor.get(r.precursor_key)!.push({
+			resource: r.resource,
+			multiplier: r.multiplier,
+			minAmount: r.min_amount,
+			maxAmount: r.max_amount
+		});
+	}
+
 	// ── Systems → planets → deposits / modifiers, + megastructures ──
 	const sysRows = d
 		.prepare(
@@ -787,6 +824,7 @@ export function loadPrecursors(): Precursor[] {
 		relic: relicByPrecursor.get(r.key) ?? null,
 		rewards: [...(rewardsByPrecursor.get(r.key)?.values() ?? [])],
 		buildings: buildingsByPrecursor.get(r.key) ?? [],
+		homeworldRewards: homeworldRewardsByPrecursor.get(r.key) ?? [],
 		systems: systemsByPrecursor.get(r.key) ?? []
 	}));
 }

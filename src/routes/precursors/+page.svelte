@@ -11,6 +11,7 @@
 		mergeRelicPassives,
 		mergeRewardModifiers,
 		rewardQualifier,
+		homeworldRewardLabel,
 		formatValue,
 		valueColor,
 		modLabel,
@@ -174,6 +175,27 @@
 												</span>
 												<span class="shrink-0 font-mono {valueColor(m)}">{formatValue(m)}</span>
 											</li>
+										{/each}
+									</ul>
+								</div>
+							{/if}
+
+							<!-- Home-world discovery reward (one-time resource burst + minor artifacts) -->
+							{#if p.homeworldRewards.length}
+								<div>
+									<div
+										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
+									>
+										{@render hrule()}<span>Homeworld reward</span>{@render hrule()}
+									</div>
+									<p class="mb-1 text-[11px] opacity-40">
+										One-time, granted when the home world is finally found. Resource grants scale
+										with your empire's current monthly output of that resource (the ×N factor),
+										clamped to the shown range.
+									</p>
+									<ul class="space-y-0.5 text-sm">
+										{#each p.homeworldRewards as reward (reward.resource)}
+											<li class="opacity-70">{homeworldRewardLabel(reward)}</li>
 										{/each}
 									</ul>
 								</div>

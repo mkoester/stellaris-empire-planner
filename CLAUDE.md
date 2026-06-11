@@ -53,6 +53,7 @@ precursor_relic         — precursor_key, relic_key, name, portrait, score, des
 precursor_relic_modifier — relic_key, modifier_key, modifier_value, condition (null=always), sort_order
 precursor_reward_modifier — precursor_key, static_modifier, variant, name, modifier_key, modifier_value
 precursor_building      — precursor_key, building_key, name, scope (planet/starbase)
+precursor_homeworld_reward — precursor_key, resource, multiplier (×monthly output; null=flat minor_artifacts), min_amount, max_amount, sort_order
 precursor_full          — VIEW: one row/precursor with relic+building pre-joined
 deposit                 — key, name, category, is_blocker, clear_time   (dictionary)
 deposit_resource        — deposit_key, kind (produces/cost/upkeep), resource, amount
