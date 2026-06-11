@@ -253,17 +253,15 @@
 												</p>
 											{/if}
 											{#if p.relic.costs.length || cd}
-												<div class="mt-0.5 flex flex-wrap gap-x-3 text-[11px] opacity-50">
-													{#if p.relic.costs.length}
-														<span
-															>Cost: <span class="opacity-80"
-																>{relicResourceLabel(p.relic.costs)}</span
-															></span
-														>
-													{/if}
-													{#if cd}
-														<span>Cooldown: <span class="opacity-80">{cd}</span></span>
-													{/if}
+												<div
+													class="mt-0.5 flex items-baseline justify-between gap-x-3 text-[11px] opacity-50"
+												>
+													<span>
+														{#if p.relic.costs.length}Cost:
+															<span class="opacity-80">{relicResourceLabel(p.relic.costs)}</span
+															>{/if}
+													</span>
+													{#if cd}<span class="shrink-0 opacity-80">{cd} cooldown</span>{/if}
 												</div>
 											{/if}
 										</div>
