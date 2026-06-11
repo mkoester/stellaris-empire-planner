@@ -24,15 +24,37 @@
 
 	// Tags that convey no additional info on the card (archetype/polarity classification)
 	const HIDDEN_CARD_TAGS = new Set([
-		'positive', 'negative', 'special', 'automod', 'background',
-		'interesting', 'modularity', 'individual',
-		'organic', 'machine', 'synthetic', 'cybernetic', 'psionic', 'lithoid'
+		'positive',
+		'negative',
+		'special',
+		'automod',
+		'background',
+		'interesting',
+		'modularity',
+		'individual',
+		'organic',
+		'machine',
+		'synthetic',
+		'cybernetic',
+		'psionic',
+		'lithoid'
 	]);
 
 	const SPECIES_PHENOTYPE_TAGS = new Set([
-		'aquatic', 'arthropoid', 'avian', 'fungoid', 'humanoid', 'lithoid',
-		'mammalian', 'molluscoid', 'necroid', 'organic', 'plantoid', 'reptilian',
-		'species', 'toxoid'
+		'aquatic',
+		'arthropoid',
+		'avian',
+		'fungoid',
+		'humanoid',
+		'lithoid',
+		'mammalian',
+		'molluscoid',
+		'necroid',
+		'organic',
+		'plantoid',
+		'reptilian',
+		'species',
+		'toxoid'
 	]);
 
 	const POLARITY_TAGS = new Set(['positive', 'negative']);
@@ -45,7 +67,9 @@
 	);
 
 	const selectedClass = $derived(
-		selectedClassKey ? (data.speciesClasses.find((sc) => sc.key === selectedClassKey) ?? null) : null
+		selectedClassKey
+			? (data.speciesClasses.find((sc) => sc.key === selectedClassKey) ?? null)
+			: null
 	);
 
 	// Actual archetype used for trait filtering (Lithoid class overrides BIOLOGICAL group)
@@ -82,7 +106,7 @@
 
 	// Clear tag filters when switching archetype group
 	$effect(() => {
-		archetypeGroup;
+		void archetypeGroup;
 		activeTags = new Set();
 	});
 
@@ -106,11 +130,15 @@
 		return [...tags].sort();
 	});
 
-	const mainFilterTags = $derived(allTagsInView.filter((t) => !SPECIES_PHENOTYPE_TAGS.has(t) && !POLARITY_TAGS.has(t)));
+	const mainFilterTags = $derived(
+		allTagsInView.filter((t) => !SPECIES_PHENOTYPE_TAGS.has(t) && !POLARITY_TAGS.has(t))
+	);
 	const speciesFilterTags = $derived(allTagsInView.filter((t) => SPECIES_PHENOTYPE_TAGS.has(t)));
 	const speciesLeadTag = $derived(speciesFilterTags.includes('species') ? 'species' : null);
 	const speciesRestTags = $derived(speciesFilterTags.filter((t) => t !== 'species'));
-	const polarityFilterTags = $derived(['positive', 'negative'].filter((t) => allTagsInView.includes(t)));
+	const polarityFilterTags = $derived(
+		['positive', 'negative'].filter((t) => allTagsInView.includes(t))
+	);
 
 	function toggleTag(tag: string) {
 		const next = new Set(activeTags);
@@ -148,7 +176,12 @@
 					const gKey = [...t.speciesClasses].sort().join(',');
 					if (!groupMap.has(gKey)) {
 						const labels = t.speciesClasses.map(formatClassKey);
-						groupMap.set(gKey, { key: gKey, labels, colors: labels.map(speciesClassColor), traits: [] });
+						groupMap.set(gKey, {
+							key: gKey,
+							labels,
+							colors: labels.map(speciesClassColor),
+							traits: []
+						});
 					}
 					groupMap.get(gKey)!.traits.push(t);
 				}
@@ -190,8 +223,12 @@
 	const traitCount = $derived(selected.size);
 
 	// Negative-cost traits give back points, expanding the effective budget.
-	const negativeBonus = $derived(selectedTraits.reduce((sum, t) => sum + Math.min(0, t.cost ?? 0), 0));
-	const positiveSpend = $derived(selectedTraits.reduce((sum, t) => sum + Math.max(0, t.cost ?? 0), 0));
+	const negativeBonus = $derived(
+		selectedTraits.reduce((sum, t) => sum + Math.min(0, t.cost ?? 0), 0)
+	);
+	const positiveSpend = $derived(
+		selectedTraits.reduce((sum, t) => sum + Math.max(0, t.cost ?? 0), 0)
+	);
 	const effectiveBudget = $derived(maxPoints - negativeBonus); // maxPoints + |negativeBonus|
 
 	// Maps blocked trait key → the first selected trait causing the conflict
@@ -231,7 +268,10 @@
 	}
 
 	function formatTag(tag: string): string {
-		return tag.split('_').map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+		return tag
+			.split('_')
+			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+			.join(' ');
 	}
 
 	function costLabel(cost: number | null): string {
@@ -282,23 +322,25 @@
 		{@const tooltip = isConflicted
 			? `Conflicts with ${formatKey(blockedByOpposite.get(trait.key)!)}`
 			: isBlockable
-				? traitCount >= maxTraits ? 'No trait picks remaining' : 'Not enough points remaining'
+				? traitCount >= maxTraits
+					? 'No trait picks remaining'
+					: 'Not enough points remaining'
 				: undefined}
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<svelte:element
 			this={debug ? 'div' : 'button'}
-			class="card relative text-left transition-all
+			class="relative card text-left transition-all
 				{isBase
-				? 'preset-filled opacity-70 cursor-default'
+				? 'cursor-default preset-filled opacity-70'
 				: isSelected && !debug
-				? 'preset-filled-primary-500'
-				: isConflicted && !debug
-					? 'preset-filled opacity-50 cursor-not-allowed ring-2 ring-inset ring-red-500/80'
-					: isBlockable && !debug
-						? 'preset-filled opacity-35 cursor-not-allowed'
-						: debug
-							? 'preset-filled cursor-text select-text'
-							: 'preset-filled card-hover cursor-pointer'}
+					? 'preset-filled-primary-500'
+					: isConflicted && !debug
+						? 'cursor-not-allowed preset-filled opacity-50 ring-2 ring-red-500/80 ring-inset'
+						: isBlockable && !debug
+							? 'cursor-not-allowed preset-filled opacity-35'
+							: debug
+								? 'cursor-text preset-filled select-text'
+								: 'cursor-pointer preset-filled card-hover'}
 				p-3"
 			style="border-top: 2px solid {borderColor}"
 			title={isBase ? 'Always included — not counted toward picks or points' : tooltip}
@@ -306,29 +348,44 @@
 			disabled={!debug && isBlockable}
 		>
 			{#if isBase}
-				<span class="absolute left-1.5 top-1.5 font-mono text-[10px] leading-tight text-amber-400">
+				<span class="absolute top-1.5 left-1.5 font-mono text-[10px] leading-tight text-amber-400">
 					Base
 				</span>
 			{:else}
-				<span class="absolute left-1.5 top-1.5 font-mono text-[10px] leading-tight {costClass(trait.cost, isSelected)}">
+				<span
+					class="absolute top-1.5 left-1.5 font-mono text-[10px] leading-tight {costClass(
+						trait.cost,
+						isSelected
+					)}"
+				>
 					{costLabel(trait.cost)}
 				</span>
 			{/if}
 			{#if trait.required_dlc}
 				<span
-					class="absolute right-1.5 top-1.5 rounded px-1 text-[10px] leading-tight bg-secondary-500 text-secondary-contrast-500"
+					class="absolute top-1.5 right-1.5 rounded bg-secondary-500 px-1 text-[10px] leading-tight text-secondary-contrast-500"
 				>
 					{trait.required_dlc}
 				</span>
 			{/if}
 			<div class="flex flex-col gap-1 pt-4">
-				<span class="text-sm leading-tight font-medium {!isSelected && trait.cost !== null && trait.cost < 0 ? 'text-red-400' : ''}">{formatKey(trait.key)}</span>
+				<span
+					class="text-sm leading-tight font-medium {!isSelected &&
+					trait.cost !== null &&
+					trait.cost < 0
+						? 'text-red-400'
+						: ''}">{formatKey(trait.key)}</span
+				>
 				{#if trait.modifiers.length > 0}
 					<ul class="space-y-0.5">
 						{#each trait.modifiers as mod}
 							<li class="flex items-baseline justify-between gap-1 text-[10px]">
-								<span class="opacity-60 leading-tight">{mod.label ?? mod.key}</span>
-								<span class="font-mono shrink-0 {(mod.value > 0) === mod.positiveIsGood ? 'text-emerald-400' : 'text-red-400'}">{formatModifier(mod)}</span>
+								<span class="leading-tight opacity-60">{mod.label ?? mod.key}</span>
+								<span
+									class="shrink-0 font-mono {mod.value > 0 === mod.positiveIsGood
+										? 'text-emerald-400'
+										: 'text-red-400'}">{formatModifier(mod)}</span
+								>
 							</li>
 						{/each}
 					</ul>
@@ -350,11 +407,13 @@
 				{/if}
 				{#each [trait.tags.filter((t) => !HIDDEN_CARD_TAGS.has(t))] as visibleTags}
 					{#if visibleTags.length > 0}
-						<div class="flex flex-wrap items-center gap-0.5 mt-0.5">
+						<div class="mt-0.5 flex flex-wrap items-center gap-0.5">
 							{#each visibleTags as tag}
 								<span
 									class="rounded px-1 text-[9px] leading-tight
-										{activeTags.has(tag) ? 'opacity-90 bg-primary-500/20 text-primary-300' : 'opacity-50 bg-surface-500/20'}"
+										{activeTags.has(tag)
+										? 'bg-primary-500/20 text-primary-300 opacity-90'
+										: 'bg-surface-500/20 opacity-50'}"
 								>
 									{formatTag(tag)}
 								</span>
@@ -370,66 +429,79 @@
 		class="space-y-6 [@media(min-height:700px)]:sticky [@media(min-height:700px)]:top-0 [@media(min-height:700px)]:z-10 [@media(min-height:700px)]:pb-2"
 		style="background-color: var(--color-surface-50-950)"
 	>
-	<div class="flex items-baseline gap-4">
-		<h1 class="text-2xl font-bold">Species Builder</h1>
-		<nav class="flex gap-3 text-sm opacity-50">
-			<a href="/ethics" class="hover:opacity-100 transition-opacity">Ethics →</a>
-		</nav>
-	</div>
-
-	<!-- Budget + selection summary -->
-	<div class="card preset-filled p-4">
-		<!-- Points & picks dots -->
-		<div class="mb-2 flex items-baseline justify-between text-sm">
-			<span>
-				<strong class={pointsRemaining < 0 ? 'text-red-400' : pointsRemaining === 0 ? 'text-amber-400' : ''}>
-					{pointsRemaining}
-				</strong>
-				/ {maxPoints} trait points remaining
-			</span>
-			{#if traitCount > 0}
-				<button class="btn text-xs preset-filled" onclick={() => (selected = new Set())}>
-					Clear all
-				</button>
-			{/if}
-			<span>
-				<strong>{maxTraits - traitCount}</strong> / {maxTraits} trait picks remaining
-			</span>
-		</div>
-		<div class="flex items-center justify-between">
-			<div class="flex items-center gap-2">
-				{#each Array.from({ length: effectiveBudget }) as _, i}
-					{@const taken = i < Math.min(positiveSpend, effectiveBudget)}
-					<span class="h-4 w-4 rounded-full border-2 transition-all
-						{taken
-						? pointsRemaining < 0 ? 'border-red-500' : 'border-amber-400'
-						: pointsRemaining < 0 ? 'bg-red-500 border-red-500' : 'bg-amber-400 border-amber-400'}"
-					></span>
-				{/each}
-			</div>
-			<div class="flex items-center gap-2">
-				{#each Array.from({ length: maxTraits }) as _, i}
-					<span class="h-4 w-4 rounded-full border-2 transition-all
-						{i < traitCount ? 'border-primary-500' : 'bg-primary-500 border-primary-500'}"
-					></span>
-				{/each}
-			</div>
+		<div class="flex items-baseline gap-4">
+			<h1 class="text-2xl font-bold">Species Builder</h1>
+			<nav class="flex gap-3 text-sm opacity-50">
+				<a href="/ethics" class="transition-opacity hover:opacity-100">Ethics →</a>
+			</nav>
 		</div>
 
-		{#if baseTraitObj || traitCount > 0}
-			<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-				{#if baseTraitObj}
-					{@render traitCard(baseTraitObj, '#d97706', true)}
+		<!-- Budget + selection summary -->
+		<div class="card preset-filled p-4">
+			<!-- Points & picks dots -->
+			<div class="mb-2 flex items-baseline justify-between text-sm">
+				<span>
+					<strong
+						class={pointsRemaining < 0
+							? 'text-red-400'
+							: pointsRemaining === 0
+								? 'text-amber-400'
+								: ''}
+					>
+						{pointsRemaining}
+					</strong>
+					/ {maxPoints} trait points remaining
+				</span>
+				{#if traitCount > 0}
+					<button class="btn preset-filled text-xs" onclick={() => (selected = new Set())}>
+						Clear all
+					</button>
 				{/if}
-				{#each selectedTraits as trait}
-					{@render traitCard(trait, categoryColorMap.get(trait.category) ?? '#888')}
-				{/each}
+				<span>
+					<strong>{maxTraits - traitCount}</strong> / {maxTraits} trait picks remaining
+				</span>
 			</div>
-		{:else}
-			<p class="mt-3 text-sm opacity-50">No traits selected. Pick up to {maxTraits} below.</p>
-		{/if}
+			<div class="flex items-center justify-between">
+				<div class="flex items-center gap-2">
+					{#each Array.from({ length: effectiveBudget }) as _, i}
+						{@const taken = i < Math.min(positiveSpend, effectiveBudget)}
+						<span
+							class="h-4 w-4 rounded-full border-2 transition-all
+						{taken
+								? pointsRemaining < 0
+									? 'border-red-500'
+									: 'border-amber-400'
+								: pointsRemaining < 0
+									? 'border-red-500 bg-red-500'
+									: 'border-amber-400 bg-amber-400'}"
+						></span>
+					{/each}
+				</div>
+				<div class="flex items-center gap-2">
+					{#each Array.from({ length: maxTraits }) as _, i}
+						<span
+							class="h-4 w-4 rounded-full border-2 transition-all
+						{i < traitCount ? 'border-primary-500' : 'border-primary-500 bg-primary-500'}"
+						></span>
+					{/each}
+				</div>
+			</div>
+
+			{#if baseTraitObj || traitCount > 0}
+				<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+					{#if baseTraitObj}
+						{@render traitCard(baseTraitObj, '#d97706', true)}
+					{/if}
+					{#each selectedTraits as trait}
+						{@render traitCard(trait, categoryColorMap.get(trait.category) ?? '#888')}
+					{/each}
+				</div>
+			{:else}
+				<p class="mt-3 text-sm opacity-50">No traits selected. Pick up to {maxTraits} below.</p>
+			{/if}
+		</div>
 	</div>
-	</div><!-- end sticky header -->
+	<!-- end sticky header -->
 
 	<!-- Species selector -->
 	<div class="space-y-2">
@@ -447,7 +519,9 @@
 			<div class="flex flex-wrap gap-1.5">
 				{#each displayedSpeciesClasses as sc}
 					<button
-						class="btn text-sm {selectedClassKey === sc.key ? 'preset-filled-primary-500' : 'preset-filled'}"
+						class="btn text-sm {selectedClassKey === sc.key
+							? 'preset-filled-primary-500'
+							: 'preset-filled'}"
 						onclick={() => selectClass(sc.key)}
 					>
 						{sc.label}
@@ -461,7 +535,9 @@
 	{#if allTagsInView.length > 0}
 		{#snippet tagBtn(tag: string)}
 			<button
-				class="btn text-xs px-2 py-0.5 leading-tight {activeTags.has(tag) ? 'preset-filled-primary-500' : 'preset-filled'}"
+				class="btn px-2 py-0.5 text-xs leading-tight {activeTags.has(tag)
+					? 'preset-filled-primary-500'
+					: 'preset-filled'}"
 				onclick={() => toggleTag(tag)}
 			>
 				{formatTag(tag)}
@@ -479,7 +555,7 @@
 					<span class="w-16 shrink-0 text-xs opacity-40">Species</span>
 					{#if speciesLeadTag}{@render tagBtn(speciesLeadTag)}{/if}
 					{#if speciesLeadTag && speciesRestTags.length > 0}
-						<span class="select-none text-xs opacity-20">|</span>
+						<span class="text-xs opacity-20 select-none">|</span>
 					{/if}
 					{#each speciesRestTags as tag}{@render tagBtn(tag)}{/each}
 				</div>
@@ -493,7 +569,10 @@
 			{#if activeTags.size > 0}
 				<div class="flex items-center gap-1">
 					<span class="w-16 shrink-0"></span>
-					<button class="btn text-xs preset-filled opacity-60" onclick={() => (activeTags = new Set())}>
+					<button
+						class="btn preset-filled text-xs opacity-60"
+						onclick={() => (activeTags = new Set())}
+					>
 						Clear all
 					</button>
 				</div>
@@ -528,7 +607,9 @@
 					{#if cat.key === 'phenotype' && !selectedClassKey}
 						<div class="flex gap-1">
 							<button
-								class="btn text-xs {!groupPhenotype ? 'preset-filled-primary-500' : 'preset-filled'}"
+								class="btn text-xs {!groupPhenotype
+									? 'preset-filled-primary-500'
+									: 'preset-filled'}"
 								onclick={() => (groupPhenotype = false)}
 							>
 								Flat
