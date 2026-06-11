@@ -22,6 +22,8 @@ import {
 	isTerraformable,
 	depositChips,
 	megaLabel,
+	relicResourceLabel,
+	cooldownLabel,
 	dlcBadge,
 	groupByDlc,
 	ALL_TYPES,
@@ -261,6 +263,42 @@ describe('megaLabel', () => {
 		expect(megaLabel({ type: 'ring_world_ruined', label: null, count: 4 })).toBe(
 			'ring_world_ruined ×4'
 		);
+	});
+});
+
+describe('relicResourceLabel', () => {
+	it('formats and title-cases the resources', () => {
+		expect(relicResourceLabel([{ resource: 'unity', amount: 3000, scales: false }])).toBe(
+			'3000 Unity'
+		);
+	});
+	it('joins multiple and notes when one scales (Cybrex War Forge cost)', () => {
+		expect(
+			relicResourceLabel([
+				{ resource: 'unity', amount: 3000, scales: false },
+				{ resource: 'minerals', amount: 2000, scales: true }
+			])
+		).toBe('3000 Unity, 2000 Minerals (grows with each use)');
+	});
+	it('formats a scaling payout (War Forge produces 1000 alloys, +1000/use)', () => {
+		expect(relicResourceLabel([{ resource: 'alloys', amount: 1000, scales: true }])).toBe(
+			'1000 Alloys (grows with each use)'
+		);
+	});
+	it('is empty for no resources', () => {
+		expect(relicResourceLabel([])).toBe('');
+	});
+});
+
+describe('cooldownLabel', () => {
+	it('converts days to Stellaris years (360-day year)', () => {
+		expect(cooldownLabel(3600)).toBe('10 years');
+		expect(cooldownLabel(900)).toBe('2.5 years');
+		expect(cooldownLabel(360)).toBe('1 year');
+	});
+	it('is null when there is no cooldown', () => {
+		expect(cooldownLabel(null)).toBeNull();
+		expect(cooldownLabel(0)).toBeNull();
 	});
 });
 

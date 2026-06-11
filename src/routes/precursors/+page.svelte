@@ -16,6 +16,8 @@
 		isTerraformable,
 		depositChips,
 		megaLabel,
+		relicResourceLabel,
+		cooldownLabel,
 		dlcBadge,
 		groupByDlc
 	} from '$lib/precursors';
@@ -229,11 +231,42 @@
 											{/each}
 										</ul>
 									{/if}
-									{#if p.relic.activeEffect}
-										<p class="mt-1.5 text-xs opacity-55">
-											<span class="opacity-40">Active:</span>
-											{p.relic.activeEffect}
-										</p>
+									{#if p.relic.passiveText}
+										<p class="mt-0.5 text-sm opacity-70">{p.relic.passiveText}</p>
+									{/if}
+									{#if p.relic.activeEffect || p.relic.produces.length || p.relic.costs.length || p.relic.triumphCooldownDays}
+										{@const cd = cooldownLabel(p.relic.triumphCooldownDays)}
+										<div class="mt-2">
+											<div
+												class="mb-0.5 text-[10px] font-medium tracking-wide uppercase opacity-40"
+											>
+												Triumph (active)
+											</div>
+											{#if p.relic.activeEffect}
+												<p class="text-sm opacity-70">{p.relic.activeEffect}</p>
+											{/if}
+											{#if p.relic.produces.length}
+												<p class="text-sm opacity-70">
+													Produces <span class="text-emerald-400"
+														>{relicResourceLabel(p.relic.produces)}</span
+													>
+												</p>
+											{/if}
+											{#if p.relic.costs.length || cd}
+												<div class="mt-0.5 flex flex-wrap gap-x-3 text-[11px] opacity-50">
+													{#if p.relic.costs.length}
+														<span
+															>Cost: <span class="opacity-80"
+																>{relicResourceLabel(p.relic.costs)}</span
+															></span
+														>
+													{/if}
+													{#if cd}
+														<span>Cooldown: <span class="opacity-80">{cd}</span></span>
+													{/if}
+												</div>
+											{/if}
+										</div>
 									{/if}
 								</div>
 							{/if}

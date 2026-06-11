@@ -6,6 +6,7 @@ import type {
 	Precursor,
 	PrecursorReward,
 	PrecursorMegastructure,
+	RelicResource,
 	DepositResource,
 	PrecursorPlanet
 } from '$lib/server/db';
@@ -155,6 +156,28 @@ export const VARIANT_LABELS: Record<string, string> = {
 
 export function variantLabel(r: PrecursorReward): string {
 	return VARIANT_LABELS[r.variant] ?? r.name ?? r.variant;
+}
+
+// ── Relic triumph (active ability) ─────────────────────────────────────────
+const titleCase = (s: string): string =>
+	s
+		.split('_')
+		.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+		.join(' ');
+
+// Format a list of relic resources (cost or produces) → "3000 Unity, 2000 Minerals"
+// (+ a note if any of them grows with use).
+export function relicResourceLabel(resources: RelicResource[]): string {
+	if (!resources.length) return '';
+	const base = resources.map((r) => `${r.amount} ${titleCase(r.resource)}`).join(', ');
+	return resources.some((r) => r.scales) ? `${base} (grows with each use)` : base;
+}
+
+// Triumph cooldown in days → years (Stellaris year = 360 days).
+export function cooldownLabel(days: number | null): string | null {
+	if (!days) return null;
+	const years = +(days / 360).toFixed(1);
+	return `${years} ${years === 1 ? 'year' : 'years'}`;
 }
 
 // ── Deposits / planets ─────────────────────────────────────────────────────

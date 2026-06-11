@@ -319,14 +319,24 @@ export interface RelicModifier extends Modifier {
 	condition: string | null; // null = always applies; else e.g. "is_machine_empire = yes"
 }
 
+export interface RelicResource {
+	resource: string;
+	amount: number;
+	scales: boolean; // grows with each use (a multiplier, e.g. Cybrex cybrex_count)
+}
+
 export interface PrecursorRelic {
 	relicKey: string;
 	name: string | null;
 	portrait: string | null;
 	score: number | null;
 	description: string | null;
-	activeEffect: string | null;
-	passives: RelicModifier[]; // triggered_country_modifier effects
+	passiveText: string | null; // non-numeric passive (e.g. Cybrex Warform armies)
+	activeEffect: string | null; // triumph (active) ability text
+	triumphCooldownDays: number | null;
+	passives: RelicModifier[]; // triggered_country_modifier numeric effects
+	costs: RelicResource[]; // triumph activation cost (resources spent)
+	produces: RelicResource[]; // triumph payout (resources gained)
 }
 
 export interface PrecursorReward {
@@ -412,7 +422,8 @@ export function loadPrecursors(): Precursor[] {
 	// ── Relics (0..1 per precursor) + their passive modifiers ──
 	const relicRows = d
 		.prepare(
-			`SELECT precursor_key, relic_key, name, portrait, score, description, active_effect
+			`SELECT precursor_key, relic_key, name, portrait, score, description,
+			        passive_text, active_effect, triumph_cooldown_days
 			 FROM precursor_relic`
 		)
 		.all() as Array<{
@@ -422,7 +433,9 @@ export function loadPrecursors(): Precursor[] {
 		portrait: string | null;
 		score: number | null;
 		description: string | null;
+		passive_text: string | null;
 		active_effect: string | null;
+		triumph_cooldown_days: number | null;
 	}>;
 
 	const relicModRows = d
@@ -454,6 +467,30 @@ export function loadPrecursors(): Precursor[] {
 		});
 	}
 
+	const resourceRows = d
+		.prepare(
+			`SELECT relic_key, kind, resource, amount, scales
+			 FROM precursor_relic_resource ORDER BY relic_key, kind, sort_order`
+		)
+		.all() as Array<{
+		relic_key: string;
+		kind: string;
+		resource: string;
+		amount: number;
+		scales: number;
+	}>;
+	const costsByRelic = new Map<string, RelicResource[]>();
+	const producesByRelic = new Map<string, RelicResource[]>();
+	for (const r of resourceRows) {
+		const target = r.kind === 'produces' ? producesByRelic : costsByRelic;
+		if (!target.has(r.relic_key)) target.set(r.relic_key, []);
+		target.get(r.relic_key)!.push({
+			resource: r.resource,
+			amount: r.amount,
+			scales: r.scales === 1
+		});
+	}
+
 	const relicByPrecursor = new Map<string, PrecursorRelic>();
 	for (const r of relicRows) {
 		relicByPrecursor.set(r.precursor_key, {
@@ -462,8 +499,12 @@ export function loadPrecursors(): Precursor[] {
 			portrait: r.portrait,
 			score: r.score,
 			description: r.description,
+			passiveText: r.passive_text,
 			activeEffect: r.active_effect,
-			passives: passivesByRelic.get(r.relic_key) ?? []
+			triumphCooldownDays: r.triumph_cooldown_days,
+			passives: passivesByRelic.get(r.relic_key) ?? [],
+			costs: costsByRelic.get(r.relic_key) ?? [],
+			produces: producesByRelic.get(r.relic_key) ?? []
 		});
 	}
 

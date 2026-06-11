@@ -66,7 +66,7 @@ All precursor/deposit tables are DROP+CREATE each extraction run.
 
 ## `src/lib/server/db.ts`
 
-Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
+Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `RelicCost`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
 
 Key functions:
 - `loadTraits()` — main trait query + separate modifier query, merged by key. Filters `initial=1 AND hidden=0`.
@@ -155,8 +155,18 @@ one-shot default.)
 `Cosmic Storms`) in a `lg:grid-cols-2` via `groupByDlc()` — base game first, then
 DLCs in first-appearance order, **precursors sorted alphabetically by name within
 each group** (deterministic; covered by tests). Each card shows, always-visible:
-Permanent effect, Relic (name + passive modifiers w/ condition note +
-active-effect text), Building(s), and the **Home system(s)**.
+Permanent effect, Relic, Building(s), and the **Home system(s)**.
+
+**Relic block** shows the full picture: the **passive** (numeric modifiers w/
+condition note + `passiveText` for non-numeric ones like the Cybrex Warform
+armies) and a **Triumph (active)** sub-block — `activeEffect` text, `produces`
+(resources gained), activation `costs`, and cooldown. `relicResourceLabel(list)`
+formats both `costs` and `produces` (e.g. "3000 Unity, 2000 Minerals (grows with
+each use)", "1000 Alloys (grows with each use)"); `cooldownLabel(days)` →
+Stellaris years. The produced amount comes from the script (`add_resource`), **not**
+the loc tooltip, which can be stale (the War Forge loc wrongly says 5000 alloys;
+the real payout is 1000, +1000/use). Relics with only a numeric passive (Cybrex)
+used to look empty — now they don't.
 
 **Empire-type filter.** A toolbar highlights the effects that apply to a chosen
 empire type. `empireFilter: 'planner' | EmpireType`; `'planner'` is the default
@@ -225,7 +235,8 @@ type-only from `$lib/server/db` (erased at runtime, so the file is client-safe).
 [`src/lib/precursors.test.ts`](src/lib/precursors.test.ts) covers the pure
 helpers — the empire-type truth table is the high-value part (e.g. Baol's
 AND/OR `potential` branches → which empire types each relic passive applies to;
-Vultaum/Inetian reward variants). Tests import the module **relatively**
+Vultaum/Inetian reward variants; plus formatting helpers like `relicCostLabel`,
+`cooldownLabel`, `groupByDlc`, `megaLabel`). Tests import the module **relatively**
 (`./precursors`) and build fixtures from the `$lib/server/db` types, so they need
 no `$lib` alias or DB at runtime. Pure presentation logic only — no component
 rendering, no DB. Add cases here when extending `precursors.ts`.
