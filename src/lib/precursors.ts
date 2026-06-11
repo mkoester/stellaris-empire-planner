@@ -159,10 +159,14 @@ export function mergeRelicPassives(passives: RelicModifier[]): MergedPassive[] {
 	return order.map((id) => byId.get(id)!);
 }
 
+// `_add` modifiers that are really fractional strengths shown as a percentage
+// (e.g. the Tempest Invocator's storm repulsion: 1.0 = +100%).
+const PERCENT_ADD_MODIFIERS = new Set(['country_storm_repulsion_influence_add']);
+
 // ── Modifier formatting ────────────────────────────────────────────────────
 export function formatValue(mod: Modifier): string {
 	const sign = mod.value > 0 ? '+' : '';
-	if (mod.key.endsWith('_add')) {
+	if (mod.key.endsWith('_add') && !PERCENT_ADD_MODIFIERS.has(mod.key)) {
 		const n = Number.isInteger(mod.value) ? mod.value : parseFloat(mod.value.toFixed(2));
 		return `${sign}${n}`;
 	}

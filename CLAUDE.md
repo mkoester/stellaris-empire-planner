@@ -226,9 +226,11 @@ These planet-class sets are **hardcoded** in the component (like the home page's
 phenotype-tag sets) — not data-driven. Extend if a precursor world isn't shown.
 
 **Formatting helpers** mirror the ethics page: `formatValue` (sign; `_add` →
-integer, else `×100%`), `valueColor` (`positiveIsGood`), `modLabel` (strips
-`[...]` tags). Plus `resourceLabel` (deposit yields), `conditionLabel` (relic
-`potential` → short note), `variantLabel` (reward variant display name).
+integer, else `×100%`; except `PERCENT_ADD_MODIFIERS` like
+`country_storm_repulsion_influence_add` — a fractional `_add` shown as % so the
+Tempest Invocator's 1.0 reads "+100%"), `valueColor` (`positiveIsGood`), `modLabel`
+(strips `[...]` tags). Plus `resourceLabel` (deposit yields), `conditionLabel`
+(relic `potential` → short note), `variantLabel` (reward variant display name).
 
 **Nav chain:** Species Builder → Ethics → Precursors (footer/header links).
 
