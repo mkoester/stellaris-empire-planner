@@ -234,7 +234,7 @@
 									{#if p.relic.passiveText}
 										<p class="mt-0.5 text-sm opacity-70">{p.relic.passiveText}</p>
 									{/if}
-									{#if p.relic.activeEffect || p.relic.produces.length || p.relic.costs.length || p.relic.triumphCooldownDays}
+									{#if p.relic.activeEffect || p.relic.activeModifiers.length || p.relic.produces.length || p.relic.costs.length || p.relic.triumphCooldownDays}
 										{@const cd = cooldownLabel(p.relic.triumphCooldownDays)}
 										<div class="mt-2">
 											<div
@@ -244,6 +244,21 @@
 											</div>
 											{#if p.relic.activeEffect}
 												<p class="text-sm opacity-70">{p.relic.activeEffect}</p>
+											{/if}
+											{#if p.relic.activeModifiers.length}
+												<ul class="space-y-0.5">
+													{#each p.relic.activeModifiers as mod}
+														<li class="flex items-baseline justify-between gap-3 text-sm">
+															<span class="opacity-70">{modLabel(mod)}</span>
+															<span class="shrink-0 font-mono {valueColor(mod)}"
+																>{formatValue(mod)}</span
+															>
+														</li>
+													{/each}
+												</ul>
+												{#if p.relic.activeDetail}<p class="mt-0.5 text-[11px] italic opacity-50">
+														{p.relic.activeDetail}
+													</p>{/if}
 											{/if}
 											{#if p.relic.produces.length}
 												<p class="text-sm opacity-70">

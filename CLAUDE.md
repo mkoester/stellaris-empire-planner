@@ -66,7 +66,7 @@ All precursor/deposit tables are DROP+CREATE each extraction run.
 
 ## `src/lib/server/db.ts`
 
-Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `RelicCost`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
+Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `RelicResource`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
 
 Key functions:
 - `loadTraits()` — main trait query + separate modifier query, merged by key. Filters `initial=1 AND hidden=0`.
@@ -159,7 +159,10 @@ Permanent effect, Relic, Building(s), and the **Home system(s)**.
 
 **Relic block** shows the full picture: the **passive** (numeric modifiers w/
 condition note + `passiveText` for non-numeric ones like the Cybrex Warform
-armies) and a **Triumph (active)** sub-block — `activeEffect` text, `produces`
+armies) and a **Triumph (active)** sub-block — `activeEffect` text,
+`activeModifiers` (temporary modifiers the active grants, e.g. the Reality
+Perforator's four +40% combat buffs) + `activeDetail` (how they're granted, e.g.
+"One at random for 2–5 years, or all of them for 1 year"), `produces`
 (resources gained), activation `costs`, and cooldown. `relicResourceLabel(list)`
 formats both `costs` and `produces` (e.g. "3000 Unity, 2000 Minerals (grows with
 each use)", "1000 Alloys (grows with each use)"); `cooldownLabel(days)` →

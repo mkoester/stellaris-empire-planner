@@ -333,8 +333,10 @@ export interface PrecursorRelic {
 	description: string | null;
 	passiveText: string | null; // non-numeric passive (e.g. Cybrex Warform armies)
 	activeEffect: string | null; // triumph (active) ability text
+	activeDetail: string | null; // how active modifiers are granted (e.g. "one at random for 2–5 years…")
 	triumphCooldownDays: number | null;
 	passives: RelicModifier[]; // triggered_country_modifier numeric effects
+	activeModifiers: Modifier[]; // temporary modifiers the triumph can grant (e.g. Reality Perforator buffs)
 	costs: RelicResource[]; // triumph activation cost (resources spent)
 	produces: RelicResource[]; // triumph payout (resources gained)
 }
@@ -423,7 +425,7 @@ export function loadPrecursors(): Precursor[] {
 	const relicRows = d
 		.prepare(
 			`SELECT precursor_key, relic_key, name, portrait, score, description,
-			        passive_text, active_effect, triumph_cooldown_days
+			        passive_text, active_effect, active_detail, triumph_cooldown_days
 			 FROM precursor_relic`
 		)
 		.all() as Array<{
@@ -435,6 +437,7 @@ export function loadPrecursors(): Precursor[] {
 		description: string | null;
 		passive_text: string | null;
 		active_effect: string | null;
+		active_detail: string | null;
 		triumph_cooldown_days: number | null;
 	}>;
 
@@ -491,6 +494,31 @@ export function loadPrecursors(): Precursor[] {
 		});
 	}
 
+	const activeModRows = d
+		.prepare(
+			`SELECT am.relic_key, am.modifier_key, am.modifier_value, ml.label, ml.positive_is_good
+			 FROM precursor_relic_active_modifier am
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = am.modifier_key
+			 ORDER BY am.relic_key, am.sort_order`
+		)
+		.all() as Array<{
+		relic_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+	const activeModsByRelic = new Map<string, Modifier[]>();
+	for (const r of activeModRows) {
+		if (!activeModsByRelic.has(r.relic_key)) activeModsByRelic.set(r.relic_key, []);
+		activeModsByRelic.get(r.relic_key)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+
 	const relicByPrecursor = new Map<string, PrecursorRelic>();
 	for (const r of relicRows) {
 		relicByPrecursor.set(r.precursor_key, {
@@ -501,8 +529,10 @@ export function loadPrecursors(): Precursor[] {
 			description: r.description,
 			passiveText: r.passive_text,
 			activeEffect: r.active_effect,
+			activeDetail: r.active_detail,
 			triumphCooldownDays: r.triumph_cooldown_days,
 			passives: passivesByRelic.get(r.relic_key) ?? [],
+			activeModifiers: activeModsByRelic.get(r.relic_key) ?? [],
 			costs: costsByRelic.get(r.relic_key) ?? [],
 			produces: producesByRelic.get(r.relic_key) ?? []
 		});
