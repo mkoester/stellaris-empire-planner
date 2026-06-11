@@ -231,9 +231,19 @@
 											{/each}
 										</ul>
 									{/if}
-									{#if p.relic.passiveText}
-										<p class="mt-0.5 text-sm opacity-70">{p.relic.passiveText}</p>
-									{/if}
+									{#each p.relic.passiveTexts as pt}
+										{@const cond = conditionLabel(pt.condition)}
+										{@const applies = activeType
+											? conditionApplies(pt.condition, activeType)
+											: null}
+										<p class="mt-0.5 text-sm {applies === false ? 'opacity-30' : 'opacity-70'}">
+											{pt.text}
+											{#if cond}<span
+													class="text-[10px] {applies === true ? 'text-primary-400' : 'opacity-40'}"
+													>({cond})</span
+												>{/if}
+										</p>
+									{/each}
 									{#if p.relic.activeEffect || p.relic.activeModifiers.length || p.relic.produces.length || p.relic.costs.length || p.relic.triumphCooldownDays}
 										{@const cd = cooldownLabel(p.relic.triumphCooldownDays)}
 										<div class="mt-2">

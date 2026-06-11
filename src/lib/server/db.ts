@@ -325,13 +325,18 @@ export interface RelicResource {
 	scales: boolean; // grows with each use (a multiplier, e.g. Cybrex cybrex_count)
 }
 
+export interface RelicPassiveText {
+	text: string;
+	condition: string | null; // null = always; else e.g. "is_wilderness_empire = yes"
+}
+
 export interface PrecursorRelic {
 	relicKey: string;
 	name: string | null;
 	portrait: string | null;
 	score: number | null;
 	description: string | null;
-	passiveText: string | null; // non-numeric passive (e.g. Cybrex Warform armies)
+	passiveTexts: RelicPassiveText[]; // non-numeric passives (e.g. Cybrex Warform armies), w/ condition
 	activeEffect: string | null; // triumph (active) ability text
 	activeDetail: string | null; // how active modifiers are granted (e.g. "one at random for 2–5 years…")
 	triumphCooldownDays: number | null;
@@ -425,7 +430,7 @@ export function loadPrecursors(): Precursor[] {
 	const relicRows = d
 		.prepare(
 			`SELECT precursor_key, relic_key, name, portrait, score, description,
-			        passive_text, active_effect, active_detail, triumph_cooldown_days
+			        active_effect, active_detail, triumph_cooldown_days
 			 FROM precursor_relic`
 		)
 		.all() as Array<{
@@ -435,11 +440,22 @@ export function loadPrecursors(): Precursor[] {
 		portrait: string | null;
 		score: number | null;
 		description: string | null;
-		passive_text: string | null;
 		active_effect: string | null;
 		active_detail: string | null;
 		triumph_cooldown_days: number | null;
 	}>;
+
+	const passiveTextRows = d
+		.prepare(
+			`SELECT relic_key, text, condition
+			 FROM precursor_relic_passive_text ORDER BY relic_key, sort_order`
+		)
+		.all() as Array<{ relic_key: string; text: string; condition: string | null }>;
+	const passiveTextsByRelic = new Map<string, RelicPassiveText[]>();
+	for (const r of passiveTextRows) {
+		if (!passiveTextsByRelic.has(r.relic_key)) passiveTextsByRelic.set(r.relic_key, []);
+		passiveTextsByRelic.get(r.relic_key)!.push({ text: r.text, condition: r.condition });
+	}
 
 	const relicModRows = d
 		.prepare(
@@ -527,7 +543,7 @@ export function loadPrecursors(): Precursor[] {
 			portrait: r.portrait,
 			score: r.score,
 			description: r.description,
-			passiveText: r.passive_text,
+			passiveTexts: passiveTextsByRelic.get(r.relic_key) ?? [],
 			activeEffect: r.active_effect,
 			activeDetail: r.active_detail,
 			triumphCooldownDays: r.triumph_cooldown_days,

@@ -66,7 +66,7 @@ All precursor/deposit tables are DROP+CREATE each extraction run.
 
 ## `src/lib/server/db.ts`
 
-Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `RelicResource`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
+Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `RelicResource`, `RelicPassiveText`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
 
 Key functions:
 - `loadTraits()` — main trait query + separate modifier query, merged by key. Filters `initial=1 AND hidden=0`.
@@ -157,9 +157,11 @@ DLCs in first-appearance order, **precursors sorted alphabetically by name withi
 each group** (deterministic; covered by tests). Each card shows, always-visible:
 Permanent effect, Relic, Building(s), and the **Home system(s)**.
 
-**Relic block** shows the full picture: the **passive** (numeric modifiers w/
-condition note + `passiveText` for non-numeric ones like the Cybrex Warform
-armies) and a **Triumph (active)** sub-block — `activeEffect` text,
+**Relic block** shows the full picture: the **passive** (numeric modifiers +
+`passiveTexts` for non-numeric ones like the Cybrex Warform armies — both carry a
+`condition`, shown as a `(wilderness)` note and dimmed/highlighted by the empire
+filter, e.g. the Cryo Core's wilderness-only district passive) and a **Triumph
+(active)** sub-block — `activeEffect` text,
 `activeModifiers` (temporary modifiers the active grants, e.g. the Reality
 Perforator's four +40% combat buffs) + `activeDetail` (how they're granted, e.g.
 "One at random for 2–5 years, or all of them for 1 year"), `produces`
