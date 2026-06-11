@@ -161,7 +161,18 @@ Permanent effect, Relic, Building(s), and the **Home system(s)**.
 `passiveTexts` for non-numeric ones like the Cybrex Warform armies — both carry a
 `condition`, shown as a `(wilderness)` note and dimmed/highlighted by the empire
 filter, e.g. the Cryo Core's wilderness-only district passive) and a **Triumph
-(active)** sub-block — `activeEffect` text,
+(active)** sub-block (below).
+
+**Passive merging (planner-only).** Numeric passives are run through
+`mergeRelicPassives()` before display: rows with the **same modifier+value** across
+condition branches collapse into one whose `types` is the union of the branches'
+empire types (`typesLabel(types)` → the `(…)` note, null when the union spans all
+four types = effectively unconditional). E.g. the Baol grants +10% pop growth via a
+non-machine branch *and* a machine/wilderness branch → shown once with no qualifier,
+while its +10% society research stays `(machine / wilderness)`. The extraction keeps
+both raw branches; this collapse is display-only.
+
+The **Triumph (active)** sub-block — `activeEffect` text,
 `activeModifiers` (temporary modifiers the active grants, e.g. the Reality
 Perforator's four +40% combat buffs) + `activeDetail` (how they're granted, e.g.
 "One at random for 2–5 years, or all of them for 1 year"), `produces`

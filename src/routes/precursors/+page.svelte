@@ -7,6 +7,8 @@
 		conditionApplies,
 		variantApplies,
 		conditionLabel,
+		typesLabel,
+		mergeRelicPassives,
 		formatValue,
 		valueColor,
 		modLabel,
@@ -205,11 +207,9 @@
 									</div>
 									{#if p.relic.passives.length}
 										<ul class="space-y-0.5">
-											{#each p.relic.passives as passive}
-												{@const cond = conditionLabel(passive.condition)}
-												{@const applies = activeType
-													? conditionApplies(passive.condition, activeType)
-													: null}
+											{#each mergeRelicPassives(p.relic.passives) as passive}
+												{@const cond = typesLabel(passive.types)}
+												{@const applies = activeType ? passive.types.includes(activeType) : null}
 												<li
 													class="flex items-baseline justify-between gap-3 text-sm {applies ===
 													false

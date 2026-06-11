@@ -3,6 +3,7 @@ import type {
 	Modifier,
 	Precursor,
 	PrecursorReward,
+	RelicModifier,
 	DepositResource,
 	PlanetDeposit,
 	PrecursorPlanet
@@ -11,6 +12,8 @@ import {
 	conditionApplies,
 	applicableTypes,
 	conditionLabel,
+	typesLabel,
+	mergeRelicPassives,
 	variantApplies,
 	formatValue,
 	valueColor,
@@ -115,6 +118,52 @@ describe('variantApplies', () => {
 	});
 	it('unknown variant falls back to applies-to-all', () => {
 		expect(apply('something_new')).toEqual(ALL_TYPES);
+	});
+});
+
+describe('mergeRelicPassives', () => {
+	// The Baol relic: +10% pop growth via a non-machine/non-wilderness branch AND a
+	// machine/wilderness branch; +10% society research only on the latter.
+	const rm = (key: string, value: number, condition: string | null): RelicModifier => ({
+		key,
+		value,
+		label: key,
+		positiveIsGood: true,
+		condition
+	});
+	const baol: RelicModifier[] = [
+		rm('logistic_growth_mult', 0.1, 'is_machine_empire = no, is_wilderness_empire = no'),
+		rm('logistic_growth_mult', 0.1, '(is_machine_empire = yes OR is_wilderness_empire = yes)'),
+		rm(
+			'country_society_research_produces_mult',
+			0.1,
+			'(is_machine_empire = yes OR is_wilderness_empire = yes)'
+		)
+	];
+
+	it('merges same modifier+value across branches and unions their types', () => {
+		const merged = mergeRelicPassives(baol);
+		expect(merged.map((m) => m.key)).toEqual([
+			'logistic_growth_mult',
+			'country_society_research_produces_mult'
+		]);
+		// pop growth now spans every type → effectively unconditional (no note)
+		expect(typesLabel(merged[0].types)).toBeNull();
+		// society research stays machine/wilderness only
+		expect(typesLabel(merged[1].types)).toBe('machine / wilderness');
+	});
+
+	it('does not merge a modifier that appears with different values', () => {
+		const merged = mergeRelicPassives([rm('x', 0.1, null), rm('x', 0.2, null)]);
+		expect(merged).toHaveLength(2);
+	});
+});
+
+describe('typesLabel', () => {
+	it('is null for the full set, "non-X" for all-but-one, else a list', () => {
+		expect(typesLabel(['regular', 'machine', 'hive', 'wilderness'])).toBeNull();
+		expect(typesLabel(['regular', 'machine', 'hive'])).toBe('non-wilderness');
+		expect(typesLabel(['machine', 'wilderness'])).toBe('machine / wilderness');
 	});
 });
 

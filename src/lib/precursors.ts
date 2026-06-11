@@ -6,6 +6,7 @@ import type {
 	Precursor,
 	PrecursorReward,
 	PrecursorMegastructure,
+	RelicModifier,
 	RelicResource,
 	DepositResource,
 	PrecursorPlanet
@@ -106,16 +107,55 @@ export function applicableTypes(condition: string | null): EmpireType[] {
 	return ALL_TYPES.filter((t) => conditionApplies(condition, t));
 }
 
-// Relic passive condition → short human note ("regular / hive", "non-wilderness",
-// …). null when it applies to every type.
-export function conditionLabel(condition: string | null): string | null {
-	if (!condition) return null;
-	const apply = applicableTypes(condition);
-	if (apply.length >= ALL_TYPES.length) return null;
-	if (apply.length === ALL_TYPES.length - 1) {
-		return `non-${ALL_TYPES.find((t) => !apply.includes(t))}`;
+// A set of empire types → short human note ("regular / hive", "non-wilderness", …).
+// null when it's the full set (effectively unconditional).
+export function typesLabel(types: EmpireType[]): string | null {
+	if (types.length >= ALL_TYPES.length) return null;
+	if (types.length === ALL_TYPES.length - 1) {
+		return `non-${ALL_TYPES.find((t) => !types.includes(t))}`;
 	}
-	return apply.join(' / ');
+	return types.join(' / ');
+}
+
+// Relic passive condition → short human note. null when it applies to every type.
+export function conditionLabel(condition: string | null): string | null {
+	return condition ? typesLabel(applicableTypes(condition)) : null;
+}
+
+// A relic passive merged across condition branches: same modifier+value collapsed
+// into one row whose `types` is the union of the branches' empire types. When that
+// union is the full set the passive is effectively unconditional (typesLabel → null).
+export interface MergedPassive {
+	key: string;
+	value: number;
+	label: string | null;
+	positiveIsGood: boolean;
+	types: EmpireType[];
+}
+
+// Merge a relic's passive modifiers: dedupe rows that are the *same* modifier+value
+// (e.g. the Baol's +10% pop growth granted via a non-machine branch *and* a
+// machine/wilderness branch → one unconditional row), unioning their empire types.
+export function mergeRelicPassives(passives: RelicModifier[]): MergedPassive[] {
+	const byId = new Map<string, MergedPassive>();
+	const order: string[] = [];
+	for (const p of passives) {
+		const id = `${p.key}|${p.value}`;
+		if (!byId.has(id)) {
+			byId.set(id, {
+				key: p.key,
+				value: p.value,
+				label: p.label,
+				positiveIsGood: p.positiveIsGood,
+				types: []
+			});
+			order.push(id);
+		}
+		const merged = byId.get(id)!;
+		const apply = applicableTypes(p.condition);
+		merged.types = ALL_TYPES.filter((t) => merged.types.includes(t) || apply.includes(t));
+	}
+	return order.map((id) => byId.get(id)!);
 }
 
 // ── Modifier formatting ────────────────────────────────────────────────────
