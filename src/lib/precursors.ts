@@ -11,7 +11,9 @@ import type {
 	RelicResource,
 	DepositResource,
 	PrecursorPlanet,
-	PrecursorHomeworldReward
+	PrecursorHomeworldReward,
+	BuildingResource,
+	BuildingModifier
 } from '$lib/server/db';
 
 // ── Grouping / ordering ──────────────────────────────────────────────────────
@@ -311,6 +313,34 @@ export function homeworldRewardLabel(r: PrecursorHomeworldReward): string {
 	return r.multiplier === null
 		? `${name} (${range})`
 		: `${r.multiplier}× monthly ${name} output (${range})`;
+}
+
+// ── Precursor buildings ─────────────────────────────────────────────────────
+// Resource key → display name: strips the `sr_` strategic-resource prefix and
+// title-cases (sr_zro → "Zro", minerals → "Minerals").
+const resourceName = (key: string): string => titleCase(key.replace(/^sr_/, ''));
+
+// A building cost/upkeep/produces row → "250 Zro" ("produces" gets a leading +).
+export function buildingResourceLabel(r: BuildingResource): string {
+	return `${r.kind === 'produces' ? '+' : ''}${r.amount} ${resourceName(r.resource)}`;
+}
+
+// A building job modifier (job_<x>_add) → "+400 Biologist".
+export function buildingJobLabel(mod: BuildingModifier): string {
+	const job = titleCase(mod.key.replace(/^job_/, '').replace(/_add$/, ''));
+	return `${mod.value > 0 ? '+' : ''}${mod.value} ${job}`;
+}
+
+// A building's how-many-you-can-build restriction (empire- and/or planet-capped),
+// e.g. "1 per empire", "1 per planet", or null when uncapped.
+export function buildingLimitLabel(b: {
+	empireLimit: number | null;
+	planetLimit: number | null;
+}): string | null {
+	const parts: string[] = [];
+	if (b.empireLimit != null) parts.push(`${b.empireLimit} per empire`);
+	if (b.planetLimit != null) parts.push(`${b.planetLimit} per planet`);
+	return parts.length ? parts.join(', ') : null;
 }
 
 // The triumph's temporary modifiers, grouped by their (consecutive) `groupLabel`.

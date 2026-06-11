@@ -12,6 +12,9 @@
 		mergeRewardModifiers,
 		rewardQualifier,
 		homeworldRewardLabel,
+		buildingResourceLabel,
+		buildingJobLabel,
+		buildingLimitLabel,
 		formatValue,
 		valueColor,
 		modLabel,
@@ -307,22 +310,81 @@
 								</div>
 							{/if}
 
-							<!-- Buildings -->
+							<!-- Buildings: effects (resources, jobs, modifiers) + build restrictions -->
 							{#if p.buildings.length}
 								<div>
 									<div
 										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
 									>
-										{@render hrule()}<span>Building</span>{@render hrule()}
+										{@render hrule()}<span>Building{p.buildings.length === 1 ? '' : 's'}</span
+										>{@render hrule()}
 									</div>
-									<ul class="space-y-0.5 text-sm">
+									<div class="space-y-3">
 										{#each p.buildings as b (b.buildingKey)}
-											<li class="opacity-70">
-												{b.name ?? b.buildingKey}
-												{#if b.scope}<span class="text-[10px] opacity-40"> ({b.scope})</span>{/if}
-											</li>
+											{@const cost = b.resources.filter((r) => r.kind === 'cost')}
+											{@const upkeep = b.resources.filter((r) => r.kind === 'upkeep')}
+											{@const produces = b.resources.filter((r) => r.kind === 'produces')}
+											{@const jobs = b.modifiers.filter((m) => m.buildingScope === 'job')}
+											{@const effects = b.modifiers.filter((m) => m.buildingScope !== 'job')}
+											{@const limit = buildingLimitLabel(b)}
+											<div class="border-surface-400-500/20 rounded border p-2">
+												<div class="text-sm font-medium">{b.name ?? b.buildingKey}</div>
+
+												<!-- Build restrictions -->
+												<div class="mt-0.5 flex flex-wrap gap-x-3 text-[10px] opacity-40">
+													{#if limit}<span title="How many you can build">Limit: {limit}</span>{/if}
+													{#if b.buildTimeDays != null}<span>{b.buildTimeDays}d build time</span
+														>{/if}
+													{#if b.canDemolish === false}<span>cannot demolish</span>{/if}
+												</div>
+
+												<!-- Cost / upkeep / produces -->
+												{#if cost.length || upkeep.length || produces.length}
+													<div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs opacity-60">
+														{#if cost.length}<span
+																>Cost: {cost.map(buildingResourceLabel).join(', ')}</span
+															>{/if}
+														{#if upkeep.length}<span
+																>Upkeep: {upkeep.map(buildingResourceLabel).join(', ')}</span
+															>{/if}
+														{#if produces.length}<span class="text-emerald-400/80"
+																>Produces: {produces.map(buildingResourceLabel).join(', ')}</span
+															>{/if}
+													</div>
+												{/if}
+
+												<!-- Jobs -->
+												{#if jobs.length}
+													<div class="mt-1 text-xs">
+														<span class="opacity-40">Jobs:</span>
+														{#each jobs as j (j.key)}<span class="ml-1 text-sky-300/80"
+																>{buildingJobLabel(j)}</span
+															>{/each}
+													</div>
+												{/if}
+
+												<!-- Planet / country modifiers -->
+												{#if effects.length}
+													<ul class="mt-1 space-y-0.5 text-xs">
+														{#each effects as e (e.buildingScope + e.key)}
+															<li class="flex items-baseline justify-between gap-3">
+																<span class="opacity-60"
+																	>{e.label ?? e.key}{#if e.buildingScope === 'country'}<span
+																			class="opacity-30"
+																		>
+																			(empire-wide)</span
+																		>{/if}</span
+																>
+																<span class="shrink-0 font-mono {valueColor(e)}"
+																	>{formatValue(e)}</span
+																>
+															</li>
+														{/each}
+													</ul>
+												{/if}
+											</div>
 										{/each}
-									</ul>
+									</div>
 								</div>
 							{/if}
 

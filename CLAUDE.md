@@ -52,7 +52,9 @@ precursor               — key, name, required_dlc, system_initializer, picture
 precursor_relic         — precursor_key, relic_key, name, portrait, score, description, active_effect
 precursor_relic_modifier — relic_key, modifier_key, modifier_value, condition (null=always), sort_order
 precursor_reward_modifier — precursor_key, static_modifier, variant, name, modifier_key, modifier_value
-precursor_building      — precursor_key, building_key, name, scope (planet/starbase)
+precursor_building      — precursor_key, building_key, name, scope (planet/starbase), category, build_time_days, empire_limit, planet_limit, can_demolish
+precursor_building_resource — building_key, kind (cost/upkeep/produces), resource, amount, sort_order
+precursor_building_modifier — building_key, scope (planet/country/job), modifier_key, modifier_value, sort_order
 precursor_homeworld_reward — precursor_key, resource, multiplier (×monthly output; null=flat minor_artifacts), min_amount, max_amount, sort_order
 precursor_full          — VIEW: one row/precursor with relic+building pre-joined
 deposit                 — key, name, category, is_blocker, clear_time   (dictionary)

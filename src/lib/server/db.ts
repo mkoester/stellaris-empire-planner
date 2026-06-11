@@ -374,10 +374,29 @@ export interface PrecursorReward {
 	modifiers: Modifier[];
 }
 
+export interface BuildingResource {
+	kind: string; // "cost" | "upkeep" | "produces"
+	resource: string;
+	amount: number;
+}
+
+// A building modifier, tagged with where it applies: 'job' = jobs the building
+// adds (job_<x>_add), 'planet' = planet_modifier, 'country' = country_modifier.
+export interface BuildingModifier extends Modifier {
+	buildingScope: string;
+}
+
 export interface PrecursorBuilding {
 	buildingKey: string;
 	name: string | null;
 	scope: string | null; // "planet" | "starbase"
+	category: string | null;
+	buildTimeDays: number | null;
+	empireLimit: number | null; // max per empire (base_cap_amount); null = uncapped
+	planetLimit: number | null; // max per planet (planet_limit); null = uncapped
+	canDemolish: boolean | null;
+	resources: BuildingResource[];
+	modifiers: BuildingModifier[];
 }
 
 // The one-time reward for discovering the precursor home world. A scaled resource
@@ -633,14 +652,65 @@ export function loadPrecursors(): Precursor[] {
 		});
 	}
 
-	// ── Buildings ──
+	// ── Buildings (+ their resources / jobs / modifiers) ──
+	const buildingResRows = d
+		.prepare(
+			`SELECT building_key, kind, resource, amount
+			 FROM precursor_building_resource ORDER BY building_key, kind, sort_order`
+		)
+		.all() as Array<{ building_key: string; kind: string; resource: string; amount: number }>;
+	const resByBuilding = new Map<string, BuildingResource[]>();
+	for (const r of buildingResRows) {
+		if (!resByBuilding.has(r.building_key)) resByBuilding.set(r.building_key, []);
+		resByBuilding
+			.get(r.building_key)!
+			.push({ kind: r.kind, resource: r.resource, amount: r.amount });
+	}
+
+	const buildingModRows = d
+		.prepare(
+			`SELECT bm.building_key, bm.scope, bm.modifier_key, bm.modifier_value,
+			        ml.label, ml.positive_is_good
+			 FROM precursor_building_modifier bm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = bm.modifier_key
+			 ORDER BY bm.building_key, bm.scope, bm.sort_order`
+		)
+		.all() as Array<{
+		building_key: string;
+		scope: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+	const modsByBuilding = new Map<string, BuildingModifier[]>();
+	for (const r of buildingModRows) {
+		if (!modsByBuilding.has(r.building_key)) modsByBuilding.set(r.building_key, []);
+		modsByBuilding.get(r.building_key)!.push({
+			buildingScope: r.scope,
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+
 	const buildingRows = d
-		.prepare(`SELECT precursor_key, building_key, name, scope FROM precursor_building`)
+		.prepare(
+			`SELECT precursor_key, building_key, name, scope, category,
+			        build_time_days, empire_limit, planet_limit, can_demolish
+			 FROM precursor_building`
+		)
 		.all() as Array<{
 		precursor_key: string;
 		building_key: string;
 		name: string | null;
 		scope: string | null;
+		category: string | null;
+		build_time_days: number | null;
+		empire_limit: number | null;
+		planet_limit: number | null;
+		can_demolish: number | null;
 	}>;
 	const buildingsByPrecursor = new Map<string, PrecursorBuilding[]>();
 	for (const r of buildingRows) {
@@ -648,7 +718,14 @@ export function loadPrecursors(): Precursor[] {
 		buildingsByPrecursor.get(r.precursor_key)!.push({
 			buildingKey: r.building_key,
 			name: r.name,
-			scope: r.scope
+			scope: r.scope,
+			category: r.category,
+			buildTimeDays: r.build_time_days,
+			empireLimit: r.empire_limit,
+			planetLimit: r.planet_limit,
+			canDemolish: r.can_demolish === null ? null : r.can_demolish === 1,
+			resources: resByBuilding.get(r.building_key) ?? [],
+			modifiers: modsByBuilding.get(r.building_key) ?? []
 		});
 	}
 
