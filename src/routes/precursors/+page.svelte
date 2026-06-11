@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import type { Precursor, PrecursorPlanet } from '$lib/server/db';
 	import {
@@ -55,20 +56,20 @@
 					>terraformable</span
 				>
 			{/if}
-			{#each chips.resources as r}
+			{#each chips.resources as r, i (i)}
 				<span class="rounded bg-emerald-500/10 px-1 text-[10px] text-emerald-300/90">{r}</span>
 			{/each}
-			{#each chips.others as o}
+			{#each chips.others as o, i (i)}
 				<span class="rounded bg-surface-500/15 px-1 text-[10px] opacity-50">{o}</span>
 			{/each}
-			{#each chips.blockers as b}
+			{#each chips.blockers as b (b.name)}
 				<span class="rounded bg-surface-500/20 px-1 text-[10px] opacity-50" title="Planet blocker">
 					{b.name}{#if b.count > 1}
 						×{b.count}{/if}
 				</span>
 			{/each}
 		</div>
-		{#each planet.modifiers as mod}
+		{#each planet.modifiers as mod (mod.key)}
 			<div class="ml-4 flex items-baseline justify-between gap-3 opacity-60">
 				<span>{modLabel(mod)}</span>
 				<span class="font-mono {valueColor(mod)}">{formatValue(mod)}</span>
@@ -86,7 +87,7 @@
 	<div class="flex items-baseline gap-4">
 		<h1 class="text-2xl font-bold">Precursors</h1>
 		<nav class="flex gap-3 text-sm opacity-50">
-			<a href="/ethics" class="transition-opacity hover:opacity-100">← Ethics</a>
+			<a href={resolve('/ethics')} class="transition-opacity hover:opacity-100">← Ethics</a>
 		</nav>
 	</div>
 
@@ -108,7 +109,7 @@
 		>
 			From planner <span class="opacity-50">(soon)</span>
 		</button>
-		{#each EMPIRE_TYPES as et}
+		{#each EMPIRE_TYPES as et (et.key)}
 			<button
 				class="btn text-xs {empireFilter === et.key
 					? 'preset-filled-primary-500'
@@ -120,7 +121,7 @@
 		{/each}
 	</div>
 
-	{#each groups as group}
+	{#each groups as group (group.label)}
 		<section class="space-y-3">
 			<h2 class="flex items-center gap-2 text-lg font-semibold">
 				{group.label}
@@ -155,7 +156,7 @@
 										{@render hrule()}<span>Permanent effect</span>{@render hrule()}
 									</div>
 									<ul class="space-y-0.5">
-										{#each mergeRewardModifiers(p.rewards) as m}
+										{#each mergeRewardModifiers(p.rewards) as m (m.key + m.value)}
 											{@const q = rewardQualifier(m)}
 											{@const applies = activeType ? m.types.includes(activeType) : null}
 											<li
@@ -192,7 +193,7 @@
 									</div>
 									{#if p.relic.passives.length}
 										<ul class="space-y-0.5">
-											{#each mergeRelicPassives(p.relic.passives) as passive}
+											{#each mergeRelicPassives(p.relic.passives) as passive (passive.key + passive.value)}
 												{@const cond = typesLabel(passive.types)}
 												{@const applies = activeType ? passive.types.includes(activeType) : null}
 												<li
@@ -216,7 +217,7 @@
 											{/each}
 										</ul>
 									{/if}
-									{#each p.relic.passiveTexts as pt}
+									{#each p.relic.passiveTexts as pt (pt.text)}
 										{@const cond = conditionLabel(pt.condition)}
 										{@const applies = activeType
 											? conditionApplies(pt.condition, activeType)
@@ -241,12 +242,12 @@
 												<p class="text-sm opacity-70">{p.relic.activeEffect}</p>
 											{/if}
 											{#if p.relic.activeModifiers.length}
-												{#each groupActiveModifiers(p.relic.activeModifiers) as grp}
+												{#each groupActiveModifiers(p.relic.activeModifiers) as grp, i (i)}
 													{#if grp.label}
 														<div class="mt-1 text-[11px] font-medium opacity-60">{grp.label}</div>
 													{/if}
 													<ul class="space-y-0.5 {grp.label ? 'ml-3' : ''}">
-														{#each grp.modifiers as mod}
+														{#each grp.modifiers as mod (mod.key)}
 															<li class="flex items-baseline justify-between gap-3 text-sm">
 																<span class="opacity-70">{modLabel(mod)}</span>
 																<span class="shrink-0 font-mono {valueColor(mod)}"
@@ -293,7 +294,7 @@
 										{@render hrule()}<span>Building</span>{@render hrule()}
 									</div>
 									<ul class="space-y-0.5 text-sm">
-										{#each p.buildings as b}
+										{#each p.buildings as b (b.buildingKey)}
 											<li class="opacity-70">
 												{b.name ?? b.buildingKey}
 												{#if b.scope}<span class="text-[10px] opacity-40"> ({b.scope})</span>{/if}
@@ -313,14 +314,14 @@
 										>{@render hrule()}
 									</div>
 									<div class="space-y-2">
-										{#each p.systems as sys}
+										{#each p.systems as sys (sys.initializer)}
 											{@const shown = shownPlanets(sys.planets)}
 											{@const relevant = shown.filter(isRelevant)}
 											{@const rest = shown.filter((pl) => !isRelevant(pl))}
 											<div class="border-surface-400-500/20 rounded border p-2">
 												<div class="mb-1 flex flex-wrap items-baseline gap-2">
 													<span class="text-sm font-medium">{sys.name ?? sys.initializer}</span>
-													{#each sys.megastructures as ms}
+													{#each sys.megastructures as ms (ms.type)}
 														<span
 															class="rounded bg-violet-500/15 px-1.5 py-0.5 text-[10px] text-violet-300"
 														>
@@ -330,7 +331,7 @@
 												</div>
 												{#if relevant.length}
 													<ul class="space-y-1">
-														{#each relevant as planet}{@render planetRow(planet)}{/each}
+														{#each relevant as planet (planet.id)}{@render planetRow(planet)}{/each}
 													</ul>
 												{:else if sys.megastructures.length === 0}
 													<p class="text-xs italic opacity-40">
@@ -348,7 +349,7 @@
 															{rest.length} more {rest.length === 1 ? 'body' : 'bodies'}
 														</summary>
 														<ul class="mt-1 space-y-1">
-															{#each rest as planet}{@render planetRow(planet)}{/each}
+															{#each rest as planet (planet.id)}{@render planetRow(planet)}{/each}
 														</ul>
 													</details>
 												{/if}

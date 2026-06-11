@@ -27,7 +27,11 @@ export default defineConfig(
 			'@typescript-eslint/no-unused-vars': [
 				'error',
 				{ argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' }
-			]
+			],
+			// We use native Map/Set as local temporaries in $derived.by and reassign whole
+			// collections into $state (immutable-update pattern), which is fully reactive in
+			// Svelte 5. SvelteMap/SvelteSet would only add deep-reactivity overhead here.
+			'svelte/prefer-svelte-reactivity': 'off'
 		}
 	},
 	{

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import type { Trait, Modifier } from '$lib/server/db';
 
@@ -378,7 +379,7 @@
 				>
 				{#if trait.modifiers.length > 0}
 					<ul class="space-y-0.5">
-						{#each trait.modifiers as mod}
+						{#each trait.modifiers as mod (mod.key)}
 							<li class="flex items-baseline justify-between gap-1 text-[10px]">
 								<span class="leading-tight opacity-60">{mod.label ?? mod.key}</span>
 								<span
@@ -392,7 +393,7 @@
 				{/if}
 				{#if trait.speciesClasses.length > 0}
 					<div class="flex flex-wrap items-center gap-1">
-						{#each trait.speciesClasses as cls}
+						{#each trait.speciesClasses as cls (cls)}
 							{@const clsLabel = formatClassKey(cls)}
 							{@const clsColor = speciesClassColor(clsLabel)}
 							<span
@@ -405,10 +406,10 @@
 						{/each}
 					</div>
 				{/if}
-				{#each [trait.tags.filter((t) => !HIDDEN_CARD_TAGS.has(t))] as visibleTags}
+				{#each [trait.tags.filter((t) => !HIDDEN_CARD_TAGS.has(t))] as visibleTags, i (i)}
 					{#if visibleTags.length > 0}
 						<div class="mt-0.5 flex flex-wrap items-center gap-0.5">
-							{#each visibleTags as tag}
+							{#each visibleTags as tag (tag)}
 								<span
 									class="rounded px-1 text-[9px] leading-tight
 										{activeTags.has(tag)
@@ -432,7 +433,7 @@
 		<div class="flex items-baseline gap-4">
 			<h1 class="text-2xl font-bold">Species Builder</h1>
 			<nav class="flex gap-3 text-sm opacity-50">
-				<a href="/ethics" class="transition-opacity hover:opacity-100">Ethics →</a>
+				<a href={resolve('/ethics')} class="transition-opacity hover:opacity-100">Ethics →</a>
 			</nav>
 		</div>
 
@@ -463,7 +464,7 @@
 			</div>
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-2">
-					{#each Array.from({ length: effectiveBudget }) as _, i}
+					{#each Array.from({ length: effectiveBudget }) as _, i (i)}
 						{@const taken = i < Math.min(positiveSpend, effectiveBudget)}
 						<span
 							class="h-4 w-4 rounded-full border-2 transition-all
@@ -478,7 +479,7 @@
 					{/each}
 				</div>
 				<div class="flex items-center gap-2">
-					{#each Array.from({ length: maxTraits }) as _, i}
+					{#each Array.from({ length: maxTraits }) as _, i (i)}
 						<span
 							class="h-4 w-4 rounded-full border-2 transition-all
 						{i < traitCount ? 'border-primary-500' : 'border-primary-500 bg-primary-500'}"
@@ -492,7 +493,7 @@
 					{#if baseTraitObj}
 						{@render traitCard(baseTraitObj, '#d97706', true)}
 					{/if}
-					{#each selectedTraits as trait}
+					{#each selectedTraits as trait (trait.key)}
 						{@render traitCard(trait, categoryColorMap.get(trait.category) ?? '#888')}
 					{/each}
 				</div>
@@ -506,7 +507,7 @@
 	<!-- Species selector -->
 	<div class="space-y-2">
 		<div class="flex flex-wrap gap-2">
-			{#each ARCHETYPE_GROUPS as group}
+			{#each ARCHETYPE_GROUPS as group (group.key)}
 				<button
 					class="btn {archetypeGroup === group.key ? 'preset-filled-primary-500' : 'preset-filled'}"
 					onclick={() => selectArchetypeGroup(group.key)}
@@ -517,7 +518,7 @@
 		</div>
 		{#if displayedSpeciesClasses.length > 0}
 			<div class="flex flex-wrap gap-1.5">
-				{#each displayedSpeciesClasses as sc}
+				{#each displayedSpeciesClasses as sc (sc.key)}
 					<button
 						class="btn text-sm {selectedClassKey === sc.key
 							? 'preset-filled-primary-500'
@@ -547,7 +548,7 @@
 			{#if mainFilterTags.length > 0}
 				<div class="flex flex-wrap items-center gap-1">
 					<span class="w-16 shrink-0 text-xs opacity-40">Tags</span>
-					{#each mainFilterTags as tag}{@render tagBtn(tag)}{/each}
+					{#each mainFilterTags as tag (tag)}{@render tagBtn(tag)}{/each}
 				</div>
 			{/if}
 			{#if speciesFilterTags.length > 0}
@@ -557,13 +558,13 @@
 					{#if speciesLeadTag && speciesRestTags.length > 0}
 						<span class="text-xs opacity-20 select-none">|</span>
 					{/if}
-					{#each speciesRestTags as tag}{@render tagBtn(tag)}{/each}
+					{#each speciesRestTags as tag (tag)}{@render tagBtn(tag)}{/each}
 				</div>
 			{/if}
 			{#if polarityFilterTags.length > 0}
 				<div class="flex flex-wrap items-center gap-1">
 					<span class="w-16 shrink-0 text-xs opacity-40">Polarity</span>
-					{#each polarityFilterTags as tag}{@render tagBtn(tag)}{/each}
+					{#each polarityFilterTags as tag (tag)}{@render tagBtn(tag)}{/each}
 				</div>
 			{/if}
 			{#if activeTags.size > 0}
@@ -583,7 +584,7 @@
 	<!-- Category legend -->
 	{#if traitsByCategory.size > 0}
 		<div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs opacity-70">
-			{#each data.traitCategories.filter((c) => traitsByCategory.has(c.key)) as cat}
+			{#each data.traitCategories.filter((c) => traitsByCategory.has(c.key)) as cat (cat.key)}
 				<span class="flex items-center gap-1.5">
 					<span
 						class="inline-block h-2.5 w-2.5 rounded-sm"
@@ -596,7 +597,7 @@
 	{/if}
 
 	<!-- Trait list by category -->
-	{#each data.traitCategories as cat}
+	{#each data.traitCategories as cat (cat.key)}
 		{#if traitsByCategory.has(cat.key)}
 			{@const color = cat.colorHex ?? '#888'}
 			<section>
@@ -627,12 +628,12 @@
 				{#if cat.key === 'phenotype' && groupPhenotype && !selectedClassKey}
 					{#if phenotypeGroups.unrestricted.length > 0}
 						<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-							{#each phenotypeGroups.unrestricted as trait}
+							{#each phenotypeGroups.unrestricted as trait (trait.key)}
 								{@render traitCard(trait, color)}
 							{/each}
 						</div>
 					{/if}
-					{#each phenotypeGroups.groups as group}
+					{#each phenotypeGroups.groups as group (group.label)}
 						<div class="mt-4">
 							<h3
 								class="mb-2 pl-2 text-sm font-medium opacity-60"
@@ -641,7 +642,7 @@
 								{group.label}
 							</h3>
 							<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-								{#each group.traits as trait}
+								{#each group.traits as trait (trait.key)}
 									{@render traitCard(trait, color)}
 								{/each}
 							</div>
@@ -649,7 +650,7 @@
 					{/each}
 				{:else if cat.key === 'phenotype'}
 					<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-						{#each traitsByCategory.get(cat.key)! as trait}
+						{#each traitsByCategory.get(cat.key)! as trait (trait.key)}
 							{@render traitCard(trait, color)}
 						{/each}
 					</div>
@@ -657,12 +658,12 @@
 					{@const subGroups = traitSubGroups.get(cat.key)!}
 					{#if subGroups.unrestricted.length > 0}
 						<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-							{#each subGroups.unrestricted as trait}
+							{#each subGroups.unrestricted as trait (trait.key)}
 								{@render traitCard(trait, color)}
 							{/each}
 						</div>
 					{/if}
-					{#each subGroups.groups as group}
+					{#each subGroups.groups as group (group.key)}
 						<div class="mt-4">
 							<h3
 								class="mb-2 pl-2 text-sm font-medium opacity-60"
@@ -671,7 +672,7 @@
 								{group.labels.join(' · ')}
 							</h3>
 							<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-								{#each group.traits as trait}
+								{#each group.traits as trait (trait.key)}
 									{@render traitCard(trait, color)}
 								{/each}
 							</div>

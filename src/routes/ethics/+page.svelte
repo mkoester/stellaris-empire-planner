@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import type { Ethic, Modifier, EthicImplication, PolicyRestriction } from '$lib/server/db';
 
@@ -274,15 +275,15 @@
 	<div class="flex items-baseline gap-4">
 		<h1 class="text-2xl font-bold">Ethics</h1>
 		<nav class="flex gap-3 text-sm opacity-50">
-			<a href="/" class="transition-opacity hover:opacity-100">← Species Builder</a>
-			<a href="/precursors" class="transition-opacity hover:opacity-100">Precursors →</a>
+			<a href={resolve('/')} class="transition-opacity hover:opacity-100">← Species Builder</a>
+			<a href={resolve('/precursors')} class="transition-opacity hover:opacity-100">Precursors →</a>
 		</nav>
 	</div>
 
 	<!-- Budget indicator -->
 	<div class="flex items-center gap-3">
 		<div class="flex gap-1.5">
-			{#each Array.from({ length: ETHIC_BUDGET }) as _, i}
+			{#each Array.from({ length: ETHIC_BUDGET }) as _, i (i)}
 				<span
 					class="h-4 w-4 rounded-full border-2 transition-all
 						{i < pointsUsed ? 'border-primary-500' : 'border-primary-500 bg-primary-500'}"
@@ -302,7 +303,7 @@
 
 	<!-- Ethics picker -->
 	<div class="space-y-2">
-		{#each AXES as [leftKey, rightKey]}
+		{#each AXES as [leftKey, rightKey] (leftKey)}
 			{@const leftEthic = ethicMap.get(leftKey)}
 			{@const rightEthic = ethicMap.get(rightKey)}
 			{@const leftFanatic = getFanatic(leftKey)}
@@ -311,7 +312,7 @@
 				<div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
 					<!-- Left side -->
 					<div class="flex justify-end gap-1.5">
-						{#each ([leftEthic, leftFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic}
+						{#each ([leftEthic, leftFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
 							{@const blocked = isBlocked(ethic!.key)}
 							{@const sel = selected.has(ethic!.key)}
 							<button
@@ -336,7 +337,7 @@
 
 					<!-- Right side -->
 					<div class="flex justify-start gap-1.5">
-						{#each ([rightEthic, rightFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic}
+						{#each ([rightEthic, rightFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
 							{@const blocked = isBlocked(ethic!.key)}
 							{@const sel = selected.has(ethic!.key)}
 							<button
@@ -360,7 +361,7 @@
 		{/each}
 
 		<!-- Gestalt Consciousness -->
-		{#each data.ethics.filter((e: Ethic) => e.gestalt) as gestaltEthic}
+		{#each data.ethics.filter((e: Ethic) => e.gestalt) as gestaltEthic (gestaltEthic.key)}
 			{@const sel = selected.has(gestaltEthic.key)}
 			<div class="border-surface-400-500/30 flex items-center gap-2 border-t pt-1">
 				<span class="w-20 shrink-0 text-right text-xs opacity-40">Gestalt</span>
@@ -386,7 +387,7 @@
 			</h2>
 
 			<ul class="max-w-sm space-y-1">
-				{#each combinedModifiers as { modifier, sources }}
+				{#each combinedModifiers as { modifier, sources } (modifier.key)}
 					<li class="flex items-baseline justify-between gap-4 text-sm">
 						<span class="opacity-70">
 							{modLabel(modifier)} <span class="opacity-50">({sources.join(', ')})</span>
@@ -400,13 +401,13 @@
 				<div>
 					<h3 class="mb-2 text-sm font-medium opacity-60">Gameplay Implications</h3>
 					<ul class="max-w-lg space-y-1">
-						{#each combinedImplications as { label, sources }}
+						{#each combinedImplications as { label, sources } (label)}
 							<li class="text-sm">
 								<span class="opacity-70">{label}</span>
 								<span class="text-xs opacity-40"> ({sources.join(', ')})</span>
 							</li>
 						{/each}
-						{#each selectedPolicyRestrictions as { label, sources }}
+						{#each selectedPolicyRestrictions as { label, sources } (label)}
 							<li class="text-sm">
 								<span class="opacity-70">{label}</span>
 								<span class="text-xs opacity-40"> ({sources.join(', ')})</span>
@@ -430,7 +431,7 @@
 								class="sticky top-0 z-10 w-48 py-1.5 pr-4 text-left font-medium opacity-60"
 								style="background-color: var(--color-surface-50-950)">Modifier</th
 							>
-							{#each tableEthicPairs as { regular, fanatic }}
+							{#each tableEthicPairs as { regular, fanatic } (regular.key)}
 								{@const active =
 									selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
 								<th
@@ -448,20 +449,20 @@
 								class="sticky top-7.5 z-10 pr-4 pb-1 text-left text-[10px] font-normal opacity-30"
 								style="background-color: var(--color-surface-50-950)">reg (fanatic)</th
 							>
-							{#each tableEthicPairs as _}<th
+							{#each tableEthicPairs as _, i (i)}<th
 									class="sticky top-7.5 z-10"
 									style="background-color: var(--color-surface-50-950)"
 								></th>{/each}
 						</tr>
 					</thead>
 					<tbody>
-						{#each allModifierKeys as modKey}
+						{#each allModifierKeys as modKey (modKey)}
 							{@const anyMod = nonGestaltEthics
 								.flatMap((e: Ethic) => e.modifiers)
 								.find((m: Modifier) => m.key === modKey)}
 							<tr class="border-surface-400-500/20 border-b hover:bg-surface-500/10">
 								<td class="py-1.5 pr-4 opacity-70">{anyMod ? modLabel(anyMod) : modKey}</td>
-								{#each tableEthicPairs as { regular, fanatic }}
+								{#each tableEthicPairs as { regular, fanatic } (regular.key)}
 									{@const regMod = regular.modifiers.find((m: Modifier) => m.key === modKey)}
 									{@const fanMod = fanatic?.modifiers.find((m: Modifier) => m.key === modKey)}
 									{@const active =
@@ -498,7 +499,7 @@
 								class="sticky top-0 z-10 w-64 py-1.5 pr-4 text-left font-medium opacity-60"
 								style="background-color: var(--color-surface-50-950)">Implication</th
 							>
-							{#each tableEthicPairs as { regular, fanatic }}
+							{#each tableEthicPairs as { regular, fanatic } (regular.key)}
 								{@const active =
 									selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
 								<th
@@ -513,10 +514,10 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each allImplicationTags as { tag, label }}
+						{#each allImplicationTags as { tag, label } (tag)}
 							<tr class="border-surface-400-500/20 border-b hover:bg-surface-500/10">
 								<td class="py-1.5 pr-4 leading-tight opacity-70">{label}</td>
-								{#each tableEthicPairs as { regular, fanatic }}
+								{#each tableEthicPairs as { regular, fanatic } (regular.key)}
 									{@const hasReg = regular.implications.some(
 										(i: EthicImplication) => i.tag === tag
 									)}
@@ -554,12 +555,12 @@
 									Policy restrictions
 								</td>
 							</tr>
-							{#each allPolicyRestrictions as pr}
+							{#each allPolicyRestrictions as pr (pr.policyKey + pr.optionKey)}
 								<tr class="border-surface-400-500/20 border-b hover:bg-surface-500/10">
 									<td class="py-1.5 pr-4 leading-tight opacity-70" title="{pr.policyKey} policy"
 										>{pr.label}</td
 									>
-									{#each tableEthicPairs as { regular, fanatic }}
+									{#each tableEthicPairs as { regular, fanatic } (regular.key)}
 										{@const hasReg = regular.policyRestrictions.some(
 											(r: PolicyRestriction) =>
 												r.policyKey === pr.policyKey && r.optionKey === pr.optionKey
@@ -634,13 +635,13 @@
 					</tr>
 				</thead>
 				<tbody>
-					{#each MONUMENT_BONUSES as { ethicKey, rows }}
+					{#each MONUMENT_BONUSES as { ethicKey, rows } (ethicKey)}
 						{@const ethic = ethicMap.get(ethicKey)}
 						{@const active =
 							selected.has(ethicKey) ||
 							!!(ethic?.regular_variant && selected.has(ethic.regular_variant)) ||
 							!!(ethic?.fanatic_variant && selected.has(ethic.fanatic_variant))}
-						{#each rows as row, i}
+						{#each rows as row, i (row.label)}
 							<tr class="border-surface-400-500/20 border-b hover:bg-surface-500/10">
 								{#if i === 0}
 									<td
