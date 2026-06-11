@@ -35,6 +35,8 @@ import {
 	groupByDlc,
 	habitableWorldCount,
 	terraformableWorldCount,
+	moltenWorldCount,
+	arcFurnaceDepositCount,
 	countLabel,
 	ALL_TYPES,
 	type EmpireType
@@ -407,6 +409,35 @@ describe('terraformableWorldCount', () => {
 			]
 		};
 		expect(terraformableWorldCount(p)).toBe(2);
+	});
+});
+
+describe('moltenWorldCount', () => {
+	it('counts molten worlds across systems', () => {
+		const p = {
+			systems: [
+				sys([planet({ planetClass: 'pc_molten' }), planet({ planetClass: 'pc_molten' })]),
+				sys([planet({ planetClass: 'pc_barren' })])
+			]
+		};
+		expect(moltenWorldCount(p)).toBe(2);
+	});
+});
+
+describe('arcFurnaceDepositCount', () => {
+	it('counts non-star, non-habitable bodies without a research-station deposit', () => {
+		const s = sys([
+			planet({ planetClass: 'pc_molten' }), // eligible
+			planet({ planetClass: 'pc_barren' }), // eligible
+			planet({ planetClass: 'pc_gas_giant' }), // eligible
+			planet({ planetClass: 'pc_continental' }), // habitable → excluded
+			planet({ planetClass: 'pc_g_star' }), // star → excluded
+			planet({
+				planetClass: 'pc_toxic',
+				deposits: [dep({ resources: [res('physics_research', 10)] })]
+			}) // has a research deposit → excluded
+		]);
+		expect(arcFurnaceDepositCount(s)).toBe(3);
 	});
 });
 

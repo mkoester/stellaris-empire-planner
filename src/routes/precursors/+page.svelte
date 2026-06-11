@@ -19,6 +19,10 @@
 		buildingScopeLabel,
 		habitableWorldCount,
 		terraformableWorldCount,
+		moltenWorldCount,
+		isHabitable,
+		hasMoltenWorld,
+		arcFurnaceDepositCount,
 		countLabel,
 		formatValue,
 		valueColor,
@@ -58,6 +62,12 @@
 				>{/if}
 			<span class="opacity-80">{planet.planetClassLabel ?? planet.planetClass}</span>
 			{#if planet.size != null}<span class="opacity-40">size {planet.size}</span>{/if}
+			{#if isHabitable(planet)}
+				<span
+					class="rounded bg-emerald-500/15 px-1 text-[10px] text-emerald-300/90"
+					title="A colonizable world">habitable</span
+				>
+			{/if}
 			{#if isTerraformable(planet)}
 				<span
 					class="rounded bg-sky-500/10 px-1 text-[10px] text-sky-300/80"
@@ -249,6 +259,10 @@
 									{#if terraformableWorldCount(p) > 0}{@render badge(
 											countLabel('Toxic world', terraformableWorldCount(p)),
 											'bg-lime-500/15 text-lime-300/90'
+										)}{/if}
+									{#if moltenWorldCount(p) > 0}{@render badge(
+											countLabel('Molten world', moltenWorldCount(p)),
+											'bg-orange-500/15 text-orange-300/90'
 										)}{/if}
 									{#if p.numDigsites}{@render badge(
 											countLabel('Dig site', p.numDigsites),
@@ -484,6 +498,13 @@
 															{megaLabel(ms)}
 														</span>
 													{/each}
+													{#if hasMoltenWorld(sys)}
+														<span
+															class="rounded bg-orange-500/15 px-1.5 py-0.5 text-[10px] text-orange-300/90"
+															title="A Molten World here can host an Arc Furnace, which adds a mining deposit (1–4 minerals each, by furnace level) to every non-habitable body in the system"
+															>Arc Furnace → {arcFurnaceDepositCount(sys)} mining deposits</span
+														>
+													{/if}
 												</div>
 												{#if relevant.length}
 													<ul class="space-y-1">

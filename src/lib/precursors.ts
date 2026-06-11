@@ -495,6 +495,40 @@ export function terraformableWorldCount(p: Pick<Precursor, 'systems'>): number {
 	return n;
 }
 
+export const isHabitable = (p: PrecursorPlanet): boolean =>
+	HABITABLE_CLASSES.has(p.planetClass ?? '');
+
+// Molten Worlds across a precursor's system(s) — the build site for an Arc Furnace.
+export function moltenWorldCount(p: Pick<Precursor, 'systems'>): number {
+	let n = 0;
+	for (const sys of p.systems)
+		for (const planet of sys.planets) if (planet.planetClass === 'pc_molten') n++;
+	return n;
+}
+
+export const hasMoltenWorld = (sys: { planets: PrecursorPlanet[] }): boolean =>
+	sys.planets.some((p) => p.planetClass === 'pc_molten');
+
+const isStar = (cls: string | null): boolean => cls === 'star' || (cls?.endsWith('_star') ?? false);
+const hasResearchDeposit = (p: PrecursorPlanet): boolean =>
+	p.deposits.some(
+		(d) =>
+			!d.isBlocker &&
+			d.resources.some((r) => r.kind === 'produces' && r.resource.endsWith('_research'))
+	);
+
+// How many mining deposits an Arc Furnace (built on a Molten World) would add to a
+// system: one per body that isn't a star, isn't colonizable, and doesn't already
+// carry a research-station deposit (matches machine_age cybernetics.1000).
+export function arcFurnaceDepositCount(sys: { planets: PrecursorPlanet[] }): number {
+	let n = 0;
+	for (const p of sys.planets) {
+		if (isStar(p.planetClass) || isHabitable(p) || hasResearchDeposit(p)) continue;
+		n++;
+	}
+	return n;
+}
+
 // "Building" → "Building" (n=1) or "Buildings ×3" (n>1). For header count badges.
 export function countLabel(singular: string, n: number): string {
 	return n === 1 ? singular : `${singular}s ×${n}`;
