@@ -343,6 +343,28 @@ export function buildingLimitLabel(b: {
 	return parts.length ? parts.join(', ') : null;
 }
 
+// Ascension-perk key → display name.
+const AP_NAMES: Record<string, string> = {
+	ap_archaeoengineers: 'Archaeo-Engineers',
+	ap_cosmogenesis: 'Cosmogenesis'
+};
+export const ascensionPerkName = (key: string): string =>
+	AP_NAMES[key] ?? titleCase(key.replace(/^ap_/, ''));
+
+// A building modifier's `condition` → a short display note ("with <Perk>"), or null
+// when it always applies. `condition` holds a *different* required ascension perk
+// (the Archaeo-Engineers boost is carried by the modifier's aeValue, not here).
+export function buildingConditionLabel(condition: string | null): string | null {
+	return condition ? `with ${ascensionPerkName(condition)}` : null;
+}
+
+// A building scope ("planet" | "starbase") → display word.
+export function buildingScopeLabel(scope: string | null): string | null {
+	if (scope === 'starbase') return 'orbital';
+	if (scope === 'planet') return 'planetary';
+	return scope;
+}
+
 // The triumph's temporary modifiers, grouped by their (consecutive) `groupLabel`.
 // For 'choice' actives each group is a named option (e.g. "Martial Guidance"); for
 // 'direct'/'random' actives every group label is null → a single flat group.

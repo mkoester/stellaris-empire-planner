@@ -380,16 +380,25 @@ export interface BuildingResource {
 	amount: number;
 }
 
-// A building modifier, tagged with where it applies: 'job' = jobs the building
-// adds (job_<x>_add), 'planet' = planet_modifier, 'country' = country_modifier.
+// A building modifier, tagged with where it applies (`buildingScope`): 'job' =
+// jobs the building adds (job_<x>_add), 'planet' = planet_modifier, 'country' =
+// country_modifier, 'system'/'station' = an orbital starbase building's system/
+// station modifier. `value` is the base (no-perk) value; `aeValue` is the total
+// with the Archaeo-Engineers ascension perk (null when the perk makes no
+// difference). `condition` is null normally, or a *different* required ascension
+// perk's key (e.g. 'ap_cosmogenesis') when the modifier only applies with it.
 export interface BuildingModifier extends Modifier {
 	buildingScope: string;
+	aeValue: number | null;
+	condition: string | null;
 }
 
 export interface PrecursorBuilding {
 	buildingKey: string;
 	name: string | null;
 	scope: string | null; // "planet" | "starbase"
+	source: string; // "homeworld" | "technology"
+	techKey: string | null; // unlocking tech (source = "technology")
 	category: string | null;
 	buildTimeDays: number | null;
 	empireLimit: number | null; // max per empire (base_cap_amount); null = uncapped
@@ -397,6 +406,18 @@ export interface PrecursorBuilding {
 	canDemolish: boolean | null;
 	resources: BuildingResource[];
 	modifiers: BuildingModifier[];
+}
+
+// A precursor's "Secrets of …" technology, granted by the discovery special
+// project, which unlocks an empire-wide building (unlocksBuildingKey).
+export interface PrecursorTechnology {
+	techKey: string;
+	name: string | null;
+	cost: number | null;
+	tier: number | null;
+	area: string | null;
+	category: string | null;
+	unlocksBuildingKey: string | null;
 }
 
 // The one-time reward for discovering the precursor home world. A scaled resource
@@ -458,6 +479,7 @@ export interface Precursor {
 	relic: PrecursorRelic | null;
 	rewards: PrecursorReward[];
 	buildings: PrecursorBuilding[];
+	technology: PrecursorTechnology | null;
 	homeworldRewards: PrecursorHomeworldReward[];
 	systems: PrecursorSystem[];
 }
@@ -669,8 +691,8 @@ export function loadPrecursors(): Precursor[] {
 
 	const buildingModRows = d
 		.prepare(
-			`SELECT bm.building_key, bm.scope, bm.modifier_key, bm.modifier_value,
-			        ml.label, ml.positive_is_good
+			`SELECT bm.building_key, bm.scope, bm.modifier_key, bm.modifier_value, bm.ae_value,
+			        bm.condition, ml.label, ml.positive_is_good
 			 FROM precursor_building_modifier bm
 			 LEFT JOIN modifier_label ml ON ml.modifier_key = bm.modifier_key
 			 ORDER BY bm.building_key, bm.scope, bm.sort_order`
@@ -680,6 +702,8 @@ export function loadPrecursors(): Precursor[] {
 		scope: string;
 		modifier_key: string;
 		modifier_value: number;
+		ae_value: number | null;
+		condition: string | null;
 		label: string | null;
 		positive_is_good: number | null;
 	}>;
@@ -688,6 +712,8 @@ export function loadPrecursors(): Precursor[] {
 		if (!modsByBuilding.has(r.building_key)) modsByBuilding.set(r.building_key, []);
 		modsByBuilding.get(r.building_key)!.push({
 			buildingScope: r.scope,
+			aeValue: r.ae_value,
+			condition: r.condition,
 			key: r.modifier_key,
 			value: r.modifier_value,
 			label: r.label,
@@ -697,7 +723,7 @@ export function loadPrecursors(): Precursor[] {
 
 	const buildingRows = d
 		.prepare(
-			`SELECT precursor_key, building_key, name, scope, category,
+			`SELECT precursor_key, building_key, name, scope, source, tech_key, category,
 			        build_time_days, empire_limit, planet_limit, can_demolish
 			 FROM precursor_building`
 		)
@@ -706,6 +732,8 @@ export function loadPrecursors(): Precursor[] {
 		building_key: string;
 		name: string | null;
 		scope: string | null;
+		source: string;
+		tech_key: string | null;
 		category: string | null;
 		build_time_days: number | null;
 		empire_limit: number | null;
@@ -719,6 +747,8 @@ export function loadPrecursors(): Precursor[] {
 			buildingKey: r.building_key,
 			name: r.name,
 			scope: r.scope,
+			source: r.source,
+			techKey: r.tech_key,
 			category: r.category,
 			buildTimeDays: r.build_time_days,
 			empireLimit: r.empire_limit,
@@ -726,6 +756,35 @@ export function loadPrecursors(): Precursor[] {
 			canDemolish: r.can_demolish === null ? null : r.can_demolish === 1,
 			resources: resByBuilding.get(r.building_key) ?? [],
 			modifiers: modsByBuilding.get(r.building_key) ?? []
+		});
+	}
+
+	// ── Technologies ("Secrets of …" → unlocked building) ──
+	const techRows = d
+		.prepare(
+			`SELECT precursor_key, tech_key, name, cost, tier, area, category, unlocks_building_key
+			 FROM precursor_technology ORDER BY precursor_key`
+		)
+		.all() as Array<{
+		precursor_key: string;
+		tech_key: string;
+		name: string | null;
+		cost: number | null;
+		tier: number | null;
+		area: string | null;
+		category: string | null;
+		unlocks_building_key: string | null;
+	}>;
+	const technologyByPrecursor = new Map<string, PrecursorTechnology>();
+	for (const r of techRows) {
+		technologyByPrecursor.set(r.precursor_key, {
+			techKey: r.tech_key,
+			name: r.name,
+			cost: r.cost,
+			tier: r.tier,
+			area: r.area,
+			category: r.category,
+			unlocksBuildingKey: r.unlocks_building_key
 		});
 	}
 
@@ -901,6 +960,7 @@ export function loadPrecursors(): Precursor[] {
 		relic: relicByPrecursor.get(r.key) ?? null,
 		rewards: [...(rewardsByPrecursor.get(r.key)?.values() ?? [])],
 		buildings: buildingsByPrecursor.get(r.key) ?? [],
+		technology: technologyByPrecursor.get(r.key) ?? null,
 		homeworldRewards: homeworldRewardsByPrecursor.get(r.key) ?? [],
 		systems: systemsByPrecursor.get(r.key) ?? []
 	}));

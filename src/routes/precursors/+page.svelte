@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
-	import type { Precursor, PrecursorPlanet } from '$lib/server/db';
+	import type { Precursor, PrecursorPlanet, PrecursorBuilding } from '$lib/server/db';
 	import {
 		EMPIRE_TYPES,
 		type EmpireType,
@@ -15,6 +15,8 @@
 		buildingResourceLabel,
 		buildingJobLabel,
 		buildingLimitLabel,
+		buildingConditionLabel,
+		buildingScopeLabel,
 		formatValue,
 		valueColor,
 		modLabel,
@@ -87,6 +89,79 @@
 	<span class="border-surface-400-500/40 h-0 flex-1 border-t"></span>
 {/snippet}
 
+<!-- One precursor building: restrictions, resources, jobs, modifiers. Shared by the
+	 home-planet "Buildings" section and the tech-unlocked "Technology" section. -->
+{#snippet buildingDetail(b: PrecursorBuilding)}
+	{@const cost = b.resources.filter((r) => r.kind === 'cost')}
+	{@const upkeep = b.resources.filter((r) => r.kind === 'upkeep')}
+	{@const produces = b.resources.filter((r) => r.kind === 'produces')}
+	{@const jobs = b.modifiers.filter((m) => m.buildingScope === 'job')}
+	{@const effects = b.modifiers.filter((m) => m.buildingScope !== 'job')}
+	{@const limit = buildingLimitLabel(b)}
+	<div class="border-surface-400-500/20 rounded border p-2">
+		<div class="flex flex-wrap items-baseline justify-between gap-x-2">
+			<span class="text-sm font-medium">{b.name ?? b.buildingKey}</span>
+			{#if buildingScopeLabel(b.scope)}<span class="text-[10px] opacity-40"
+					>{buildingScopeLabel(b.scope)}</span
+				>{/if}
+		</div>
+
+		<!-- Build restrictions -->
+		<div class="mt-0.5 flex flex-wrap gap-x-3 text-[10px] opacity-40">
+			{#if limit}<span title="How many you can build">Limit: {limit}</span>{/if}
+			{#if b.buildTimeDays != null}<span>{b.buildTimeDays}d build time</span>{/if}
+			{#if b.canDemolish === false}<span>cannot demolish</span>{/if}
+		</div>
+
+		<!-- Cost / upkeep / produces -->
+		{#if cost.length || upkeep.length || produces.length}
+			<div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs opacity-60">
+				{#if cost.length}<span>Cost: {cost.map(buildingResourceLabel).join(', ')}</span>{/if}
+				{#if upkeep.length}<span>Upkeep: {upkeep.map(buildingResourceLabel).join(', ')}</span>{/if}
+				{#if produces.length}<span class="text-emerald-400/80"
+						>Produces: {produces.map(buildingResourceLabel).join(', ')}</span
+					>{/if}
+			</div>
+		{/if}
+
+		<!-- Jobs -->
+		{#if jobs.length}
+			<div class="mt-1 text-xs">
+				<span class="opacity-40">Jobs:</span>
+				{#each jobs as j (j.key)}<span class="ml-1 text-sky-300/80">{buildingJobLabel(j)}</span
+					>{/each}
+			</div>
+		{/if}
+
+		<!-- Planet / country / system / station modifiers (base + Archaeo-Engineers) -->
+		{#if effects.length}
+			<ul class="mt-1 space-y-0.5 text-xs">
+				{#each effects as e (e.buildingScope + e.key + (e.condition ?? ''))}
+					{@const cond = buildingConditionLabel(e.condition)}
+					<li class="flex items-baseline justify-between gap-3">
+						<span class="opacity-60"
+							>{e.label ?? e.key}{#if cond}<span class="text-primary-400/70">
+									({cond})</span
+								>{:else if e.buildingScope === 'country'}<span class="opacity-30">
+									(empire-wide)</span
+								>{/if}</span
+						>
+						<span class="shrink-0 font-mono {valueColor(e)}">{formatValue(e)}</span>
+					</li>
+					{#if e.aeValue != null}
+						<li class="flex items-baseline justify-between gap-3">
+							<span class="pl-3 text-primary-400/60">(with Archaeo-Engineers)</span>
+							<span class="shrink-0 font-mono {valueColor({ ...e, value: e.aeValue })}"
+								>{formatValue({ ...e, value: e.aeValue })}</span
+							>
+						</li>
+					{/if}
+				{/each}
+			</ul>
+		{/if}
+	</div>
+{/snippet}
+
 <main class="mx-auto max-w-7xl space-y-8 p-4">
 	<div class="flex items-baseline gap-4">
 		<h1 class="text-2xl font-bold">Precursors</h1>
@@ -145,7 +220,9 @@
 								<h3 class="text-lg font-semibold">{p.name ?? p.key}</h3>
 								<div class="mt-0.5 flex items-center gap-2 text-[11px] opacity-50">
 									{#if p.relic}<span>Relic</span>{/if}
-									{#if p.buildings.length}<span>· Building</span>{/if}
+									{#if p.buildings.some((b) => b.source === 'homeworld')}<span>· Building</span
+										>{/if}
+									{#if p.technology}<span>· Technology</span>{/if}
 									{#if p.numDigsites}<span>· {p.numDigsites} dig sites</span>{/if}
 									<span>· {p.systems.length} system{p.systems.length === 1 ? '' : 's'}</span>
 								</div>
@@ -310,81 +387,47 @@
 								</div>
 							{/if}
 
-							<!-- Buildings: effects (resources, jobs, modifiers) + build restrictions -->
-							{#if p.buildings.length}
+							<!-- Home-planet buildings (granted directly): effects + restrictions -->
+							{#if p.buildings.some((b) => b.source === 'homeworld')}
+								{@const homeBuildings = p.buildings.filter((b) => b.source === 'homeworld')}
 								<div>
 									<div
 										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
 									>
-										{@render hrule()}<span>Building{p.buildings.length === 1 ? '' : 's'}</span
+										{@render hrule()}<span>Building{homeBuildings.length === 1 ? '' : 's'}</span
 										>{@render hrule()}
 									</div>
 									<div class="space-y-3">
-										{#each p.buildings as b (b.buildingKey)}
-											{@const cost = b.resources.filter((r) => r.kind === 'cost')}
-											{@const upkeep = b.resources.filter((r) => r.kind === 'upkeep')}
-											{@const produces = b.resources.filter((r) => r.kind === 'produces')}
-											{@const jobs = b.modifiers.filter((m) => m.buildingScope === 'job')}
-											{@const effects = b.modifiers.filter((m) => m.buildingScope !== 'job')}
-											{@const limit = buildingLimitLabel(b)}
-											<div class="border-surface-400-500/20 rounded border p-2">
-												<div class="text-sm font-medium">{b.name ?? b.buildingKey}</div>
-
-												<!-- Build restrictions -->
-												<div class="mt-0.5 flex flex-wrap gap-x-3 text-[10px] opacity-40">
-													{#if limit}<span title="How many you can build">Limit: {limit}</span>{/if}
-													{#if b.buildTimeDays != null}<span>{b.buildTimeDays}d build time</span
-														>{/if}
-													{#if b.canDemolish === false}<span>cannot demolish</span>{/if}
-												</div>
-
-												<!-- Cost / upkeep / produces -->
-												{#if cost.length || upkeep.length || produces.length}
-													<div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs opacity-60">
-														{#if cost.length}<span
-																>Cost: {cost.map(buildingResourceLabel).join(', ')}</span
-															>{/if}
-														{#if upkeep.length}<span
-																>Upkeep: {upkeep.map(buildingResourceLabel).join(', ')}</span
-															>{/if}
-														{#if produces.length}<span class="text-emerald-400/80"
-																>Produces: {produces.map(buildingResourceLabel).join(', ')}</span
-															>{/if}
-													</div>
-												{/if}
-
-												<!-- Jobs -->
-												{#if jobs.length}
-													<div class="mt-1 text-xs">
-														<span class="opacity-40">Jobs:</span>
-														{#each jobs as j (j.key)}<span class="ml-1 text-sky-300/80"
-																>{buildingJobLabel(j)}</span
-															>{/each}
-													</div>
-												{/if}
-
-												<!-- Planet / country modifiers -->
-												{#if effects.length}
-													<ul class="mt-1 space-y-0.5 text-xs">
-														{#each effects as e (e.buildingScope + e.key)}
-															<li class="flex items-baseline justify-between gap-3">
-																<span class="opacity-60"
-																	>{e.label ?? e.key}{#if e.buildingScope === 'country'}<span
-																			class="opacity-30"
-																		>
-																			(empire-wide)</span
-																		>{/if}</span
-																>
-																<span class="shrink-0 font-mono {valueColor(e)}"
-																	>{formatValue(e)}</span
-																>
-															</li>
-														{/each}
-													</ul>
-												{/if}
-											</div>
-										{/each}
+										{#each homeBuildings as b (b.buildingKey)}{@render buildingDetail(b)}{/each}
 									</div>
+								</div>
+							{/if}
+
+							<!-- Technology: the "Secrets of …" tech + the empire-wide building it unlocks -->
+							{#if p.technology}
+								{@const tech = p.technology}
+								{@const techBuilding = p.buildings.find(
+									(b) => b.buildingKey === tech.unlocksBuildingKey
+								)}
+								<div>
+									<div
+										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
+									>
+										{@render hrule()}<span>Technology</span>{@render hrule()}
+									</div>
+									<p class="mb-2 text-[11px] opacity-40">
+										A permanent research option from the <span class="opacity-70"
+											>Secrets of the {p.name}</span
+										> discovery project (can't appear in normal research draws), unlocking:
+									</p>
+									<div class="mb-2 flex flex-wrap items-baseline gap-x-2 text-sm">
+										<span class="font-medium">{tech.name ?? tech.techKey}</span>
+										<span class="text-[10px] opacity-40">
+											{#if tech.cost != null}{tech.cost.toLocaleString('en-US')} research{/if}{#if tech.tier != null}
+												· tier {tech.tier}{/if}
+										</span>
+									</div>
+									{#if techBuilding}{@render buildingDetail(techBuilding)}{/if}
 								</div>
 							{/if}
 
