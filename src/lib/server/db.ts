@@ -10,6 +10,22 @@ function db(): Database.Database {
 	return _db;
 }
 
+export interface GameVersion {
+	version: string; // full, e.g. "Cetus v4.3.7 (4f3c)"
+	raw: string | null; // e.g. "v4.3.7"
+}
+
+// The Stellaris version the DB was extracted from (meta, from launcher-settings.json).
+export function loadGameVersion(): GameVersion | null {
+	const rows = db()
+		.prepare(`SELECT key, value FROM meta WHERE key IN ('game_version', 'game_version_raw')`)
+		.all() as Array<{ key: string; value: string }>;
+	const map = new Map(rows.map((x) => [x.key, x.value]));
+	const version = map.get('game_version');
+	if (!version) return null;
+	return { version, raw: map.get('game_version_raw') ?? null };
+}
+
 export interface Archetype {
 	key: string;
 	traitPoints: number;

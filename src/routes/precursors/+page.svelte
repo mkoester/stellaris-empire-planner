@@ -5,14 +5,14 @@
 		EMPIRE_TYPES,
 		type EmpireType,
 		conditionApplies,
-		variantApplies,
 		conditionLabel,
 		typesLabel,
 		mergeRelicPassives,
+		mergeRewardModifiers,
+		rewardQualifier,
 		formatValue,
 		valueColor,
 		modLabel,
-		variantLabel,
 		shownPlanets,
 		isRelevant,
 		isTerraformable,
@@ -146,7 +146,7 @@
 								</div>
 							</header>
 
-							<!-- Permanent empire effect (reward modifiers) -->
+							<!-- Permanent empire effect (reward modifiers, merged across empire-type/choice variants) -->
 							{#if p.rewards.length}
 								<div>
 									<div
@@ -154,43 +154,27 @@
 									>
 										{@render hrule()}<span>Permanent effect</span>{@render hrule()}
 									</div>
-									{#if p.rewards.length > 1}
-										<p class="mb-1.5 text-[11px] italic opacity-40">
-											Only one applies, by empire type / choice:
-										</p>
-									{/if}
-									<div class="space-y-2">
-										{#each p.rewards as reward}
-											{@const applies = activeType
-												? variantApplies(reward.variant, activeType)
-												: null}
-											<div class={applies === false ? 'opacity-40' : ''}>
-												{#if p.rewards.length > 1}
-													<div
-														class="text-[11px] font-medium {applies === true
-															? 'text-primary-400'
-															: 'opacity-60'}"
-													>
-														{variantLabel(reward)}
-														{#if reward.name}<span class="font-normal opacity-40"
-																>· {reward.name}</span
-															>{/if}
-														{#if applies === true}<span class="opacity-70"> ✓</span>{/if}
-													</div>
-												{/if}
-												<ul class="space-y-0.5">
-													{#each reward.modifiers as mod}
-														<li class="flex items-baseline justify-between gap-3 text-sm">
-															<span class="opacity-70">{modLabel(mod)}</span>
-															<span class="shrink-0 font-mono {valueColor(mod)}"
-																>{formatValue(mod)}</span
-															>
-														</li>
-													{/each}
-												</ul>
-											</div>
+									<ul class="space-y-0.5">
+										{#each mergeRewardModifiers(p.rewards) as m}
+											{@const q = rewardQualifier(m)}
+											{@const applies = activeType ? m.types.includes(activeType) : null}
+											<li
+												class="flex items-baseline justify-between gap-3 text-sm {applies === false
+													? 'opacity-30'
+													: ''}"
+											>
+												<span class="opacity-70">
+													{modLabel(m)}
+													{#if q}<span
+															class="text-[10px] {applies === true
+																? 'text-primary-400'
+																: 'opacity-40'}">({q})</span
+														>{/if}
+												</span>
+												<span class="shrink-0 font-mono {valueColor(m)}">{formatValue(m)}</span>
+											</li>
 										{/each}
-									</div>
+									</ul>
 								</div>
 							{/if}
 

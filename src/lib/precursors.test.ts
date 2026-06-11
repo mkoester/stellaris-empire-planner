@@ -14,6 +14,8 @@ import {
 	conditionLabel,
 	typesLabel,
 	mergeRelicPassives,
+	mergeRewardModifiers,
+	rewardQualifier,
 	variantApplies,
 	formatValue,
 	valueColor,
@@ -157,6 +159,48 @@ describe('mergeRelicPassives', () => {
 	it('does not merge a modifier that appears with different values', () => {
 		const merged = mergeRelicPassives([rm('x', 0.1, null), rm('x', 0.2, null)]);
 		expect(merged).toHaveLength(2);
+	});
+});
+
+describe('mergeRewardModifiers (Vultaum empire-type + choice)', () => {
+	const mod = (key: string, value: number) => ({
+		key,
+		value,
+		label: key,
+		positiveIsGood: true
+	});
+	const reward = (variant: string, mods: ReturnType<typeof mod>[]): PrecursorReward => ({
+		staticModifier: 's',
+		variant,
+		name: null,
+		modifiers: mods
+	});
+	const vultaum: PrecursorReward[] = [
+		reward('suppressed', [mod('computing', 0.075), mod('amenities', 0.1)]),
+		reward('public', [
+			mod('all_tech', 0.1),
+			mod('computing', 0.075),
+			mod('amenities', 0.1),
+			mod('happiness', -0.2)
+		]),
+		reward('machine', [mod('computing', 0.075), mod('assembly', 0.05)]),
+		reward('hive', [mod('computing', 0.075)])
+	];
+	const merged = mergeRewardModifiers(vultaum);
+	const find = (k: string) => merged.find((m) => m.key === k)!;
+
+	it('collapses a modifier shared by all variants to unconditional', () => {
+		expect(rewardQualifier(find('computing'))).toBeNull(); // all empires
+	});
+	it('keeps a both-choices regular modifier as a plain type note', () => {
+		expect(rewardQualifier(find('amenities'))).toBe('regular / wilderness');
+	});
+	it('marks a choice-only modifier with the choice (research made public)', () => {
+		expect(rewardQualifier(find('all_tech'))).toBe('regular / wilderness, research made public');
+		expect(rewardQualifier(find('happiness'))).toBe('regular / wilderness, research made public');
+	});
+	it('keeps a machine-only modifier as machine', () => {
+		expect(rewardQualifier(find('assembly'))).toBe('machine');
 	});
 });
 

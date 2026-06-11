@@ -14,6 +14,10 @@ Two repos that work together:
 
 DB path: `STELLARIS_DB=/home/mk/Projects/stellaris-data-extraction/sqlite/stellaris.sqlite` (from `.env`).
 
+**Game version:** `meta` table (`game_version` / `game_version_raw`, from the game's
+`launcher-settings.json`). `loadGameVersion()` → `+layout.server.ts` → shown fixed
+top-right by `+layout.svelte` ("Stellaris v4.3.7", full version as the `title`).
+
 After changing the extraction script, regenerate the DB:
 ```
 cd stellaris-data-extraction
@@ -202,12 +206,16 @@ applicable ones get a `text-primary-400` accent (+ ✓ on the variant).
   "non-wilderness"), replacing the old hardcoded string map. **Depends on the
   extraction emitting parseable OR conditions** (see extraction CLAUDE.md).
 
-**Reward variants (Vultaum).** Vultaum's `_machine`/`_hive` reward modifiers both
-localise to the same name ("Secrets of the Vultaum"), so a bare name is
-ambiguous. `VARIANT_LABELS` maps the `variant` key → empire-type/choice
-descriptor ("Regular empire — research kept secret", "Machine empire", …); for
-multi-variant rewards the card shows that descriptor + the loc name and an
-"Only one applies, by empire type / choice" note.
+**Reward merging (permanent effect).** `mergeRewardModifiers(rewards)` collapses
+the per-variant reward modifiers into one flat list (like `mergeRelicPassives`):
+same modifier+value → one row whose `types` is the union of the granting variants'
+empire types, plus a `choiceNote` when, for those types, only some (choice) variants
+grant it. `rewardQualifier(m)` → the `(…)` note (type note + choice note; null when
+it applies to everyone). So Vultaum reads: Research Speed (Computing) — no note
+(all); Amenities — `(regular / wilderness)` (both regular choices); All-Tech /
+Happiness — `(regular / wilderness, research made public)` (the "made public"
+choice only); Pop Assembly — `(machine)`. (`VARIANT_LABELS`/`variantLabel` and the
+old per-variant "Only one applies" rendering are gone.)
 
 **Home system — relevant-first.** `isRelevant(planet)` = homeworld OR has a
 resource (non-blocker) deposit OR has a modifier OR class ∈ `RELEVANT_CLASSES`

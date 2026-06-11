@@ -163,6 +163,88 @@ export function mergeRelicPassives(passives: RelicModifier[]): MergedPassive[] {
 // (e.g. the Tempest Invocator's storm repulsion: 1.0 = +100%).
 const PERCENT_ADD_MODIFIERS = new Set(['country_storm_repulsion_influence_add']);
 
+// A reward (permanent effect) modifier merged across its empire-type/choice variants.
+export interface MergedReward {
+	key: string;
+	value: number;
+	label: string | null;
+	positiveIsGood: boolean;
+	types: EmpireType[]; // empire types that can get it
+	choiceNote: string | null; // when choice-gated within a type, e.g. "research made public"
+}
+
+// The player-choice descriptor for a variant (Vultaum: regular empires choose to
+// keep the research secret or make it public — only some effects differ).
+const VARIANT_CHOICE_LABELS: Record<string, string> = {
+	suppressed: 'research kept secret',
+	public: 'research made public'
+};
+
+// Merge a precursor's reward modifiers across its variants (like mergeRelicPassives,
+// but reward variants split by empire type *and* sometimes a choice). Same
+// modifier+value collapses into one row whose `types` is the union of the empire
+// types of the variants granting it; `choiceNote` is set when, for those types,
+// only some (choice) variants grant it — so Vultaum's regular-empire "kept secret"
+// vs "made public" options read correctly.
+export function mergeRewardModifiers(rewards: PrecursorReward[]): MergedReward[] {
+	type Acc = {
+		key: string;
+		value: number;
+		label: string | null;
+		positiveIsGood: boolean;
+		variants: Set<string>;
+	};
+	const byId = new Map<string, Acc>();
+	const order: string[] = [];
+	for (const r of rewards) {
+		for (const m of r.modifiers) {
+			const id = `${m.key}|${m.value}`;
+			if (!byId.has(id)) {
+				byId.set(id, {
+					key: m.key,
+					value: m.value,
+					label: m.label,
+					positiveIsGood: m.positiveIsGood,
+					variants: new Set()
+				});
+				order.push(id);
+			}
+			byId.get(id)!.variants.add(r.variant);
+		}
+	}
+	const variantsForType = (t: EmpireType) =>
+		rewards.filter((r) => variantApplies(r.variant, t)).map((r) => r.variant);
+
+	return order.map((id) => {
+		const e = byId.get(id)!;
+		const types = ALL_TYPES.filter((t) => [...e.variants].some((v) => variantApplies(v, t)));
+		// choice-gated when, for the applicable types, some variant doesn't grant it
+		const applicable = new Set<string>();
+		for (const t of types) for (const v of variantsForType(t)) applicable.add(v);
+		const choiceGated = [...applicable].some((v) => !e.variants.has(v));
+		const choiceNote = choiceGated
+			? [...e.variants]
+					.map((v) => VARIANT_CHOICE_LABELS[v])
+					.filter(Boolean)
+					.join(' / ') || null
+			: null;
+		return {
+			key: e.key,
+			value: e.value,
+			label: e.label,
+			positiveIsGood: e.positiveIsGood,
+			types,
+			choiceNote
+		};
+	});
+}
+
+// The "(…)" qualifier for a merged reward: empire-type note + choice note (null = all).
+export function rewardQualifier(m: MergedReward): string | null {
+	const parts = [typesLabel(m.types), m.choiceNote].filter((p): p is string => !!p);
+	return parts.length ? parts.join(', ') : null;
+}
+
 // ── Modifier formatting ────────────────────────────────────────────────────
 export function formatValue(mod: Modifier): string {
 	const sign = mod.value > 0 ? '+' : '';
