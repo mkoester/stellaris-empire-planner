@@ -19,6 +19,7 @@
 		depositChips,
 		megaLabel,
 		relicResourceLabel,
+		groupActiveModifiers,
 		cooldownLabel,
 		dlcBadge,
 		groupByDlc
@@ -256,16 +257,21 @@
 												<p class="text-sm opacity-70">{p.relic.activeEffect}</p>
 											{/if}
 											{#if p.relic.activeModifiers.length}
-												<ul class="space-y-0.5">
-													{#each p.relic.activeModifiers as mod}
-														<li class="flex items-baseline justify-between gap-3 text-sm">
-															<span class="opacity-70">{modLabel(mod)}</span>
-															<span class="shrink-0 font-mono {valueColor(mod)}"
-																>{formatValue(mod)}</span
-															>
-														</li>
-													{/each}
-												</ul>
+												{#each groupActiveModifiers(p.relic.activeModifiers) as grp}
+													{#if grp.label}
+														<div class="mt-1 text-[11px] font-medium opacity-60">{grp.label}</div>
+													{/if}
+													<ul class="space-y-0.5 {grp.label ? 'ml-3' : ''}">
+														{#each grp.modifiers as mod}
+															<li class="flex items-baseline justify-between gap-3 text-sm">
+																<span class="opacity-70">{modLabel(mod)}</span>
+																<span class="shrink-0 font-mono {valueColor(mod)}"
+																	>{formatValue(mod)}</span
+																>
+															</li>
+														{/each}
+													</ul>
+												{/each}
 												{#if p.relic.activeDetail}<p class="mt-0.5 text-[11px] italic opacity-50">
 														{p.relic.activeDetail}
 													</p>{/if}

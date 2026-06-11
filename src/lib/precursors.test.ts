@@ -26,6 +26,7 @@ import {
 	depositChips,
 	megaLabel,
 	relicResourceLabel,
+	groupActiveModifiers,
 	cooldownLabel,
 	dlcBadge,
 	groupByDlc,
@@ -336,6 +337,32 @@ describe('relicResourceLabel', () => {
 	});
 	it('is empty for no resources', () => {
 		expect(relicResourceLabel([])).toBe('');
+	});
+});
+
+describe('groupActiveModifiers', () => {
+	const am = (key: string, groupLabel: string | null) => ({
+		key,
+		value: 0.2,
+		label: key,
+		positiveIsGood: true,
+		groupLabel
+	});
+	it('keeps flat (one null group) when nothing is grouped', () => {
+		const groups = groupActiveModifiers([am('a', null), am('b', null)]);
+		expect(groups).toHaveLength(1);
+		expect(groups[0].label).toBeNull();
+		expect(groups[0].modifiers).toHaveLength(2);
+	});
+	it('groups consecutive modifiers by label (Zro guidance choice)', () => {
+		const groups = groupActiveModifiers([
+			am('ship_weapon_damage', 'Martial Guidance'),
+			am('planet_stability_add', 'Statecraft Guidance'),
+			am('edicts_upkeep_mult', 'Statecraft Guidance'),
+			am('pop_government_ethic_attraction', 'Statecraft Guidance')
+		]);
+		expect(groups.map((g) => g.label)).toEqual(['Martial Guidance', 'Statecraft Guidance']);
+		expect(groups[1].modifiers).toHaveLength(3);
 	});
 });
 

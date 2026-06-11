@@ -7,6 +7,7 @@ import type {
 	PrecursorReward,
 	PrecursorMegastructure,
 	RelicModifier,
+	ActiveModifier,
 	RelicResource,
 	DepositResource,
 	PrecursorPlanet
@@ -211,6 +212,23 @@ export function relicResourceLabel(resources: RelicResource[]): string {
 	if (!resources.length) return '';
 	const base = resources.map((r) => `${r.amount} ${titleCase(r.resource)}`).join(', ');
 	return resources.some((r) => r.scales) ? `${base} (grows with each use)` : base;
+}
+
+// The triumph's temporary modifiers, grouped by their (consecutive) `groupLabel`.
+// For 'choice' actives each group is a named option (e.g. "Martial Guidance"); for
+// 'direct'/'random' actives every group label is null → a single flat group.
+export interface ActiveModifierGroup {
+	label: string | null;
+	modifiers: ActiveModifier[];
+}
+export function groupActiveModifiers(mods: ActiveModifier[]): ActiveModifierGroup[] {
+	const groups: ActiveModifierGroup[] = [];
+	for (const m of mods) {
+		const last = groups[groups.length - 1];
+		if (last && last.label === m.groupLabel) last.modifiers.push(m);
+		else groups.push({ label: m.groupLabel, modifiers: [m] });
+	}
+	return groups;
 }
 
 // Triumph cooldown in days → years (Stellaris year = 360 days).
