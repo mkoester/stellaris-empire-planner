@@ -61,4 +61,12 @@ describe('civicRequirementLines', () => {
 		expect(lines).toContainEqual({ type: 'exclude', text: 'Corporate' });
 		expect(lines).toContainEqual({ type: 'exclude', text: 'Shared Burden' });
 	});
+	it('renders ship-type gates with a "ships" suffix', () => {
+		expect(civicRequirementLines([req('ship_type', 'forbid', 'organic')])).toEqual([
+			{ type: 'exclude', text: 'Organic ships' }
+		]);
+		expect(civicRequirementLines([req('ship_type', 'require_any', 'organic', 1)])).toEqual([
+			{ type: 'require', text: 'Organic ships' }
+		]);
+	});
 });

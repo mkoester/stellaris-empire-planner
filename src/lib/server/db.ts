@@ -519,6 +519,40 @@ export function loadOrigins(): Origin[] {
 	}));
 }
 
+// ── Planet classes ───────────────────────────────────────────────────────────
+
+// A world type. `climate` (wet/dry/cold) groups habitability for the colonizable
+// standard climates; special/engineered worlds and uninhabitable bodies have none.
+export interface PlanetClass {
+	key: string;
+	name: string | null;
+	climate: string | null;
+	colonizable: boolean;
+	isStandard: boolean; // a default startable climate (initial = yes)
+}
+
+export function loadPlanetClasses(): PlanetClass[] {
+	const rows = db()
+		.prepare(
+			`SELECT key, name, climate, colonizable, is_standard
+			 FROM planet_class ORDER BY sort_order`
+		)
+		.all() as Array<{
+		key: string;
+		name: string | null;
+		climate: string | null;
+		colonizable: number;
+		is_standard: number;
+	}>;
+	return rows.map((r) => ({
+		key: r.key,
+		name: r.name,
+		climate: r.climate,
+		colonizable: r.colonizable === 1,
+		isStandard: r.is_standard === 1
+	}));
+}
+
 // ── Precursors ─────────────────────────────────────────────────────────────
 
 export interface RelicModifier extends Modifier {

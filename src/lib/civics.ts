@@ -70,13 +70,17 @@ export function civicRequirementLines(reqs: CivicRequirement[]): CivicRequiremen
 	for (const r of reqs) {
 		if (r.operator === 'require_any') {
 			if (!anyGroups.has(r.groupId)) anyGroups.set(r.groupId, []);
-			anyGroups.get(r.groupId)!.push(prettyKey(r.value));
+			anyGroups
+				.get(r.groupId)!
+				.push(r.kind === 'ship_type' ? `${prettyKey(r.value)} ships` : prettyKey(r.value));
 		}
 	}
 	for (const vals of anyGroups.values()) lines.push({ type: 'require', text: vals.join(' or ') });
 	for (const r of reqs) {
-		if (r.operator === 'require') lines.push({ type: 'require', text: prettyKey(r.value) });
-		else if (r.operator === 'forbid') lines.push({ type: 'exclude', text: prettyKey(r.value) });
+		// Ship-type gates read as "Organic ships" rather than just "Organic".
+		const text = r.kind === 'ship_type' ? `${prettyKey(r.value)} ships` : prettyKey(r.value);
+		if (r.operator === 'require') lines.push({ type: 'require', text });
+		else if (r.operator === 'forbid') lines.push({ type: 'exclude', text });
 	}
 	// Drop duplicates (distinct keys can still map to the same display text).
 	const seen = new Set<string>();

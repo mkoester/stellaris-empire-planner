@@ -53,7 +53,8 @@ civic_modifier          — civic_key, modifier_key, modifier_value, sort_order
 civic_requirement       — civic_key, kind (authority/ethic/civic/origin), operator (require/forbid/require_any), value, group_id (ties require_any OR sets)
 origin                  — key, name, description, required_dlc, selectable, icon, sort_order
 origin_modifier         — origin_key, modifier_key, modifier_value, sort_order
-origin_requirement      — origin_key, kind, operator, value, group_id  (same shape as civic_requirement)
+origin_requirement      — origin_key, kind, operator, value, group_id  (same shape as civic_requirement; kind includes 'ship_type' value 'organic')
+planet_class            — key, name, climate (wet/dry/cold/null), colonizable, is_standard (default startable climate)
 precursor               — key, name, required_dlc, system_initializer, picture, num_digsites, sort_order
 precursor_relic         — precursor_key, relic_key, name, portrait, score, description, active_effect
 precursor_relic_modifier — relic_key, modifier_key, modifier_value, condition (null=always), sort_order
@@ -88,7 +89,8 @@ Key functions:
 - `loadSpeciesClasses()` — returns `{ key, label, archetype }`, filtered to BIOLOGICAL/LITHOID/MACHINE.
 - `loadEthics()` — returns ethics with `modifiers[]`, `implications[]`, `policyRestrictions[]`.
 - `loadCivics()` — player-selectable `Civic[]` (`selectable = 1`), each with `modifiers[]` and `requirements[]` (`{ kind, operator, value, groupId }`). Pure display helpers in [`src/lib/civics.ts`](src/lib/civics.ts) (`groupCivicsByType`, `prettyKey`, `civicRequirementLines`, `formatModifierValue`).
-- `loadOrigins()` — player-selectable `Origin[]`; same `requirements`/`modifiers` shape as civics (reuses `CivicRequirement` + the civics.ts helpers). Effects are mostly the `description`.
+- `loadOrigins()` — player-selectable `Origin[]`; same `requirements`/`modifiers` shape as civics (reuses `CivicRequirement` + the civics.ts helpers). Effects are mostly the `description`. Requirements include `ship_type` gates (forbid/require organic ships).
+- `loadPlanetClasses()` — `PlanetClass[]`; grouped for display by `src/lib/planets.ts` (`groupPlanetClasses`: wet/dry/cold standard climates, special/engineered worlds, uninhabitable bodies).
 - `loadPrecursors()` — fully-stitched `Precursor[]`: each with `relic` (+passives w/ `condition`), `rewards[]` (grouped by variant — Vultaum has 4), `buildings[]`, and `systems[]` → `planets[]` → `deposits[]` (resolved against the `deposit` dictionary) + planet `modifiers[]` + system `megastructures[]`. Several queries stitched in JS by `precursor_key`/`relic_key`/`initializer`/`planet_id`.
 
 `Modifier.positiveIsGood` — false for cost/upkeep/size modifiers (see INVERTED_MODIFIERS in extraction script).
@@ -166,8 +168,22 @@ state yet).
 
 **Page data:** `{ origins }` from `loadOrigins()`. Grouped by DLC (base game first),
 free-text filter; each card shows needs/excludes chips + modifiers + cleaned
-description, reusing the civics.ts helpers. Global nav order: Species Builder · Ethics
-· Civics · Origins · Precursors (a single sticky nav in `+layout.svelte`).
+description, reusing the civics.ts helpers.
+
+### `/planets` — Planets reference (`src/routes/planets/+page.svelte`)
+
+**Page data:** `{ planetClasses }` from `loadPlanetClasses()`, grouped by
+`groupPlanetClasses`. World types grouped into wet/dry/cold standard climates, special
+& engineered colonizable worlds, and uninhabitable bodies; climate chips.
+
+### `/ships` — Ships reference (`src/routes/ships/+page.svelte`)
+
+**Page data:** `{ origins, civics }`. A regular-vs-organic (bio-ship) explainer plus
+lists of origins/civics that **force** or **exclude** organic ships, filtered from
+their `ship_type` requirements.
+
+Global nav (single sticky nav in `+layout.svelte`): Species Builder · Ethics · Civics
+· Origins · Planets · Ships · Precursors.
 
 ### `/precursors` — Precursors (`src/routes/precursors/+page.svelte`)
 
