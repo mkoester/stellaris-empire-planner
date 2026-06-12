@@ -8,7 +8,7 @@ export function civicTypeLabel(t: string): string {
 	);
 }
 
-// Group selectable civics by their type, in a stable display order.
+// Group selectable civics by their type (stable display order), alphabetical within.
 const TYPE_ORDER = ['normal', 'gestalt', 'corporate', 'special'];
 export function groupCivicsByType(
 	civics: Civic[]
@@ -21,7 +21,7 @@ export function groupCivicsByType(
 	return TYPE_ORDER.filter((t) => by.has(t)).map((t) => ({
 		type: t,
 		label: civicTypeLabel(t),
-		items: by.get(t)!
+		items: by.get(t)!.sort((a, b) => (a.name ?? a.key).localeCompare(b.name ?? b.key))
 	}));
 }
 

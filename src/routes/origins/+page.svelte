@@ -36,7 +36,11 @@
 		}
 		return order
 			.sort((a, b) => (a === null ? -1 : b === null ? 1 : 0))
-			.map((dlc) => ({ dlc, label: dlc ?? 'Base game', items: by.get(dlc)! }));
+			.map((dlc) => ({
+				dlc,
+				label: dlc ?? 'Base game',
+				items: by.get(dlc)!.sort((a, b) => (a.name ?? a.key).localeCompare(b.name ?? b.key))
+			}));
 	});
 </script>
 
