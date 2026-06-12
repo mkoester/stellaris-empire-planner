@@ -83,7 +83,30 @@
 							? 'cursor-text select-text'
 							: ''}"
 					>
-						<h3 class="font-semibold">{origin.name ?? origin.key}</h3>
+						<div class="flex items-start justify-between gap-2">
+							<h3 class="font-semibold">{origin.name ?? origin.key}</h3>
+							{#if origin.ascensionLock || origin.ascensionBlocks.length}
+								<div class="flex shrink-0 flex-wrap justify-end gap-1">
+									{#if origin.ascensionLock}
+										<span
+											class="rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-200"
+											title="Locked to {origin.ascensionLock} Ascension — blocks all other ascension paths"
+										>
+											{origin.ascensionLock} ascension only
+										</span>
+									{:else}
+										{#each origin.ascensionBlocks as path (path)}
+											<span
+												class="rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-200"
+												title="Cannot pursue {path} Ascension"
+											>
+												no {path} ascension
+											</span>
+										{/each}
+									{/if}
+								</div>
+							{/if}
+						</div>
 
 						{#if reqs.length}
 							<div class="flex flex-wrap gap-1">

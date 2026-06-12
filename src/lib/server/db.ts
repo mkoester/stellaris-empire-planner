@@ -443,6 +443,8 @@ export interface Origin {
 	name: string | null;
 	description: string | null;
 	requiredDlc: string | null;
+	ascensionLock: string | null; // locked to this single ascension path (blocks the others)
+	ascensionBlocks: string[]; // ascension paths blocked while still allowing others
 	icon: string | null;
 	modifiers: Modifier[];
 	requirements: CivicRequirement[];
@@ -452,7 +454,7 @@ export function loadOrigins(): Origin[] {
 	const d = db();
 	const rows = d
 		.prepare(
-			`SELECT key, name, description, required_dlc, icon
+			`SELECT key, name, description, required_dlc, ascension_lock, ascension_blocks, icon
 			 FROM origin WHERE selectable = 1 ORDER BY sort_order`
 		)
 		.all() as Array<{
@@ -460,6 +462,8 @@ export function loadOrigins(): Origin[] {
 		name: string | null;
 		description: string | null;
 		required_dlc: string | null;
+		ascension_lock: string | null;
+		ascension_blocks: string | null;
 		icon: string | null;
 	}>;
 
@@ -516,6 +520,8 @@ export function loadOrigins(): Origin[] {
 		name: r.name,
 		description: r.description,
 		requiredDlc: r.required_dlc,
+		ascensionLock: r.ascension_lock,
+		ascensionBlocks: r.ascension_blocks ? r.ascension_blocks.split(',') : [],
 		icon: r.icon,
 		modifiers: modByOrigin.get(r.key) ?? [],
 		requirements: reqByOrigin.get(r.key) ?? []
