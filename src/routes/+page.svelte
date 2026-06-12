@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import type { Trait } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
-	import { formatModifierValue } from '$lib/civics';
+	import { formatModifierValue, modifierColor } from '$lib/civics';
 
 	let { data }: { data: PageData } = $props();
 
@@ -383,11 +383,7 @@
 						{#each trait.modifiers as mod (mod.key)}
 							<li class="flex items-baseline justify-between gap-1 text-[10px]">
 								<span class="leading-tight opacity-60">{mod.label ?? mod.key}</span>
-								<span
-									class="shrink-0 font-mono {mod.value > 0 === mod.positiveIsGood
-										? 'text-emerald-400'
-										: 'text-red-400'}">{formatModifier(mod)}</span
-								>
+								<span class="shrink-0 font-mono {modifierColor(mod)}">{formatModifier(mod)}</span>
 							</li>
 						{/each}
 					</ul>

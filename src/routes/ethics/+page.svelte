@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import type { Ethic, Modifier, EthicImplication, PolicyRestriction } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
-	import { formatModifierValue } from '$lib/civics';
+	import { formatModifierValue, modifierColor } from '$lib/civics';
 
 	let { data }: { data: PageData } = $props();
 
@@ -234,12 +234,10 @@
 	];
 
 	// ── Formatting ───────────────────────────────────────────────────────────
-	// Value formatting (fractions vs percentages) lives in one place: $lib/civics.
+	// Value formatting (fractions vs percentages) and good/bad colouring live in one
+	// place: $lib/civics. (modLabel keeps a local tweak — see below.)
 	const formatValue = formatModifierValue;
-
-	function valueColor(mod: Modifier): string {
-		return mod.value > 0 === mod.positiveIsGood ? 'text-emerald-400' : 'text-red-400';
-	}
+	const valueColor = modifierColor;
 
 	function modLabel(mod: Modifier): string {
 		if (!mod.label) {

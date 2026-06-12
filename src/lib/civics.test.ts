@@ -66,6 +66,15 @@ describe('formatModifierValue', () => {
 		expect(formatModifierValue(mod('ship_hull_regen_add_perc', 0.05))).toBe('+5%');
 		expect(formatModifierValue(mod('science_ship_survey_speed', 0.2))).toBe('+20%');
 	});
+	it('resolves the precursor-rule contradictions as percentages', () => {
+		expect(formatModifierValue(mod('country_trade_fee', -0.05))).toBe('-5%'); // Market Fee
+		expect(formatModifierValue(mod('shroud_delve_cooldown', -0.5))).toBe('-50%');
+		expect(formatModifierValue(mod('country_storm_repulsion_influence_add', 1))).toBe('+100%');
+	});
+	it('does not mistake "no_happiness" flat keys for percentages', () => {
+		// anchored families: a flat -30 crime value must stay raw, not become -3000%
+		expect(formatModifierValue(mod('planet_crime_no_happiness_add', -30))).toBe('-30');
+	});
 });
 
 describe('civicRequirementLines', () => {

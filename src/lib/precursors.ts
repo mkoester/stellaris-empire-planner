@@ -162,10 +162,6 @@ export function mergeRelicPassives(passives: RelicModifier[]): MergedPassive[] {
 	return order.map((id) => byId.get(id)!);
 }
 
-// `_add` modifiers that are really fractional strengths shown as a percentage
-// (e.g. the Tempest Invocator's storm repulsion: 1.0 = +100%).
-const PERCENT_ADD_MODIFIERS = new Set(['country_storm_repulsion_influence_add']);
-
 // A reward (permanent effect) modifier merged across its empire-type/choice variants.
 export interface MergedReward {
 	key: string;
@@ -249,18 +245,11 @@ export function rewardQualifier(m: MergedReward): string | null {
 }
 
 // ── Modifier formatting ────────────────────────────────────────────────────
-export function formatValue(mod: Modifier): string {
-	const sign = mod.value > 0 ? '+' : '';
-	if (mod.key.endsWith('_add') && !PERCENT_ADD_MODIFIERS.has(mod.key)) {
-		const n = Number.isInteger(mod.value) ? mod.value : parseFloat(mod.value.toFixed(2));
-		return `${sign}${n}`;
-	}
-	return `${sign}${Math.round(mod.value * 100)}%`;
-}
-
-export function valueColor(mod: Modifier): string {
-	return mod.value > 0 === mod.positiveIsGood ? 'text-emerald-400' : 'text-red-400';
-}
+// Value (fraction vs percentage) and good/bad colouring are shared with the rest of
+// the app — one implementation in $lib/civics. The storm-repulsion percentage case
+// that used to be special-cased here is handled by that single rule. Re-exported
+// under the precursor page's existing names.
+export { formatModifierValue as formatValue, modifierColor as valueColor } from './civics';
 
 export function modLabel(mod: Modifier): string {
 	if (!mod.label) {

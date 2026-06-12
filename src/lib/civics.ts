@@ -47,13 +47,19 @@ export function prettyKey(value: string): string {
 // Modifiers stored as a fraction but shown as a percentage. `_mult` (including
 // variants like `_mult_uninhabitable`) and `_perc` keys are always percentages; a
 // number of `_add`/suffixless families (happiness, habitability, attraction,
-// tolerance, exp gain, research/survey speed, chances, and a few combat stats) are
-// too — whereas flat amounts (envoys, leader skill, per-job resource output,
-// influence, loyalty, trait counts) stay raw. This is the ONE place modifier values
-// are turned into percentages; every page formats through formatModifierValue.
+// tolerance, exp gain, research/survey speed, chances, cooldowns, market fees and a
+// few combat stats) are too — whereas flat amounts (envoys, leader skill, per-job
+// resource output, influence, loyalty, trait counts, crime) stay raw. This is the
+// ONE place modifier values become percentages; every page (incl. precursors)
+// formats through formatModifierValue.
+//
+// The families are anchored (e.g. `_happiness$`, not bare `happiness`) so flat keys
+// that merely contain the word — like `planet_crime_no_happiness_add` (−30 crime) —
+// are not mistaken for percentages. `storm_repulsion` is an explicit special case (a
+// storm-repulsion "effect" that reads as a %, despite its `_influence_add` key).
 function isPercentModifier(key: string): boolean {
 	if (key.includes('_mult') || key.endsWith('_perc')) return true;
-	return /habitability|happiness|attraction|tolerance|_exp_gain$|research_speed$|survey_speed|_chance_add$|army_health$|weapon_damage$|orbital_bombardment_damage$/.test(
+	return /habitability|_happiness$|_attraction$|_tolerance$|_exp_gain$|research_speed$|survey_speed|_chance_add$|army_health$|weapon_damage$|orbital_bombardment_damage$|_cooldown$|_fee$|storm_repulsion/.test(
 		key
 	);
 }
