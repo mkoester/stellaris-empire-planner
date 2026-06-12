@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import type { Precursor, PrecursorPlanet, PrecursorBuilding } from '$lib/server/db';
 	import {
@@ -181,12 +180,7 @@
 {/snippet}
 
 <main class="mx-auto max-w-7xl space-y-8 p-4">
-	<div class="flex items-baseline gap-4">
-		<h1 class="text-2xl font-bold">Precursors</h1>
-		<nav class="flex gap-3 text-sm opacity-50">
-			<a href={resolve('/civics')} class="transition-opacity hover:opacity-100">← Civics</a>
-		</nav>
-	</div>
+	<h1 class="text-2xl font-bold">Precursors</h1>
 
 	<p class="max-w-3xl text-sm opacity-60">
 		The ancient civilisations whose archaeology chains you can uncover. Each grants a

@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import type { Civic } from '$lib/server/db';
 	import { dlcBadge } from '$lib/precursors';
@@ -27,13 +26,7 @@
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
-	<div class="flex items-baseline gap-4">
-		<h1 class="text-2xl font-bold">Civics</h1>
-		<nav class="flex gap-3 text-sm opacity-50">
-			<a href={resolve('/ethics')} class="transition-opacity hover:opacity-100">← Ethics</a>
-			<a href={resolve('/precursors')} class="transition-opacity hover:opacity-100">Precursors →</a>
-		</nav>
-	</div>
+	<h1 class="text-2xl font-bold">Civics</h1>
 
 	<input class="input max-w-sm" type="search" placeholder="Filter civics…" bind:value={query} />
 

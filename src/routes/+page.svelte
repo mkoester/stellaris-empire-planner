@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { resolve } from '$app/paths';
 	import type { PageData } from './$types';
 	import type { Trait, Modifier } from '$lib/server/db';
 
@@ -430,12 +429,7 @@
 		class="space-y-6 [@media(min-height:700px)]:sticky [@media(min-height:700px)]:top-0 [@media(min-height:700px)]:z-10 [@media(min-height:700px)]:pb-2"
 		style="background-color: var(--color-surface-50-950)"
 	>
-		<div class="flex items-baseline gap-4">
-			<h1 class="text-2xl font-bold">Species Builder</h1>
-			<nav class="flex gap-3 text-sm opacity-50">
-				<a href={resolve('/ethics')} class="transition-opacity hover:opacity-100">Ethics →</a>
-			</nav>
-		</div>
+		<h1 class="text-2xl font-bold">Species Builder</h1>
 
 		<!-- Budget + selection summary -->
 		<div class="card preset-filled p-4">
