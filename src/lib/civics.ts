@@ -87,7 +87,7 @@ export function modifierColor(mod: Modifier): string {
 // end so a card's real, distinguishing effects come first. Callers render a divider
 // between `main` and `attunement` when both are present.
 export function sortModifiers(mods: Modifier[]): { main: Modifier[]; attunement: Modifier[] } {
-	const isAttunement = (m: Modifier) => m.key.startsWith('add_attunement');
+	const isAttunement = (m: Modifier) => /attunement/.test(m.key);
 	const byLabel = (a: Modifier, b: Modifier) => modifierLabel(a).localeCompare(modifierLabel(b));
 	return {
 		main: mods.filter((m) => !isAttunement(m)).sort(byLabel),
