@@ -6,8 +6,10 @@
 		formatModifierValue,
 		modifierColor,
 		modifierLabel,
+		sortModifiers,
 		civicRequirementLines
 	} from '$lib/civics';
+	import RuleText from '$lib/RuleText.svelte';
 	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -59,6 +61,7 @@
 				{#each group.items as origin (origin.key)}
 					{@const reqs = civicRequirementLines(origin.requirements)}
 					{@const selected = empire.draft.origin === origin.key}
+					{@const mods = sortModifiers(origin.modifiers)}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<svelte:element
 						this={debug ? 'div' : 'button'}
@@ -86,21 +89,31 @@
 							</div>
 						{/if}
 
-						{#if origin.modifiers.length}
-							<ul class="space-y-0.5 text-xs">
-								{#each origin.modifiers as mod (mod.key)}
-									<li class="flex items-baseline justify-between gap-3">
-										<span class="opacity-70">{modifierLabel(mod)}</span>
-										<span class="shrink-0 font-mono {modifierColor(mod)}"
-											>{formatModifierValue(mod)}</span
-										>
-									</li>
-								{/each}
-							</ul>
+						{#if mods.main.length || mods.attunement.length}
+							{#snippet modRow(mod: (typeof mods.main)[number], muted: boolean)}
+								<li class="flex items-baseline justify-between gap-3 {muted ? 'opacity-45' : ''}">
+									<span class="opacity-70">{modifierLabel(mod)}</span>
+									<span class="shrink-0 font-mono {muted ? '' : modifierColor(mod)}"
+										>{formatModifierValue(mod)}</span
+									>
+								</li>
+							{/snippet}
+							{#if mods.main.length}
+								<ul class="space-y-0.5 text-xs">
+									{#each mods.main as mod (mod.key)}{@render modRow(mod, false)}{/each}
+								</ul>
+							{/if}
+							{#if mods.attunement.length}
+								<hr class="my-1 border-current opacity-45" />
+								<ul class="space-y-0.5 text-xs">
+									{#each mods.attunement as mod (mod.key)}{@render modRow(mod, true)}{/each}
+								</ul>
+							{/if}
 						{/if}
 
 						{#if origin.description}
-							<p class="text-xs opacity-55">{origin.description}</p>
+							{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
+							<RuleText text={origin.description} class="text-xs opacity-55" />
 						{/if}
 					</svelte:element>
 				{/each}

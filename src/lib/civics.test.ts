@@ -5,6 +5,7 @@ import {
 	prettyKey,
 	formatModifierValue,
 	modifierLabel,
+	sortModifiers,
 	civicRequirementLines
 } from './civics';
 
@@ -104,6 +105,22 @@ describe('modifierLabel', () => {
 	it('strips unresolved game-script tags, falling back if nothing remains', () => {
 		expect(modifierLabel(withLabel('x', 'Eater [This.GetColor] Bonus'))).toBe('Eater  Bonus');
 		expect(modifierLabel(withLabel('pop_happiness', '[This.X]'))).toBe('Pop Happiness');
+	});
+});
+
+describe('sortModifiers', () => {
+	const m = (key: string, label: string) => ({ key, value: 1, label, positiveIsGood: true });
+	it('sorts main modifiers alphabetically and splits attunement off to the end', () => {
+		const { main, attunement } = sortModifiers([
+			m('add_attunement_the_cradle_of_souls', 'Add Attunement with The Cradle Of Souls'),
+			m('z_mod', 'Zeta Bonus'),
+			m('a_mod', 'Alpha Bonus')
+		]);
+		expect(main.map((x) => x.label)).toEqual(['Alpha Bonus', 'Zeta Bonus']);
+		expect(attunement.map((x) => x.key)).toEqual(['add_attunement_the_cradle_of_souls']);
+	});
+	it('returns no attunement group when there are none', () => {
+		expect(sortModifiers([m('a', 'A')]).attunement).toEqual([]);
 	});
 });
 

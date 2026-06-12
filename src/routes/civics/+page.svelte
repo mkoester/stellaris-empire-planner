@@ -7,8 +7,10 @@
 		formatModifierValue,
 		modifierColor,
 		modifierLabel,
+		sortModifiers,
 		civicRequirementLines
 	} from '$lib/civics';
+	import RuleText from '$lib/RuleText.svelte';
 	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -45,6 +47,7 @@
 				{#each group.items as civic (civic.key)}
 					{@const reqs = civicRequirementLines(civic.requirements)}
 					{@const selected = empire.draft.civics.includes(civic.key)}
+					{@const mods = sortModifiers(civic.modifiers)}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<svelte:element
 						this={debug ? 'div' : 'button'}
@@ -83,23 +86,34 @@
 							</div>
 						{/if}
 
-						<!-- Numeric modifiers -->
-						{#if civic.modifiers.length}
-							<ul class="space-y-0.5 text-xs">
-								{#each civic.modifiers as mod (mod.key)}
-									<li class="flex items-baseline justify-between gap-3">
-										<span class="opacity-70">{modifierLabel(mod)}</span>
-										<span class="shrink-0 font-mono {modifierColor(mod)}"
-											>{formatModifierValue(mod)}</span
-										>
-									</li>
-								{/each}
-							</ul>
+						<!-- Numeric modifiers: alphabetical, attunement split off below a divider.
+						     Attunement only matters with Psionic Ascension, so it's dimmed. -->
+						{#if mods.main.length || mods.attunement.length}
+							{#snippet modRow(mod: (typeof mods.main)[number], muted: boolean)}
+								<li class="flex items-baseline justify-between gap-3 {muted ? 'opacity-45' : ''}">
+									<span class="opacity-70">{modifierLabel(mod)}</span>
+									<span class="shrink-0 font-mono {muted ? '' : modifierColor(mod)}"
+										>{formatModifierValue(mod)}</span
+									>
+								</li>
+							{/snippet}
+							{#if mods.main.length}
+								<ul class="space-y-0.5 text-xs">
+									{#each mods.main as mod (mod.key)}{@render modRow(mod, false)}{/each}
+								</ul>
+							{/if}
+							{#if mods.attunement.length}
+								<hr class="my-1 border-current opacity-45" />
+								<ul class="space-y-0.5 text-xs">
+									{#each mods.attunement as mod (mod.key)}{@render modRow(mod, true)}{/each}
+								</ul>
+							{/if}
 						{/if}
 
-						<!-- Effects description -->
+						<!-- Effects description (divider after the attunement block too, if present) -->
 						{#if civic.description}
-							<p class="text-xs opacity-55">{civic.description}</p>
+							{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
+							<RuleText text={civic.description} class="text-xs opacity-55" />
 						{/if}
 					</svelte:element>
 				{/each}

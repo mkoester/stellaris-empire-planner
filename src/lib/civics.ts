@@ -82,6 +82,19 @@ export function modifierColor(mod: Modifier): string {
 	return good ? 'text-emerald-400' : 'text-red-400';
 }
 
+// Order a modifier list for display: alphabetical by label, with the Shroud
+// "Add Attunement with …" modifiers (which every civic carries) split off to the
+// end so a card's real, distinguishing effects come first. Callers render a divider
+// between `main` and `attunement` when both are present.
+export function sortModifiers(mods: Modifier[]): { main: Modifier[]; attunement: Modifier[] } {
+	const isAttunement = (m: Modifier) => m.key.startsWith('add_attunement');
+	const byLabel = (a: Modifier, b: Modifier) => modifierLabel(a).localeCompare(modifierLabel(b));
+	return {
+		main: mods.filter((m) => !isAttunement(m)).sort(byLabel),
+		attunement: mods.filter(isAttunement).sort(byLabel)
+	};
+}
+
 // Display name for a modifier. The single home for label formatting: strips any
 // unresolved game-script tags like [This.GetColor] (defensive — none currently
 // survive extraction) and falls back to a title-cased key when the label is missing
