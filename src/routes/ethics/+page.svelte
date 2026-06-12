@@ -276,6 +276,7 @@
 		<h1 class="text-2xl font-bold">Ethics</h1>
 		<nav class="flex gap-3 text-sm opacity-50">
 			<a href={resolve('/')} class="transition-opacity hover:opacity-100">← Species Builder</a>
+			<a href={resolve('/civics')} class="transition-opacity hover:opacity-100">Civics →</a>
 			<a href={resolve('/precursors')} class="transition-opacity hover:opacity-100">Precursors →</a>
 		</nav>
 	</div>

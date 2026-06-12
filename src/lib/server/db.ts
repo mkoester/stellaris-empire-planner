@@ -329,6 +329,107 @@ export function loadEthics(): Ethic[] {
 	}));
 }
 
+// ── Civics ───────────────────────────────────────────────────────────────────
+
+// One eligibility rule parsed from a civic's potential/possible blocks. `kind` is
+// what is constrained (authority/ethic/civic/origin); `operator` is 'require',
+// 'forbid', or 'require_any' (one of an OR set, tied together by `groupId`).
+export interface CivicRequirement {
+	kind: string;
+	operator: string;
+	value: string;
+	groupId: number;
+}
+
+export interface Civic {
+	key: string;
+	name: string | null;
+	description: string | null;
+	civicType: string; // 'normal' | 'gestalt' | 'corporate' | 'special'
+	requiredDlc: string | null;
+	icon: string | null;
+	modifiers: Modifier[];
+	requirements: CivicRequirement[];
+}
+
+// Player-selectable civics (skips non-pickable ones gated to fallen empires etc.),
+// with their numeric modifiers and parsed eligibility rules.
+export function loadCivics(): Civic[] {
+	const d = db();
+	const rows = d
+		.prepare(
+			`SELECT key, name, description, civic_type, required_dlc, icon
+			 FROM civic WHERE selectable = 1 ORDER BY civic_type, sort_order`
+		)
+		.all() as Array<{
+		key: string;
+		name: string | null;
+		description: string | null;
+		civic_type: string;
+		required_dlc: string | null;
+		icon: string | null;
+	}>;
+
+	const modRows = d
+		.prepare(
+			`SELECT cm.civic_key, cm.modifier_key, cm.modifier_value, ml.label, ml.positive_is_good
+			 FROM civic_modifier cm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = cm.modifier_key
+			 ORDER BY cm.civic_key, cm.sort_order`
+		)
+		.all() as Array<{
+		civic_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+	const modByCivic = new Map<string, Modifier[]>();
+	for (const r of modRows) {
+		if (!modByCivic.has(r.civic_key)) modByCivic.set(r.civic_key, []);
+		modByCivic.get(r.civic_key)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+
+	const reqRows = d
+		.prepare(
+			`SELECT civic_key, kind, operator, value, group_id
+			 FROM civic_requirement ORDER BY civic_key, kind, operator`
+		)
+		.all() as Array<{
+		civic_key: string;
+		kind: string;
+		operator: string;
+		value: string;
+		group_id: number;
+	}>;
+	const reqByCivic = new Map<string, CivicRequirement[]>();
+	for (const r of reqRows) {
+		if (!reqByCivic.has(r.civic_key)) reqByCivic.set(r.civic_key, []);
+		reqByCivic.get(r.civic_key)!.push({
+			kind: r.kind,
+			operator: r.operator,
+			value: r.value,
+			groupId: r.group_id
+		});
+	}
+
+	return rows.map((r) => ({
+		key: r.key,
+		name: r.name,
+		description: r.description,
+		civicType: r.civic_type,
+		requiredDlc: r.required_dlc,
+		icon: r.icon,
+		modifiers: modByCivic.get(r.key) ?? [],
+		requirements: reqByCivic.get(r.key) ?? []
+	}));
+}
+
 // ── Precursors ─────────────────────────────────────────────────────────────
 
 export interface RelicModifier extends Modifier {

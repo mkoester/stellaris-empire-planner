@@ -184,7 +184,7 @@
 	<div class="flex items-baseline gap-4">
 		<h1 class="text-2xl font-bold">Precursors</h1>
 		<nav class="flex gap-3 text-sm opacity-50">
-			<a href={resolve('/ethics')} class="transition-opacity hover:opacity-100">← Ethics</a>
+			<a href={resolve('/civics')} class="transition-opacity hover:opacity-100">← Civics</a>
 		</nav>
 	</div>
 

@@ -48,6 +48,9 @@ ethic_modifier          — ethic_key, modifier_key, modifier_value, sort_order
 ethic_tag_label         — tag (PK), label  ← DROP+CREATE each run
 ethic_tag               — ethic_key, tag, sort_order
 ethic_policy_restriction — policy_key, option_key, option_label, ethic_key
+civic                   — key, name, description, civic_type (normal/gestalt/corporate/special), required_dlc, selectable, icon, sort_order
+civic_modifier          — civic_key, modifier_key, modifier_value, sort_order
+civic_requirement       — civic_key, kind (authority/ethic/civic/origin), operator (require/forbid/require_any), value, group_id (ties require_any OR sets)
 precursor               — key, name, required_dlc, system_initializer, picture, num_digsites, sort_order
 precursor_relic         — precursor_key, relic_key, name, portrait, score, description, active_effect
 precursor_relic_modifier — relic_key, modifier_key, modifier_value, condition (null=always), sort_order
@@ -81,6 +84,7 @@ Key functions:
 - `loadTraitsForKeys(keys)` — loads specific trait keys (used for base traits: organic, lithoid, machine_unit).
 - `loadSpeciesClasses()` — returns `{ key, label, archetype }`, filtered to BIOLOGICAL/LITHOID/MACHINE.
 - `loadEthics()` — returns ethics with `modifiers[]`, `implications[]`, `policyRestrictions[]`.
+- `loadCivics()` — player-selectable `Civic[]` (`selectable = 1`), each with `modifiers[]` and `requirements[]` (`{ kind, operator, value, groupId }`). Pure display helpers in [`src/lib/civics.ts`](src/lib/civics.ts) (`groupCivicsByType`, `prettyKey`, `civicRequirementLines`, `formatModifierValue`).
 - `loadPrecursors()` — fully-stitched `Precursor[]`: each with `relic` (+passives w/ `condition`), `rewards[]` (grouped by variant — Vultaum has 4), `buildings[]`, and `systems[]` → `planets[]` → `deposits[]` (resolved against the `deposit` dictionary) + planet `modifiers[]` + system `megastructures[]`. Several queries stitched in JS by `precursor_key`/`relic_key`/`initializer`/`planet_id`.
 
 `Modifier.positiveIsGood` — false for cost/upkeep/size modifiers (see INVERTED_MODIFIERS in extraction script).
@@ -145,6 +149,14 @@ Key functions:
 6. **Monument Bonuses per 100 Civilians** — hard-coded from wiki (game building scripts too complex to parse). 4 columns: Ethic / Effect / Regular / Fanatic.
 
 **Sticky headers:** Apply `sticky top-0 z-10` + `style="background-color: …"` to each `<th>` individually — NOT to `<thead>`. Required for Firefox. Tables must be in `overflow-auto max-h-128` scroll containers (not `overflow-x-auto`) for sticky to work cross-browser.
+
+### `/civics` — Civics reference (`src/routes/civics/+page.svelte`)
+
+**Page data:** `{ civics }` — selectable `Civic[]` from `loadCivics()`. Grouped by type
+(Regular / Gestalt / Corporate / Special) via `groupCivicsByType`; a free-text filter
+over name+description; each card shows needs/excludes chips (`civicRequirementLines`),
+numeric modifiers, and the cleaned effects description. Reference page (no planning
+state yet).
 
 ### `/precursors` — Precursors (`src/routes/precursors/+page.svelte`)
 
