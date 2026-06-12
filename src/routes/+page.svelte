@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { Trait, Modifier } from '$lib/server/db';
+	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -17,10 +18,26 @@
 		return classLabelMap.get(key) ?? key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
 	}
 
-	let archetypeGroup = $state<ArchetypeGroup>('BIOLOGICAL');
+	// Trait selection is backed by the shared empire draft; the archetype/class are
+	// local view state (which traits the picker shows), synced from the draft on load.
+	const deriveArchetype = (traits: string[]): ArchetypeGroup =>
+		traits.includes('trait_machine') ? 'MACHINE' : 'BIOLOGICAL';
+
+	let archetypeGroup = $state<ArchetypeGroup>(deriveArchetype(empire.draft.traits));
 	let selectedClassKey = $state<string | null>(null);
-	let selected = $state(new Set<string>());
+	const selected = $derived(new Set(empire.draft.traits));
 	let activeTags = $state(new Set<string>());
+
+	// When an empire is loaded elsewhere (generation bumps), follow its archetype so
+	// the loaded traits stay visible (and aren't pruned).
+	let lastGen = $state(empire.generation);
+	$effect(() => {
+		if (empire.generation !== lastGen) {
+			lastGen = empire.generation;
+			archetypeGroup = deriveArchetype(empire.draft.traits);
+			selectedClassKey = null;
+		}
+	});
 
 	// Tags that convey no additional info on the card (archetype/polarity classification)
 	const HIDDEN_CARD_TAGS = new Set([
@@ -100,8 +117,8 @@
 	// Prune selected traits whenever available traits change
 	$effect(() => {
 		const valid = new Set(visibleTraits.map((t) => t.key));
-		const pruned = new Set([...selected].filter((k) => valid.has(k)));
-		if (pruned.size !== selected.size) selected = pruned;
+		const pruned = [...selected].filter((k) => valid.has(k));
+		if (pruned.length !== selected.size) empire.setTraits(pruned);
 	});
 
 	// Clear tag filters when switching archetype group
@@ -256,7 +273,7 @@
 		} else if (canToggle(trait)) {
 			next.add(trait.key);
 		}
-		selected = next;
+		empire.setTraits([...next]);
 	}
 
 	function formatKey(key: string): string {
@@ -448,7 +465,7 @@
 					/ {maxPoints} trait points remaining
 				</span>
 				{#if traitCount > 0}
-					<button class="btn preset-filled text-xs" onclick={() => (selected = new Set())}>
+					<button class="btn preset-filled text-xs" onclick={() => empire.setTraits([])}>
 						Clear all
 					</button>
 				{/if}

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { Ethic, Modifier, EthicImplication, PolicyRestriction } from '$lib/server/db';
+	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -23,8 +24,8 @@
 		return e?.fanatic_variant ? ethicMap.get(e.fanatic_variant) : undefined;
 	}
 
-	// ── Selection state ──────────────────────────────────────────────────────
-	let selected = $state(new Set<string>());
+	// ── Selection state (backed by the shared empire draft) ───────────────────
+	const selected = $derived(new Set(empire.draft.ethics));
 
 	const pointsUsed = $derived(
 		[...selected].reduce((sum, k) => sum + (ethicMap.get(k)?.cost ?? 0), 0)
@@ -66,17 +67,13 @@
 		} else if (!isBlocked(ethicKey)) {
 			next.add(ethicKey);
 		}
-		selected = next;
+		empire.setEthics([...next]);
 	}
 
 	function selectGestalt() {
 		const g = data.ethics.find((e: Ethic) => e.gestalt);
 		if (!g) return;
-		if (selected.has(g.key)) {
-			selected = new Set();
-		} else {
-			selected = new Set([g.key]);
-		}
+		empire.setEthics(selected.has(g.key) ? [] : [g.key]);
 	}
 
 	// ── Combined modifiers for selected ethics ───────────────────────────────
@@ -288,7 +285,7 @@
 			/ {ETHIC_BUDGET} ethic points remaining
 		</span>
 		{#if selected.size > 0}
-			<button class="btn preset-filled text-xs" onclick={() => (selected = new Set())}>
+			<button class="btn preset-filled text-xs" onclick={() => empire.setEthics([])}>
 				Clear
 			</button>
 		{/if}

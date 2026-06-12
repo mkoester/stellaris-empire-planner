@@ -7,46 +7,69 @@
 	let { data }: { data: PageData } = $props();
 	const predefined = $derived(data.predefined as Empire[]);
 	const names = $derived(data.names as Record<string, string>);
-
 	const name = (key: string | null) => keyName(key, names);
 
 	let importKey = $state('');
-	function importPredefined() {
-		const e = predefined.find((p) => p.key === importKey);
-		if (e) empire.load(e);
+	let fileEmpires = $state<Empire[]>([]); // when an uploaded file holds several
+	let fileError = $state('');
+	let pending = $state<Empire | null>(null); // awaiting an override decision
+
+	// Reset the import controls after a load completes (or is cancelled).
+	function resetControls() {
+		importKey = '';
+		fileEmpires = [];
 	}
 
-	// Empires parsed from an uploaded file (pick one if the file holds several).
-	let fileEmpires = $state<Empire[]>([]);
-	let fileError = $state('');
+	// Single entry point for loading an empire: prompt about overrides only if some
+	// sections already hold a value, otherwise just load everything.
+	function tryLoad(e: Empire) {
+		if (empire.anySet()) {
+			pending = e;
+		} else {
+			empire.apply(e, 'all');
+			resetControls();
+		}
+	}
+	function resolve(mode: 'all' | 'partial') {
+		if (pending) empire.apply(pending, mode);
+		pending = null;
+		resetControls();
+	}
+	function cancel() {
+		pending = null;
+		resetControls();
+	}
+
+	function importPredefined() {
+		const e = predefined.find((p) => p.key === importKey);
+		if (e) tryLoad(e);
+	}
+
 	async function onFile(event: Event) {
-		const file = (event.target as HTMLInputElement).files?.[0];
+		const input = event.target as HTMLInputElement;
+		const file = input.files?.[0];
 		if (!file) return;
 		fileError = '';
 		try {
 			const parsed = parseEmpireFile(await file.text());
-			if (parsed.length === 0) {
-				fileError = 'No empires found in that file.';
-				fileEmpires = [];
-			} else if (parsed.length === 1) {
-				fileEmpires = [];
-				empire.load(parsed[0]);
-			} else {
-				fileEmpires = parsed; // let the user pick
-			}
+			if (parsed.length === 0) fileError = 'No empires found in that file.';
+			else if (parsed.length === 1) tryLoad(parsed[0]);
+			else fileEmpires = parsed; // let the user pick one
 		} catch {
 			fileError = 'Could not parse that file.';
 		}
+		input.value = ''; // allow re-selecting the same file
 	}
 
-	const current = $derived(empire.current);
+	const draft = $derived(empire.draft);
+	const hasEmpire = $derived(empire.anySet());
 </script>
 
 <main class="mx-auto max-w-5xl space-y-6 p-4">
 	<h1 class="text-2xl font-bold">Empire</h1>
 	<p class="max-w-3xl text-sm opacity-60">
-		Import a predefined empire or load a <code>user_empire_designs.txt</code> as a starting point. (Editing
-		and exporting come next.)
+		Import a predefined empire or load a <code>user_empire_designs.txt</code> as a starting point — it
+		populates the builder sections (Ethics, Species Builder, …). Editing and export come next.
 	</p>
 
 	<!-- Import / load controls -->
@@ -83,36 +106,46 @@
 			<p class="text-sm opacity-60">That file holds {fileEmpires.length} empires — pick one:</p>
 			<div class="flex flex-wrap gap-2">
 				{#each fileEmpires as e (e.key)}
-					<button
-						class="btn preset-filled text-sm card-hover"
-						onclick={() => {
-							empire.load(e);
-							fileEmpires = [];
-						}}>{e.name}</button
+					<button class="btn preset-filled text-sm card-hover" onclick={() => tryLoad(e)}
+						>{e.name}</button
 					>
 				{/each}
 			</div>
 		</div>
 	{/if}
 
+	<!-- Override prompt (only when sections already hold values) -->
+	{#if pending}
+		<div class="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
+			<p class="text-sm">
+				Some sections already have selections (<span class="opacity-70"
+					>{empire.setSectionLabels().join(', ')}</span
+				>). How should <strong>{pending.name}</strong> be applied?
+			</p>
+			<div class="flex flex-wrap gap-2">
+				<button class="btn preset-filled-primary-500 text-sm" onclick={() => resolve('all')}>
+					Override everything
+				</button>
+				<button class="btn preset-filled text-sm" onclick={() => resolve('partial')}>
+					Only fill empty sections
+				</button>
+				<button class="btn preset-filled text-sm opacity-70" onclick={cancel}>Cancel</button>
+			</div>
+		</div>
+	{/if}
+
 	<!-- Current empire -->
-	{#if current}
+	{#if hasEmpire}
 		{@const rows = [
-			{ label: 'Species', value: name(current.speciesClass) },
-			{ label: 'Authority', value: name(current.authority) },
-			{ label: 'Origin', value: name(current.origin) },
-			{ label: 'Homeworld', value: name(current.planetClass) },
-			{ label: 'Ship type', value: shipTypeLabel(current.graphicalCulture) }
+			{ label: 'Species', value: name(draft.speciesClass) },
+			{ label: 'Origin', value: name(draft.origin) },
+			{ label: 'Homeworld', value: name(draft.planetClass) },
+			{ label: 'Ship type', value: shipTypeLabel(draft.graphicalCulture) }
 		]}
 		<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">
-			<div class="flex items-baseline justify-between gap-3">
-				<h2 class="text-xl font-semibold">{current.name}</h2>
-				<span class="text-[11px] opacity-40"
-					>{current.source === 'predefined' ? 'predefined' : 'from file'}</span
-				>
-			</div>
+			<h2 class="text-xl font-semibold">{draft.name || 'Current empire'}</h2>
 
-			<dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-3">
+			<dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
 				{#each rows as r (r.label)}
 					<div class="flex flex-col">
 						<dt class="text-[11px] uppercase opacity-40">{r.label}</dt>
@@ -134,9 +167,9 @@
 				{/if}
 			{/snippet}
 
-			{@render chips('Ethics', current.ethics, 'bg-primary-500/15 text-primary-300/90')}
-			{@render chips('Civics', current.civics, 'bg-sky-500/15 text-sky-300/90')}
-			{@render chips('Traits', current.traits, 'bg-emerald-500/15 text-emerald-300/90')}
+			{@render chips('Ethics', draft.ethics, 'bg-primary-500/15 text-primary-300/90')}
+			{@render chips('Civics', draft.civics, 'bg-sky-500/15 text-sky-300/90')}
+			{@render chips('Traits', draft.traits, 'bg-emerald-500/15 text-emerald-300/90')}
 		</section>
 	{:else}
 		<p class="text-sm opacity-50">No empire loaded yet.</p>

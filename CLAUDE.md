@@ -187,14 +187,25 @@ their `ship_type` requirements.
 
 ### `/empire` — Empire (`src/routes/empire/+page.svelte`)
 
-The central empire hub (phase 1 = **import + view**). A shared runes store
-[`src/lib/empire.svelte.ts`](src/lib/empire.svelte.ts) holds the single "current
-empire" (`empire.current` / `empire.load(e)`). Import a predefined empire (from
+The central empire hub. A shared runes store
+[`src/lib/empire.svelte.ts`](src/lib/empire.svelte.ts) holds the single empire
+`draft` (species/traits/ethics/civics/origin/planet/ship). **The builder pages bind to
+it** — the Species Builder's trait `selected` is `$derived(new Set(empire.draft.traits))`
+(toggles call `empire.setTraits`), and Ethics likewise via `empire.setEthics`; so a
+load populates those pages and edits there flow back. Import a predefined empire (from
 `loadPrescriptedEmpires()`) or upload a `user_empire_designs.txt` (parsed client-side
-by [`src/lib/empireFile.ts`](src/lib/empireFile.ts) `parseEmpireFile` — a small
-Clausewitz parser, handles multiple empires); the composition is displayed with keys
-resolved via `loadEntityNames()` + `keyName()`. **Planned next:** the builder pages
-bind to this shared store, plus edit + export back to `user_empire_designs.txt`.
+by [`src/lib/empireFile.ts`](src/lib/empireFile.ts) `parseEmpireFile`).
+
+**Conflict resolution:** the store defines composable **sections** (species/traits/
+ethics/civics/origin/homeworld/ship). `empire.apply(e, 'all' | 'partial')` overrides
+everything, or fills only the currently-unset sections; loading prompts (override
+everything / only fill empty / cancel) **only when `empire.anySet()`**. A `generation`
+counter (bumped on load, not on edits) lets the Species Builder re-sync its archetype
+when an empire is loaded, without feedback loops. Note: the store is module-level
+`$state` → shared on the server, fine for this single-user local tool.
+
+**Planned next:** edit + export the draft back to a Stellaris-importable
+`user_empire_designs.txt` (needs valid flag/ruler/portrait defaults).
 
 Global nav (single sticky nav in `+layout.svelte`): Empire · Species Builder · Ethics
 · Civics · Origins · Planets · Ships · Precursors.
