@@ -54,13 +54,35 @@
 						type={debug ? undefined : 'button'}
 						aria-pressed={debug ? undefined : selected}
 						onclick={debug ? undefined : () => empire.toggleCivic(civic.key)}
-						class="space-y-2 rounded-lg border p-3 text-left transition-colors {selected
+						class="relative space-y-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
 							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
 							? 'cursor-text select-text'
 							: ''}"
 					>
-						<header class="flex flex-wrap items-baseline gap-2">
+						{#if civic.locked}
+							<span
+								class="absolute top-1.5 right-1.5 text-amber-400/90 drop-shadow-[0_1px_0_rgba(110,75,0,0.65)]"
+								title="Cannot be added or removed after game start"
+								aria-label="Locked: cannot be added or removed after game start"
+							>
+								<svg
+									xmlns="http://www.w3.org/2000/svg"
+									width="12"
+									height="12"
+									viewBox="0 0 24 24"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+									stroke-linecap="round"
+									stroke-linejoin="round"
+								>
+									<rect x="3" y="11" width="18" height="11" rx="2" />
+									<path d="M7 11V7a5 5 0 0 1 10 0v4" />
+								</svg>
+							</span>
+						{/if}
+						<header class="flex flex-wrap items-baseline gap-2 pr-5">
 							<h3 class="font-semibold">{civic.name ?? civic.key}</h3>
 							{#if civic.requiredDlc}
 								<span

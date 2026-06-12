@@ -347,6 +347,7 @@ export interface Civic {
 	description: string | null;
 	civicType: string; // 'normal' | 'gestalt' | 'corporate' | 'special'
 	requiredDlc: string | null;
+	locked: boolean; // `modification = no`: can't be added/removed after game start
 	icon: string | null;
 	modifiers: Modifier[];
 	requirements: CivicRequirement[];
@@ -358,7 +359,7 @@ export function loadCivics(): Civic[] {
 	const d = db();
 	const rows = d
 		.prepare(
-			`SELECT key, name, description, civic_type, required_dlc, icon
+			`SELECT key, name, description, civic_type, required_dlc, locked, icon
 			 FROM civic WHERE selectable = 1 ORDER BY civic_type, sort_order`
 		)
 		.all() as Array<{
@@ -367,6 +368,7 @@ export function loadCivics(): Civic[] {
 		description: string | null;
 		civic_type: string;
 		required_dlc: string | null;
+		locked: number;
 		icon: string | null;
 	}>;
 
@@ -424,6 +426,7 @@ export function loadCivics(): Civic[] {
 		description: r.description,
 		civicType: r.civic_type,
 		requiredDlc: r.required_dlc,
+		locked: r.locked === 1,
 		icon: r.icon,
 		modifiers: modByCivic.get(r.key) ?? [],
 		requirements: reqByCivic.get(r.key) ?? []
