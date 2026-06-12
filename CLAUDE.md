@@ -55,6 +55,8 @@ origin                  — key, name, description, required_dlc, selectable, ic
 origin_modifier         — origin_key, modifier_key, modifier_value, sort_order
 origin_requirement      — origin_key, kind, operator, value, group_id  (same shape as civic_requirement; kind includes 'ship_type' value 'organic')
 planet_class            — key, name, climate (wet/dry/cold/null), colonizable, is_standard (default startable climate)
+prescripted_empire      — key, name, species_class, species_portrait, authority, government, origin, planet_class, graphical_culture, sort_order  (the ~52 predefined empires)
+prescripted_empire_item — empire_key, kind (trait/civic/ethic), value, sort_order
 precursor               — key, name, required_dlc, system_initializer, picture, num_digsites, sort_order
 precursor_relic         — precursor_key, relic_key, name, portrait, score, description, active_effect
 precursor_relic_modifier — relic_key, modifier_key, modifier_value, condition (null=always), sort_order
@@ -91,6 +93,7 @@ Key functions:
 - `loadCivics()` — player-selectable `Civic[]` (`selectable = 1`), each with `modifiers[]` and `requirements[]` (`{ kind, operator, value, groupId }`). Pure display helpers in [`src/lib/civics.ts`](src/lib/civics.ts) (`groupCivicsByType`, `prettyKey`, `civicRequirementLines`, `formatModifierValue`).
 - `loadOrigins()` — player-selectable `Origin[]`; same `requirements`/`modifiers` shape as civics (reuses `CivicRequirement` + the civics.ts helpers). Effects are mostly the `description`. Requirements include `ship_type` gates (forbid/require organic ships).
 - `loadPlanetClasses()` — `PlanetClass[]`; grouped for display by `src/lib/planets.ts` (`groupPlanetClasses`: wet/dry/cold standard climates, special/engineered worlds, uninhabitable bodies).
+- `loadPrescriptedEmpires()` — the ~52 predefined `Empire[]` (species/traits/ethics/civics/origin/authority/planet/ship). `loadEntityNames()` — a `{key:name}` map (species_class/ethic/civic/origin/planet_class) for resolving an empire's raw keys. The shared `Empire` type is the shape for both predefined and parsed user empires.
 - `loadPrecursors()` — fully-stitched `Precursor[]`: each with `relic` (+passives w/ `condition`), `rewards[]` (grouped by variant — Vultaum has 4), `buildings[]`, and `systems[]` → `planets[]` → `deposits[]` (resolved against the `deposit` dictionary) + planet `modifiers[]` + system `megastructures[]`. Several queries stitched in JS by `precursor_key`/`relic_key`/`initializer`/`planet_id`.
 
 `Modifier.positiveIsGood` — false for cost/upkeep/size modifiers (see INVERTED_MODIFIERS in extraction script).
@@ -182,8 +185,19 @@ description, reusing the civics.ts helpers.
 lists of origins/civics that **force** or **exclude** organic ships, filtered from
 their `ship_type` requirements.
 
-Global nav (single sticky nav in `+layout.svelte`): Species Builder · Ethics · Civics
-· Origins · Planets · Ships · Precursors.
+### `/empire` — Empire (`src/routes/empire/+page.svelte`)
+
+The central empire hub (phase 1 = **import + view**). A shared runes store
+[`src/lib/empire.svelte.ts`](src/lib/empire.svelte.ts) holds the single "current
+empire" (`empire.current` / `empire.load(e)`). Import a predefined empire (from
+`loadPrescriptedEmpires()`) or upload a `user_empire_designs.txt` (parsed client-side
+by [`src/lib/empireFile.ts`](src/lib/empireFile.ts) `parseEmpireFile` — a small
+Clausewitz parser, handles multiple empires); the composition is displayed with keys
+resolved via `loadEntityNames()` + `keyName()`. **Planned next:** the builder pages
+bind to this shared store, plus edit + export back to `user_empire_designs.txt`.
+
+Global nav (single sticky nav in `+layout.svelte`): Empire · Species Builder · Ethics
+· Civics · Origins · Planets · Ships · Precursors.
 
 ### `/precursors` — Precursors (`src/routes/precursors/+page.svelte`)
 

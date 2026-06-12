@@ -553,6 +553,97 @@ export function loadPlanetClasses(): PlanetClass[] {
 	}));
 }
 
+// ── Empires (predefined + the shared empire shape) ───────────────────────────
+
+// A full empire design — the shape shared by the predefined empires and a parsed
+// user_empire_designs.txt entry. Values are raw keys; resolve names via
+// loadEntityNames() (or key-formatting for traits/authorities).
+export interface Empire {
+	key: string;
+	name: string;
+	speciesClass: string | null;
+	speciesPortrait: string | null;
+	authority: string | null;
+	government: string | null;
+	origin: string | null;
+	planetClass: string | null;
+	graphicalCulture: string | null; // ship appearance
+	ethics: string[];
+	civics: string[];
+	traits: string[];
+	source: 'predefined' | 'file';
+}
+
+export function loadPrescriptedEmpires(): Empire[] {
+	const d = db();
+	const rows = d
+		.prepare(
+			`SELECT key, name, species_class, species_portrait, authority, government,
+			        origin, planet_class, graphical_culture
+			 FROM prescripted_empire ORDER BY sort_order`
+		)
+		.all() as Array<{
+		key: string;
+		name: string;
+		species_class: string | null;
+		species_portrait: string | null;
+		authority: string | null;
+		government: string | null;
+		origin: string | null;
+		planet_class: string | null;
+		graphical_culture: string | null;
+	}>;
+	const itemRows = d
+		.prepare(
+			`SELECT empire_key, kind, value FROM prescripted_empire_item
+			 ORDER BY empire_key, sort_order`
+		)
+		.all() as Array<{ empire_key: string; kind: string; value: string }>;
+	const items = new Map<string, { traits: string[]; civics: string[]; ethics: string[] }>();
+	for (const r of itemRows) {
+		if (!items.has(r.empire_key)) items.set(r.empire_key, { traits: [], civics: [], ethics: [] });
+		const e = items.get(r.empire_key)!;
+		if (r.kind === 'trait') e.traits.push(r.value);
+		else if (r.kind === 'civic') e.civics.push(r.value);
+		else if (r.kind === 'ethic') e.ethics.push(r.value);
+	}
+	return rows.map((r) => ({
+		key: r.key,
+		name: r.name,
+		speciesClass: r.species_class,
+		speciesPortrait: r.species_portrait,
+		authority: r.authority,
+		government: r.government,
+		origin: r.origin,
+		planetClass: r.planet_class,
+		graphicalCulture: r.graphical_culture,
+		ethics: items.get(r.key)?.ethics ?? [],
+		civics: items.get(r.key)?.civics ?? [],
+		traits: items.get(r.key)?.traits ?? [],
+		source: 'predefined' as const
+	}));
+}
+
+// Key → display name across the entity tables that have stored names, so an empire's
+// raw keys (ethics/civics/origin/planet/species class) can be resolved for display.
+export function loadEntityNames(): Record<string, string> {
+	const d = db();
+	const out: Record<string, string> = {};
+	const sources: [string, string][] = [
+		['SELECT key, label AS name FROM species_class WHERE label IS NOT NULL', 'species'],
+		['SELECT key, label AS name FROM ethic WHERE label IS NOT NULL', 'ethic'],
+		['SELECT key, name FROM civic WHERE name IS NOT NULL', 'civic'],
+		['SELECT key, name FROM origin WHERE name IS NOT NULL', 'origin'],
+		['SELECT key, name FROM planet_class WHERE name IS NOT NULL', 'planet']
+	];
+	for (const [sql] of sources) {
+		for (const r of d.prepare(sql).all() as Array<{ key: string; name: string }>) {
+			out[r.key] = r.name;
+		}
+	}
+	return out;
+}
+
 // ── Precursors ─────────────────────────────────────────────────────────────
 
 export interface RelicModifier extends Modifier {

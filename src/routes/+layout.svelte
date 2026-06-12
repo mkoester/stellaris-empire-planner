@@ -8,6 +8,7 @@
 
 	// Global navigation — every section reachable from every page (order matters).
 	const NAV = [
+		{ href: '/empire', label: 'Empire' },
 		{ href: '/', label: 'Species Builder' },
 		{ href: '/ethics', label: 'Ethics' },
 		{ href: '/civics', label: 'Civics' },
