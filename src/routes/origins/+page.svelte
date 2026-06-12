@@ -2,7 +2,12 @@
 	import type { PageData } from './$types';
 	import type { Origin } from '$lib/server/db';
 	import { dlcBadge } from '$lib/precursors';
-	import { formatModifierValue, modifierColor, civicRequirementLines } from '$lib/civics';
+	import {
+		formatModifierValue,
+		modifierColor,
+		modifierLabel,
+		civicRequirementLines
+	} from '$lib/civics';
 	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -79,7 +84,7 @@
 							<ul class="space-y-0.5 text-xs">
 								{#each origin.modifiers as mod (mod.key)}
 									<li class="flex items-baseline justify-between gap-3">
-										<span class="opacity-70">{mod.label ?? mod.key}</span>
+										<span class="opacity-70">{modifierLabel(mod)}</span>
 										<span class="shrink-0 font-mono {modifierColor(mod)}"
 											>{formatModifierValue(mod)}</span
 										>

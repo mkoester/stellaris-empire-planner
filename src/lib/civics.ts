@@ -85,11 +85,14 @@ export function modifierColor(mod: Modifier): string {
 // Display name for a modifier. The single home for label formatting: strips any
 // unresolved game-script tags like [This.GetColor] (defensive — none currently
 // survive extraction) and falls back to a title-cased key when the label is missing
-// or empty (e.g. planet_crime_mult → "Planet Crime Mult").
+// or empty. The fallback drops the trailing value-suffix so an un-localised key reads
+// as a name, not a raw key (e.g. envoys_add → "Envoys", planet_crime_mult → "Planet
+// Crime"); a handful of modifiers have no game loc at all and rely on this.
 export function modifierLabel(mod: Modifier): string {
 	const label = mod.label?.replace(/\[.*?\]/g, '').trim();
 	if (label) return label;
-	return mod.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+	const key = mod.key.replace(/_(add|mult)(_uninhabitable)?$/, '');
+	return key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 // Collapse a civic's requirements into 'requires' / 'excludes' display lines. An

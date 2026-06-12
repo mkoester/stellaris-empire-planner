@@ -93,9 +93,13 @@ describe('modifierLabel', () => {
 	it('uses the extracted label when present', () => {
 		expect(modifierLabel(withLabel('x', 'Pretty Label'))).toBe('Pretty Label');
 	});
-	it('title-cases the key when the label is missing or empty', () => {
+	it('title-cases the key when the label is missing or empty, dropping the value-suffix', () => {
 		expect(modifierLabel(withLabel('pop_growth_speed', null))).toBe('Pop Growth Speed');
-		expect(modifierLabel(withLabel('planet_crime_mult', ''))).toBe('Planet Crime Mult');
+		expect(modifierLabel(withLabel('planet_crime_mult', ''))).toBe('Planet Crime');
+		expect(modifierLabel(withLabel('envoys_add', null))).toBe('Envoys');
+		expect(modifierLabel(withLabel('country_election_cost_mult', null))).toBe(
+			'Country Election Cost'
+		);
 	});
 	it('strips unresolved game-script tags, falling back if nothing remains', () => {
 		expect(modifierLabel(withLabel('x', 'Eater [This.GetColor] Bonus'))).toBe('Eater  Bonus');

@@ -266,8 +266,8 @@ describe('modLabel', () => {
 	it('strips unresolved [..] script tags', () => {
 		expect(modLabel(mod('x', 1, { label: 'Eat [This.GetName] food' }))).toBe('Eat  food');
 	});
-	it('title-cases the key when no label', () => {
-		expect(modLabel(mod('country_unity_produces_mult', 1))).toBe('Country Unity Produces Mult');
+	it('title-cases the key when no label, dropping the value-suffix', () => {
+		expect(modLabel(mod('country_unity_produces_mult', 1))).toBe('Country Unity Produces');
 	});
 });
 

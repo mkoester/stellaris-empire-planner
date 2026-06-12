@@ -6,6 +6,7 @@
 		groupCivicsByType,
 		formatModifierValue,
 		modifierColor,
+		modifierLabel,
 		civicRequirementLines
 	} from '$lib/civics';
 	import { empire } from '$lib/empire.svelte';
@@ -81,7 +82,7 @@
 							<ul class="space-y-0.5 text-xs">
 								{#each civic.modifiers as mod (mod.key)}
 									<li class="flex items-baseline justify-between gap-3">
-										<span class="opacity-70">{mod.label ?? mod.key}</span>
+										<span class="opacity-70">{modifierLabel(mod)}</span>
 										<span class="shrink-0 font-mono {modifierColor(mod)}"
 											>{formatModifierValue(mod)}</span
 										>
