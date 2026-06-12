@@ -1,11 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-	collectEffects,
-	collectSpeciesEffects,
-	groupEffects,
-	effectGroupOf,
-	modifierLabel
-} from './effects';
+import { collectEffects, collectSpeciesEffects, groupEffects, effectGroupOf } from './effects';
 import type { Modifier, ModifierSource } from '$lib/server/db';
 
 const mod = (key: string, value: number, label: string | null = null): Modifier => ({
@@ -129,14 +123,5 @@ describe('groupEffects', () => {
 			'Jobs & resource output'
 		]);
 		expect(groups[0].entries).toHaveLength(1);
-	});
-});
-
-describe('modifierLabel', () => {
-	it('uses the extracted label when present', () => {
-		expect(modifierLabel(mod('x', 1, 'Pretty Label'))).toBe('Pretty Label');
-	});
-	it('formats the raw key when no label', () => {
-		expect(modifierLabel(mod('pop_growth_speed', 1))).toBe('Pop Growth Speed');
 	});
 });

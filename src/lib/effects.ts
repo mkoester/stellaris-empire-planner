@@ -69,13 +69,6 @@ export function collectSpeciesEffects(
 	return out;
 }
 
-// Human label for a modifier — the extracted label, or a formatted fallback from
-// the raw key when none was resolved (e.g. "pop_growth_speed" → "Pop Growth Speed").
-export function modifierLabel(mod: Modifier): string {
-	if (mod.label) return mod.label;
-	return mod.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-}
-
 // ── Grouping ──────────────────────────────────────────────────────────────────
 // Empire-wide effects fall into a handful of themes, derived from the modifier key.
 

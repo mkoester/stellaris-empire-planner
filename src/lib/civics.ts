@@ -82,6 +82,16 @@ export function modifierColor(mod: Modifier): string {
 	return good ? 'text-emerald-400' : 'text-red-400';
 }
 
+// Display name for a modifier. The single home for label formatting: strips any
+// unresolved game-script tags like [This.GetColor] (defensive — none currently
+// survive extraction) and falls back to a title-cased key when the label is missing
+// or empty (e.g. planet_crime_mult → "Planet Crime Mult").
+export function modifierLabel(mod: Modifier): string {
+	const label = mod.label?.replace(/\[.*?\]/g, '').trim();
+	if (label) return label;
+	return mod.key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // Collapse a civic's requirements into 'requires' / 'excludes' display lines. An
 // OR set (require_any, same groupId) becomes a single "A or B" requires line.
 export interface CivicRequirementLine {

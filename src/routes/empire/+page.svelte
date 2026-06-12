@@ -3,8 +3,8 @@
 	import type { Empire, ModifierSource } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
 	import { parseEmpireFile, keyName, shipTypeLabel } from '$lib/empireFile';
-	import { collectEffects, collectSpeciesEffects, groupEffects, modifierLabel } from '$lib/effects';
-	import { formatModifierValue, modifierColor } from '$lib/civics';
+	import { collectEffects, collectSpeciesEffects, groupEffects } from '$lib/effects';
+	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
 
 	let { data }: { data: PageData } = $props();
 	const predefined = $derived(data.predefined as Empire[]);

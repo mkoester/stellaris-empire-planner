@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { CivicRequirement, Modifier } from '$lib/server/db';
-import { civicTypeLabel, prettyKey, formatModifierValue, civicRequirementLines } from './civics';
+import {
+	civicTypeLabel,
+	prettyKey,
+	formatModifierValue,
+	modifierLabel,
+	civicRequirementLines
+} from './civics';
 
 const req = (kind: string, operator: string, value: string, groupId = 0): CivicRequirement => ({
 	kind,
@@ -74,6 +80,26 @@ describe('formatModifierValue', () => {
 	it('does not mistake "no_happiness" flat keys for percentages', () => {
 		// anchored families: a flat -30 crime value must stay raw, not become -3000%
 		expect(formatModifierValue(mod('planet_crime_no_happiness_add', -30))).toBe('-30');
+	});
+});
+
+describe('modifierLabel', () => {
+	const withLabel = (key: string, label: string | null) => ({
+		key,
+		value: 1,
+		label,
+		positiveIsGood: true
+	});
+	it('uses the extracted label when present', () => {
+		expect(modifierLabel(withLabel('x', 'Pretty Label'))).toBe('Pretty Label');
+	});
+	it('title-cases the key when the label is missing or empty', () => {
+		expect(modifierLabel(withLabel('pop_growth_speed', null))).toBe('Pop Growth Speed');
+		expect(modifierLabel(withLabel('planet_crime_mult', ''))).toBe('Planet Crime Mult');
+	});
+	it('strips unresolved game-script tags, falling back if nothing remains', () => {
+		expect(modifierLabel(withLabel('x', 'Eater [This.GetColor] Bonus'))).toBe('Eater  Bonus');
+		expect(modifierLabel(withLabel('pop_happiness', '[This.X]'))).toBe('Pop Happiness');
 	});
 });
 

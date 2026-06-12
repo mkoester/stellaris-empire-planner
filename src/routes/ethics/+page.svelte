@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import type { Ethic, Modifier, EthicImplication, PolicyRestriction } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
-	import { formatModifierValue, modifierColor } from '$lib/civics';
+	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
 
 	let { data }: { data: PageData } = $props();
 
@@ -234,21 +234,11 @@
 	];
 
 	// ── Formatting ───────────────────────────────────────────────────────────
-	// Value formatting (fractions vs percentages) and good/bad colouring live in one
-	// place: $lib/civics. (modLabel keeps a local tweak — see below.)
+	// Value (fractions vs percentages), good/bad colouring, and label formatting all
+	// live in one place: $lib/civics.
 	const formatValue = formatModifierValue;
 	const valueColor = modifierColor;
-
-	function modLabel(mod: Modifier): string {
-		if (!mod.label) {
-			return mod.key
-				.split('_')
-				.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-				.join(' ');
-		}
-		// Strip unresolved game script tags like [This.GetEaterColor]
-		return mod.label.replace(/\[.*?\]/g, '').trim() || mod.key;
-	}
+	const modLabel = modifierLabel;
 
 	function ethicLabel(e: Ethic): string {
 		return e.label ?? e.key;

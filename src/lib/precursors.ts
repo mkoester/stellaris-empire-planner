@@ -2,7 +2,6 @@
 // page component so they can be unit-tested in isolation. No Svelte/runtime state
 // here — only data → display logic. Types come in type-only (erased at runtime).
 import type {
-	Modifier,
 	Precursor,
 	PrecursorReward,
 	PrecursorMegastructure,
@@ -245,21 +244,15 @@ export function rewardQualifier(m: MergedReward): string | null {
 }
 
 // ── Modifier formatting ────────────────────────────────────────────────────
-// Value (fraction vs percentage) and good/bad colouring are shared with the rest of
-// the app — one implementation in $lib/civics. The storm-repulsion percentage case
-// that used to be special-cased here is handled by that single rule. Re-exported
-// under the precursor page's existing names.
-export { formatModifierValue as formatValue, modifierColor as valueColor } from './civics';
-
-export function modLabel(mod: Modifier): string {
-	if (!mod.label) {
-		return mod.key
-			.split('_')
-			.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-			.join(' ');
-	}
-	return mod.label.replace(/\[.*?\]/g, '').trim() || mod.key;
-}
+// Value (fraction vs percentage), good/bad colouring, and label formatting are all
+// shared with the rest of the app — one implementation in $lib/civics. The
+// storm-repulsion percentage case that used to be special-cased here is handled by
+// that single rule. Re-exported under the precursor page's existing names.
+export {
+	formatModifierValue as formatValue,
+	modifierColor as valueColor,
+	modifierLabel as modLabel
+} from './civics';
 
 // ── Reward variant labels ──────────────────────────────────────────────────
 // Vultaum's variants share the same loc name ("Secrets of the Vultaum"), so we
