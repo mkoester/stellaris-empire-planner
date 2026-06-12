@@ -51,6 +51,9 @@ ethic_policy_restriction — policy_key, option_key, option_label, ethic_key
 civic                   — key, name, description, civic_type (normal/gestalt/corporate/special), required_dlc, selectable, icon, sort_order
 civic_modifier          — civic_key, modifier_key, modifier_value, sort_order
 civic_requirement       — civic_key, kind (authority/ethic/civic/origin), operator (require/forbid/require_any), value, group_id (ties require_any OR sets)
+origin                  — key, name, description, required_dlc, selectable, icon, sort_order
+origin_modifier         — origin_key, modifier_key, modifier_value, sort_order
+origin_requirement      — origin_key, kind, operator, value, group_id  (same shape as civic_requirement)
 precursor               — key, name, required_dlc, system_initializer, picture, num_digsites, sort_order
 precursor_relic         — precursor_key, relic_key, name, portrait, score, description, active_effect
 precursor_relic_modifier — relic_key, modifier_key, modifier_value, condition (null=always), sort_order
@@ -85,6 +88,7 @@ Key functions:
 - `loadSpeciesClasses()` — returns `{ key, label, archetype }`, filtered to BIOLOGICAL/LITHOID/MACHINE.
 - `loadEthics()` — returns ethics with `modifiers[]`, `implications[]`, `policyRestrictions[]`.
 - `loadCivics()` — player-selectable `Civic[]` (`selectable = 1`), each with `modifiers[]` and `requirements[]` (`{ kind, operator, value, groupId }`). Pure display helpers in [`src/lib/civics.ts`](src/lib/civics.ts) (`groupCivicsByType`, `prettyKey`, `civicRequirementLines`, `formatModifierValue`).
+- `loadOrigins()` — player-selectable `Origin[]`; same `requirements`/`modifiers` shape as civics (reuses `CivicRequirement` + the civics.ts helpers). Effects are mostly the `description`.
 - `loadPrecursors()` — fully-stitched `Precursor[]`: each with `relic` (+passives w/ `condition`), `rewards[]` (grouped by variant — Vultaum has 4), `buildings[]`, and `systems[]` → `planets[]` → `deposits[]` (resolved against the `deposit` dictionary) + planet `modifiers[]` + system `megastructures[]`. Several queries stitched in JS by `precursor_key`/`relic_key`/`initializer`/`planet_id`.
 
 `Modifier.positiveIsGood` — false for cost/upkeep/size modifiers (see INVERTED_MODIFIERS in extraction script).
@@ -157,6 +161,13 @@ Key functions:
 over name+description; each card shows needs/excludes chips (`civicRequirementLines`),
 numeric modifiers, and the cleaned effects description. Reference page (no planning
 state yet).
+
+### `/origins` — Origins reference (`src/routes/origins/+page.svelte`)
+
+**Page data:** `{ origins }` from `loadOrigins()`. Grouped by DLC (base game first),
+free-text filter; each card shows needs/excludes chips + modifiers + cleaned
+description, reusing the civics.ts helpers. Global nav order: Species Builder · Ethics
+· Civics · Origins · Precursors (a single sticky nav in `+layout.svelte`).
 
 ### `/precursors` — Precursors (`src/routes/precursors/+page.svelte`)
 

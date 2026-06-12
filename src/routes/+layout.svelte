@@ -11,6 +11,7 @@
 		{ href: '/', label: 'Species Builder' },
 		{ href: '/ethics', label: 'Ethics' },
 		{ href: '/civics', label: 'Civics' },
+		{ href: '/origins', label: 'Origins' },
 		{ href: '/precursors', label: 'Precursors' }
 	] as const;
 </script>

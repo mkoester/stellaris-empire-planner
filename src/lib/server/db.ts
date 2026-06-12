@@ -430,6 +430,95 @@ export function loadCivics(): Civic[] {
 	}));
 }
 
+// ── Origins ──────────────────────────────────────────────────────────────────
+
+// The empire's starting scenario. Same requirement shape as civics (reuses
+// CivicRequirement); most origins' real effects are narrative — `description` is the
+// main payload, with `modifiers[]` where the origin has numeric effects.
+export interface Origin {
+	key: string;
+	name: string | null;
+	description: string | null;
+	requiredDlc: string | null;
+	icon: string | null;
+	modifiers: Modifier[];
+	requirements: CivicRequirement[];
+}
+
+export function loadOrigins(): Origin[] {
+	const d = db();
+	const rows = d
+		.prepare(
+			`SELECT key, name, description, required_dlc, icon
+			 FROM origin WHERE selectable = 1 ORDER BY sort_order`
+		)
+		.all() as Array<{
+		key: string;
+		name: string | null;
+		description: string | null;
+		required_dlc: string | null;
+		icon: string | null;
+	}>;
+
+	const modRows = d
+		.prepare(
+			`SELECT om.origin_key, om.modifier_key, om.modifier_value, ml.label, ml.positive_is_good
+			 FROM origin_modifier om
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = om.modifier_key
+			 ORDER BY om.origin_key, om.sort_order`
+		)
+		.all() as Array<{
+		origin_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+	const modByOrigin = new Map<string, Modifier[]>();
+	for (const r of modRows) {
+		if (!modByOrigin.has(r.origin_key)) modByOrigin.set(r.origin_key, []);
+		modByOrigin.get(r.origin_key)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+
+	const reqRows = d
+		.prepare(
+			`SELECT origin_key, kind, operator, value, group_id
+			 FROM origin_requirement ORDER BY origin_key, kind, operator`
+		)
+		.all() as Array<{
+		origin_key: string;
+		kind: string;
+		operator: string;
+		value: string;
+		group_id: number;
+	}>;
+	const reqByOrigin = new Map<string, CivicRequirement[]>();
+	for (const r of reqRows) {
+		if (!reqByOrigin.has(r.origin_key)) reqByOrigin.set(r.origin_key, []);
+		reqByOrigin.get(r.origin_key)!.push({
+			kind: r.kind,
+			operator: r.operator,
+			value: r.value,
+			groupId: r.group_id
+		});
+	}
+
+	return rows.map((r) => ({
+		key: r.key,
+		name: r.name,
+		description: r.description,
+		requiredDlc: r.required_dlc,
+		icon: r.icon,
+		modifiers: modByOrigin.get(r.key) ?? [],
+		requirements: reqByOrigin.get(r.key) ?? []
+	}));
+}
+
 // ── Precursors ─────────────────────────────────────────────────────────────
 
 export interface RelicModifier extends Modifier {

@@ -27,16 +27,10 @@ export function groupCivicsByType(
 
 // Turn a gating key (ethic_/auth_/civic_/origin_) into a readable name, e.g.
 // "ethic_fanatic_materialist" → "Fanatic Materialist", "auth_corporate" → "Corporate".
-const PREFIXES = [
-	'ethic_fanatic_',
-	'ethic_',
-	'auth_',
-	'civic_corporate_',
-	'civic_machine_',
-	'civic_hive_',
-	'civic_',
-	'origin_'
-];
+// Only the leading category prefix is stripped — the corporate/machine/hive part of
+// a civic key is kept so distinct civics don't collapse to the same name (e.g.
+// civic_anglers → "Anglers", civic_corporate_anglers → "Corporate Anglers").
+const PREFIXES = ['ethic_fanatic_', 'ethic_', 'auth_', 'civic_', 'origin_'];
 export function prettyKey(value: string): string {
 	let s = value;
 	for (const p of PREFIXES) {
@@ -84,5 +78,12 @@ export function civicRequirementLines(reqs: CivicRequirement[]): CivicRequiremen
 		if (r.operator === 'require') lines.push({ type: 'require', text: prettyKey(r.value) });
 		else if (r.operator === 'forbid') lines.push({ type: 'exclude', text: prettyKey(r.value) });
 	}
-	return lines;
+	// Drop duplicates (distinct keys can still map to the same display text).
+	const seen = new Set<string>();
+	return lines.filter((l) => {
+		const id = `${l.type}|${l.text}`;
+		if (seen.has(id)) return false;
+		seen.add(id);
+		return true;
+	});
 }
