@@ -111,33 +111,98 @@ export function modifierLabel(mod: Modifier): string {
 // Collapse a civic's requirements into 'requires' / 'excludes' display lines. An
 // OR set (require_any, same groupId) becomes a single "A or B" requires line.
 export interface CivicRequirementLine {
+	kind: string; // what's gated: ethic / civic / origin / authority / ship_type
 	type: 'require' | 'exclude';
 	text: string;
 }
 export function civicRequirementLines(reqs: CivicRequirement[]): CivicRequirementLine[] {
 	const lines: CivicRequirementLine[] = [];
-	const anyGroups = new Map<number, string[]>();
+	const anyGroups = new Map<number, { kind: string; vals: string[] }>();
 	for (const r of reqs) {
 		if (r.operator === 'require_any') {
-			if (!anyGroups.has(r.groupId)) anyGroups.set(r.groupId, []);
+			if (!anyGroups.has(r.groupId)) anyGroups.set(r.groupId, { kind: r.kind, vals: [] });
 			anyGroups
 				.get(r.groupId)!
-				.push(r.kind === 'ship_type' ? `${prettyKey(r.value)} ships` : prettyKey(r.value));
+				.vals.push(r.kind === 'ship_type' ? `${prettyKey(r.value)} ships` : prettyKey(r.value));
 		}
 	}
-	for (const vals of anyGroups.values()) lines.push({ type: 'require', text: vals.join(' or ') });
+	for (const g of anyGroups.values())
+		lines.push({ kind: g.kind, type: 'require', text: g.vals.join(' or ') });
 	for (const r of reqs) {
 		// Ship-type gates read as "Organic ships" rather than just "Organic".
 		const text = r.kind === 'ship_type' ? `${prettyKey(r.value)} ships` : prettyKey(r.value);
-		if (r.operator === 'require') lines.push({ type: 'require', text });
-		else if (r.operator === 'forbid') lines.push({ type: 'exclude', text });
+		if (r.operator === 'require') lines.push({ kind: r.kind, type: 'require', text });
+		else if (r.operator === 'forbid') lines.push({ kind: r.kind, type: 'exclude', text });
 	}
 	// Drop duplicates (distinct keys can still map to the same display text).
 	const seen = new Set<string>();
-	return lines.filter((l) => {
+	const deduped = lines.filter((l) => {
 		const id = `${l.type}|${l.text}`;
 		if (seen.has(id)) return false;
 		seen.add(id);
 		return true;
 	});
+	return deduped.sort(compareRequirementLines);
 }
+
+// Display order for requirement chips: grouped by kind (legend order), alphabetical
+// within — except ethics, which read Gestalt first, then each axis with the regular
+// variant before its Fanatic one ("Egalitarian" before "Fanatic Egalitarian").
+const KIND_ORDER = ['ethic', 'civic', 'origin', 'authority', 'ship_type'];
+function ethicSortKey(text: string): [number, string, number] {
+	if (/^gestalt/i.test(text)) return [0, '', 0]; // Gestalt Consciousness first
+	const fanatic = /^fanatic /i.test(text);
+	return [1, text.replace(/^fanatic /i, '').toLowerCase(), fanatic ? 1 : 0];
+}
+function compareRequirementLines(a: CivicRequirementLine, b: CivicRequirementLine): number {
+	const rank = (k: string) => {
+		const i = KIND_ORDER.indexOf(k);
+		return i === -1 ? KIND_ORDER.length : i;
+	};
+	const ka = rank(a.kind);
+	const kb = rank(b.kind);
+	if (ka !== kb) return ka - kb;
+	if (a.kind === 'ethic') {
+		const [ga, na, fa] = ethicSortKey(a.text);
+		const [gb, nb, fb] = ethicSortKey(b.text);
+		return ga - gb || na.localeCompare(nb) || fa - fb;
+	}
+	return a.text.localeCompare(b.text);
+}
+
+// Colour a requirement chip by what it gates (one hue per kind), with the lighter
+// shade for "needs" and a stronger one for "excl." so a kind reads the same whether
+// required or forbidden. Full class strings (not built dynamically) so Tailwind
+// keeps them.
+const REQ_KIND_CLASS: Record<string, { require: string; exclude: string }> = {
+	ethic: {
+		require: 'bg-amber-500/10 text-amber-300/70',
+		exclude: 'bg-amber-500/25 text-amber-200'
+	},
+	civic: { require: 'bg-sky-500/10 text-sky-300/70', exclude: 'bg-sky-500/25 text-sky-200' },
+	origin: {
+		require: 'bg-violet-500/10 text-violet-300/70',
+		exclude: 'bg-violet-500/25 text-violet-200'
+	},
+	authority: {
+		require: 'bg-rose-500/10 text-rose-300/70',
+		exclude: 'bg-rose-500/25 text-rose-200'
+	},
+	ship_type: { require: 'bg-teal-500/10 text-teal-300/70', exclude: 'bg-teal-500/25 text-teal-200' }
+};
+const REQ_FALLBACK = {
+	require: 'bg-slate-500/10 text-slate-300/70',
+	exclude: 'bg-slate-500/25 text-slate-200'
+};
+export function requirementChipClass(line: CivicRequirementLine): string {
+	return (REQ_KIND_CLASS[line.kind] ?? REQ_FALLBACK)[line.type];
+}
+
+// The requirement kinds, in display order, for the legend (label per coloured hue).
+export const REQUIREMENT_KINDS: { kind: string; label: string }[] = [
+	{ kind: 'ethic', label: 'Ethics' },
+	{ kind: 'civic', label: 'Civics' },
+	{ kind: 'origin', label: 'Origin' },
+	{ kind: 'authority', label: 'Government' },
+	{ kind: 'ship_type', label: 'Ship type' }
+];

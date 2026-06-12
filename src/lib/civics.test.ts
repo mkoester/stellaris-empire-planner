@@ -6,7 +6,8 @@ import {
 	formatModifierValue,
 	modifierLabel,
 	sortModifiers,
-	civicRequirementLines
+	civicRequirementLines,
+	requirementChipClass
 } from './civics';
 
 const req = (kind: string, operator: string, value: string, groupId = 0): CivicRequirement => ({
@@ -130,24 +131,63 @@ describe('civicRequirementLines', () => {
 			req('ethic', 'require_any', 'ethic_materialist', 1),
 			req('ethic', 'require_any', 'ethic_fanatic_materialist', 1)
 		]);
-		expect(lines).toEqual([{ type: 'require', text: 'Materialist or Fanatic Materialist' }]);
+		expect(lines).toEqual([
+			{ kind: 'ethic', type: 'require', text: 'Materialist or Fanatic Materialist' }
+		]);
 	});
-	it('renders require → require line and forbid → exclude line', () => {
+	it('renders require → require line and forbid → exclude line, tagged with the kind', () => {
 		const lines = civicRequirementLines([
 			req('authority', 'forbid', 'auth_corporate'),
 			req('civic', 'forbid', 'civic_shared_burden'),
 			req('authority', 'require', 'auth_machine_intelligence')
 		]);
-		expect(lines).toContainEqual({ type: 'require', text: 'Machine Intelligence' });
-		expect(lines).toContainEqual({ type: 'exclude', text: 'Corporate' });
-		expect(lines).toContainEqual({ type: 'exclude', text: 'Shared Burden' });
+		expect(lines).toContainEqual({
+			kind: 'authority',
+			type: 'require',
+			text: 'Machine Intelligence'
+		});
+		expect(lines).toContainEqual({ kind: 'authority', type: 'exclude', text: 'Corporate' });
+		expect(lines).toContainEqual({ kind: 'civic', type: 'exclude', text: 'Shared Burden' });
+	});
+	it('orders ethics Gestalt-first then regular-before-fanatic, other kinds alphabetical, grouped', () => {
+		const lines = civicRequirementLines([
+			req('civic', 'forbid', 'civic_shared_burden'),
+			req('ethic', 'require', 'ethic_fanatic_egalitarian'),
+			req('ethic', 'require', 'ethic_egalitarian'),
+			req('ethic', 'require', 'ethic_gestalt_consciousness'),
+			req('authority', 'forbid', 'auth_corporate'),
+			req('civic', 'require', 'civic_anglers')
+		]);
+		expect(lines.map((l) => l.text)).toEqual([
+			'Gestalt Consciousness', // ethics first: Gestalt
+			'Egalitarian', // then regular before fanatic
+			'Fanatic Egalitarian',
+			'Anglers', // civics, alphabetical
+			'Shared Burden',
+			'Corporate' // authority last (legend order)
+		]);
 	});
 	it('renders ship-type gates with a "ships" suffix', () => {
 		expect(civicRequirementLines([req('ship_type', 'forbid', 'organic')])).toEqual([
-			{ type: 'exclude', text: 'Organic ships' }
+			{ kind: 'ship_type', type: 'exclude', text: 'Organic ships' }
 		]);
 		expect(civicRequirementLines([req('ship_type', 'require_any', 'organic', 1)])).toEqual([
-			{ type: 'require', text: 'Organic ships' }
+			{ kind: 'ship_type', type: 'require', text: 'Organic ships' }
 		]);
+	});
+});
+
+describe('requirementChipClass', () => {
+	it('colours by kind, lighter for needs than excl.', () => {
+		const need = requirementChipClass({ kind: 'ethic', type: 'require', text: 'x' });
+		const excl = requirementChipClass({ kind: 'ethic', type: 'exclude', text: 'x' });
+		expect(need).toContain('amber');
+		expect(excl).toContain('amber');
+		expect(need).not.toBe(excl); // needs is the lighter shade
+	});
+	it('falls back for an unknown kind', () => {
+		expect(requirementChipClass({ kind: 'mystery', type: 'require', text: 'x' })).toContain(
+			'slate'
+		);
 	});
 });

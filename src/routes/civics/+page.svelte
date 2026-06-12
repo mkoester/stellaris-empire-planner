@@ -8,9 +8,11 @@
 		modifierColor,
 		modifierLabel,
 		sortModifiers,
-		civicRequirementLines
+		civicRequirementLines,
+		requirementChipClass
 	} from '$lib/civics';
 	import RuleText from '$lib/RuleText.svelte';
+	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -32,7 +34,10 @@
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
-	<h1 class="text-2xl font-bold">Civics</h1>
+	<div class="flex flex-wrap items-start justify-between gap-3">
+		<h1 class="text-2xl font-bold">Civics</h1>
+		<RequirementLegend />
+	</div>
 
 	<input class="input max-w-sm" type="search" placeholder="Filter civics…" bind:value={query} />
 
@@ -98,10 +103,7 @@
 						{#if reqs.length}
 							<div class="flex flex-wrap gap-1">
 								{#each reqs as r, i (i)}
-									<span
-										class="rounded px-1.5 py-0.5 text-[10px] {r.type === 'require'
-											? 'bg-emerald-500/12 text-emerald-300/90'
-											: 'bg-red-500/12 text-red-300/90'}"
+									<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}"
 										>{r.type === 'require' ? 'needs' : 'excl.'} {r.text}</span
 									>
 								{/each}
