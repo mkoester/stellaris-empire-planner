@@ -36,10 +36,35 @@ describe('prettyKey', () => {
 });
 
 describe('formatModifierValue', () => {
-	it('shows _add as a raw number and _mult as a percentage', () => {
+	it('shows flat _add as a raw number and _mult as a percentage', () => {
 		expect(formatModifierValue(mod('country_scientist_cap_add', 1))).toBe('+1');
 		expect(formatModifierValue(mod('country_official_cap_add', -1))).toBe('-1');
 		expect(formatModifierValue(mod('planet_jobs_worker_produces_mult', 0.1))).toBe('+10%');
+	});
+	it('treats fractional percent families (happiness/habitability/attraction/…) as %', () => {
+		expect(formatModifierValue(mod('refugee_attraction', 0.15))).toBe('+15%');
+		expect(formatModifierValue(mod('pop_happiness', 0.1))).toBe('+10%');
+		expect(formatModifierValue(mod('pc_continental_habitability', 0.1))).toBe('+10%');
+		expect(formatModifierValue(mod('habitability_floor_add', 0.25))).toBe('+25%');
+		expect(formatModifierValue(mod('all_technology_research_speed', 0.1))).toBe('+10%');
+		expect(formatModifierValue(mod('citizen_pop_same_species_class_happiness', 0.075))).toBe(
+			'+7.5%'
+		);
+	});
+	it('keeps flat fractional _add amounts as raw numbers (not %)', () => {
+		expect(formatModifierValue(mod('country_ethic_influence_produces_add', 0.5))).toBe('+0.5');
+		expect(formatModifierValue(mod('planet_bureaucrats_society_research_produces_add', 1.5))).toBe(
+			'+1.5'
+		);
+		expect(formatModifierValue(mod('monthly_loyalty', 0.5))).toBe('+0.5');
+		expect(formatModifierValue(mod('commander_initial_skill', 2))).toBe('+2');
+	});
+	it('handles _mult variants and _perc suffixes', () => {
+		expect(formatModifierValue(mod('ship_anomaly_research_speed_mult_uninhabitable', 0.25))).toBe(
+			'+25%'
+		);
+		expect(formatModifierValue(mod('ship_hull_regen_add_perc', 0.05))).toBe('+5%');
+		expect(formatModifierValue(mod('science_ship_survey_speed', 0.2))).toBe('+20%');
 	});
 });
 

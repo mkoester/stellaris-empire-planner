@@ -644,6 +644,27 @@ export function loadEntityNames(): Record<string, string> {
 	return out;
 }
 
+// Per-key modifier index for the chosen-empire "Effects" summary: every ethic,
+// civic, origin and trait that carries numeric modifiers, keyed by its raw key.
+// `kind` says where the modifier comes from ("ethic"/"civic"/…); names are
+// resolved separately (loadEntityNames + key formatting for traits).
+export interface ModifierSource {
+	kind: 'ethic' | 'civic' | 'origin' | 'trait';
+	modifiers: Modifier[];
+}
+
+export function loadModifierIndex(): Record<string, ModifierSource> {
+	const out: Record<string, ModifierSource> = {};
+	const add = (key: string, kind: ModifierSource['kind'], modifiers: Modifier[]) => {
+		if (modifiers.length) out[key] = { kind, modifiers };
+	};
+	for (const e of loadEthics()) add(e.key, 'ethic', e.modifiers);
+	for (const c of loadCivics()) add(c.key, 'civic', c.modifiers);
+	for (const o of loadOrigins()) add(o.key, 'origin', o.modifiers);
+	for (const t of loadTraits()) add(t.key, 'trait', t.modifiers);
+	return out;
+}
+
 // ── Precursors ─────────────────────────────────────────────────────────────
 
 export interface RelicModifier extends Modifier {

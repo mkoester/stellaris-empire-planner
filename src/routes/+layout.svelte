@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import EmpireOverview from '$lib/EmpireOverview.svelte';
 
 	let { children, data } = $props();
 
@@ -45,3 +46,8 @@
 </nav>
 
 {@render children()}
+
+<!-- Floating running summary of the current empire (hidden on /empire, which shows its own). -->
+{#if page.url.pathname !== '/empire'}
+	<EmpireOverview names={data?.names ?? {}} />
+{/if}

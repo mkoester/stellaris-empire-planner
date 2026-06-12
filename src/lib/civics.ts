@@ -44,11 +44,29 @@ export function prettyKey(value: string): string {
 	return s;
 }
 
-// Format a civic modifier value: `_add` keys show the raw number, `_mult` (and the
-// rest) show a percentage — the same convention used for precursor modifiers.
+// Modifiers stored as a fraction but shown as a percentage. `_mult` (including
+// variants like `_mult_uninhabitable`) and `_perc` keys are always percentages; a
+// number of `_add`/suffixless families (happiness, habitability, attraction,
+// tolerance, exp gain, research/survey speed, chances, and a few combat stats) are
+// too — whereas flat amounts (envoys, leader skill, per-job resource output,
+// influence, loyalty, trait counts) stay raw. This is the ONE place modifier values
+// are turned into percentages; every page formats through formatModifierValue.
+function isPercentModifier(key: string): boolean {
+	if (key.includes('_mult') || key.endsWith('_perc')) return true;
+	return /habitability|happiness|attraction|tolerance|_exp_gain$|research_speed$|survey_speed|_chance_add$|army_health$|weapon_damage$|orbital_bombardment_damage$/.test(
+		key
+	);
+}
+
+// Format a modifier value: percentage families show `value × 100`%, everything else
+// shows the raw number. Used by the civics/origins pages and the empire Effects block.
 export function formatModifierValue(mod: Modifier): string {
 	const sign = mod.value > 0 ? '+' : '';
-	if (mod.key.endsWith('_mult')) return `${sign}${Math.round(mod.value * 100)}%`;
+	if (isPercentModifier(mod.key)) {
+		const pct = mod.value * 100;
+		const n = Number.isInteger(pct) ? pct : parseFloat(pct.toFixed(2));
+		return `${sign}${n}%`;
+	}
 	const n = Number.isInteger(mod.value) ? mod.value : parseFloat(mod.value.toFixed(2));
 	return `${sign}${n}`;
 }

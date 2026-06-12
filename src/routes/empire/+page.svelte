@@ -1,12 +1,15 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Empire } from '$lib/server/db';
+	import type { Empire, ModifierSource } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
 	import { parseEmpireFile, keyName, shipTypeLabel } from '$lib/empireFile';
+	import { collectEffects, collectSpeciesEffects, groupEffects, modifierLabel } from '$lib/effects';
+	import { formatModifierValue, modifierColor } from '$lib/civics';
 
 	let { data }: { data: PageData } = $props();
 	const predefined = $derived(data.predefined as Empire[]);
 	const names = $derived(data.names as Record<string, string>);
+	const modifierIndex = $derived(data.modifierIndex as Record<string, ModifierSource>);
 	const name = (key: string | null) => keyName(key, names);
 
 	let importKey = $state('');
@@ -63,6 +66,21 @@
 
 	const draft = $derived(empire.draft);
 	const hasEmpire = $derived(empire.anySet());
+	const effectGroups = $derived(groupEffects(collectEffects(draft, modifierIndex, names)));
+	// Species traits, grouped per species (one founder species for now, but the model
+	// supports several — e.g. Syncretic Evolution).
+	const speciesGroups = $derived(
+		collectSpeciesEffects(
+			[
+				{
+					name: draft.speciesClass ? name(draft.speciesClass) : 'Founder species',
+					traits: draft.traits
+				}
+			],
+			modifierIndex,
+			names
+		)
+	);
 </script>
 
 <main class="mx-auto max-w-5xl space-y-6 p-4">
@@ -171,6 +189,58 @@
 			{@render chips('Civics', draft.civics, 'bg-sky-500/15 text-sky-300/90')}
 			{@render chips('Traits', draft.traits, 'bg-emerald-500/15 text-emerald-300/90')}
 		</section>
+
+		<!-- Aggregated numeric effects of the current choices, grouped by theme -->
+		{#if effectGroups.length}
+			<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">
+				<h2 class="text-xl font-semibold">Effects</h2>
+				{#each effectGroups as group (group.label)}
+					<div class="space-y-1">
+						<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">
+							{group.label}
+							<span class="font-normal opacity-60">· {group.entries.length}</span>
+						</h3>
+						{#each group.entries as e, i (i)}
+							<div class="flex items-baseline gap-3 text-sm">
+								<span class="flex-1">
+									{modifierLabel(e.mod)}
+									<span class="opacity-45">(from {e.sourceKind} {e.sourceName})</span>
+								</span>
+								<span class="shrink-0 text-right font-medium tabular-nums {modifierColor(e.mod)}">
+									{formatModifierValue(e.mod)}
+								</span>
+							</div>
+						{/each}
+					</div>
+				{/each}
+			</section>
+		{/if}
+
+		<!-- Species traits, kept separate and grouped per species -->
+		{#if speciesGroups.length}
+			<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">
+				<h2 class="text-xl font-semibold">Species traits</h2>
+				{#each speciesGroups as sg (sg.species)}
+					<div class="space-y-1">
+						<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">
+							{sg.species}
+							<span class="font-normal opacity-60">· {sg.entries.length}</span>
+						</h3>
+						{#each sg.entries as e, i (i)}
+							<div class="flex items-baseline gap-3 text-sm">
+								<span class="flex-1">
+									{modifierLabel(e.mod)}
+									<span class="opacity-45">(from trait {e.sourceName})</span>
+								</span>
+								<span class="shrink-0 text-right font-medium tabular-nums {modifierColor(e.mod)}">
+									{formatModifierValue(e.mod)}
+								</span>
+							</div>
+						{/each}
+					</div>
+				{/each}
+			</section>
+		{/if}
 	{:else}
 		<p class="text-sm opacity-50">No empire loaded yet.</p>
 	{/if}

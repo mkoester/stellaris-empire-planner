@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import type { Ethic, Modifier, EthicImplication, PolicyRestriction } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
+	import { formatModifierValue } from '$lib/civics';
 
 	let { data }: { data: PageData } = $props();
 
@@ -233,14 +234,8 @@
 	];
 
 	// ── Formatting ───────────────────────────────────────────────────────────
-	function formatValue(mod: Modifier): string {
-		const sign = mod.value > 0 ? '+' : '';
-		if (mod.key.endsWith('_add')) {
-			const n = Number.isInteger(mod.value) ? mod.value : parseFloat(mod.value.toFixed(2));
-			return `${sign}${n}`;
-		}
-		return `${sign}${Math.round(mod.value * 100)}%`;
-	}
+	// Value formatting (fractions vs percentages) lives in one place: $lib/civics.
+	const formatValue = formatModifierValue;
 
 	function valueColor(mod: Modifier): string {
 		return mod.value > 0 === mod.positiveIsGood ? 'text-emerald-400' : 'text-red-400';

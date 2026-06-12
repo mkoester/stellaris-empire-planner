@@ -1,6 +1,7 @@
-import { loadGameVersion } from '$lib/server/db';
+import { loadGameVersion, loadEntityNames } from '$lib/server/db';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = () => ({
-	gameVersion: loadGameVersion()
+	gameVersion: loadGameVersion(),
+	names: loadEntityNames()
 });
