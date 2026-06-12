@@ -13,6 +13,8 @@
 
 	let { data }: { data: PageData } = $props();
 	const civics = $derived(data.civics as Civic[]);
+	// Debug: render selectable cards as plain elements so their text can be copied.
+	const debug = $derived(data.debugDisableSelection);
 
 	// Free-text filter across name + description.
 	let query = $state('');
@@ -43,13 +45,17 @@
 				{#each group.items as civic (civic.key)}
 					{@const reqs = civicRequirementLines(civic.requirements)}
 					{@const selected = empire.draft.civics.includes(civic.key)}
-					<button
-						type="button"
-						aria-pressed={selected}
-						onclick={() => empire.toggleCivic(civic.key)}
+					<!-- svelte-ignore a11y_no_static_element_interactions -->
+					<svelte:element
+						this={debug ? 'div' : 'button'}
+						type={debug ? undefined : 'button'}
+						aria-pressed={debug ? undefined : selected}
+						onclick={debug ? undefined : () => empire.toggleCivic(civic.key)}
 						class="space-y-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
-							: 'border-surface-400-500/30 hover:border-surface-400-500/60'}"
+							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
+							? 'cursor-text select-text'
+							: ''}"
 					>
 						<header class="flex flex-wrap items-baseline gap-2">
 							<h3 class="font-semibold">{civic.name ?? civic.key}</h3>
@@ -95,7 +101,7 @@
 						{#if civic.description}
 							<p class="text-xs opacity-55">{civic.description}</p>
 						{/if}
-					</button>
+					</svelte:element>
 				{/each}
 			</div>
 		</section>

@@ -5,6 +5,8 @@
 	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
+	// Debug: render selectable cards as plain elements so their text can be copied.
+	const debug = $derived(data.debugDisableSelection);
 
 	// Current ship type from the empire draft (organic = a biogenesis appearance).
 	const shipType = $derived(
@@ -59,17 +61,23 @@
 		<h2 class="text-lg font-semibold">Your ship type</h2>
 		<div class="flex flex-wrap gap-2">
 			{#each [{ id: 'regular', label: 'Regular' }, { id: 'organic', label: 'Organic (bio-ships)' }] as opt (opt.id)}
-				<button
-					type="button"
-					aria-pressed={shipType === opt.id}
-					onclick={() =>
-						empire.setShipType(shipType === opt.id ? null : (opt.id as 'regular' | 'organic'))}
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<svelte:element
+					this={debug ? 'div' : 'button'}
+					type={debug ? undefined : 'button'}
+					aria-pressed={debug ? undefined : shipType === opt.id}
+					onclick={debug
+						? undefined
+						: () =>
+								empire.setShipType(shipType === opt.id ? null : (opt.id as 'regular' | 'organic'))}
 					class="rounded border px-3 py-1.5 text-sm transition-colors {shipType === opt.id
 						? 'border-primary-500 bg-primary-500/10'
-						: 'border-surface-400-500/30 hover:border-surface-400-500/60'}"
+						: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
+						? 'cursor-text select-text'
+						: ''}"
 				>
 					{opt.label}
-				</button>
+				</svelte:element>
 			{/each}
 		</div>
 	</section>

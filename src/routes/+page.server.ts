@@ -5,7 +5,6 @@ import {
 	loadTraits,
 	loadTraitsForKeys
 } from '$lib/server/db';
-import { env } from '$env/dynamic/private';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {
@@ -24,7 +23,6 @@ export const load: PageServerLoad = () => {
 		archetypes,
 		traitCategories: loadTraitCategories(),
 		speciesClasses: loadSpeciesClasses(),
-		baseTraits,
-		debugDisableSelection: !!env.DEBUG_DISABLE_SELECTION
+		baseTraits
 	};
 };

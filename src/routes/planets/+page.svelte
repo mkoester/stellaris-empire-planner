@@ -6,6 +6,8 @@
 
 	let { data }: { data: PageData } = $props();
 	const groups = $derived(groupPlanetClasses(data.planetClasses as PlanetClass[]));
+	// Debug: render selectable cards as plain elements so their text can be copied.
+	const debug = $derived(data.debugDisableSelection);
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
@@ -30,14 +32,18 @@
 				{#each group.items as pc (pc.key)}
 					{@const selected = empire.draft.planetClass === pc.key}
 					{#if pc.colonizable}
-						<button
-							type="button"
-							aria-pressed={selected}
-							title="Set as homeworld"
-							onclick={() => empire.setPlanetClass(selected ? null : pc.key)}
+						<!-- svelte-ignore a11y_no_static_element_interactions -->
+						<svelte:element
+							this={debug ? 'div' : 'button'}
+							type={debug ? undefined : 'button'}
+							aria-pressed={debug ? undefined : selected}
+							title={debug ? undefined : 'Set as homeworld'}
+							onclick={debug ? undefined : () => empire.setPlanetClass(selected ? null : pc.key)}
 							class="flex items-center gap-1.5 rounded border px-2 py-1 text-sm transition-colors {selected
 								? 'border-primary-500 bg-primary-500/10'
-								: 'border-surface-400-500/30 hover:border-surface-400-500/60'}"
+								: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
+								? 'cursor-text select-text'
+								: ''}"
 						>
 							{pc.name ?? pc.key}
 							{#if pc.climate}
@@ -48,7 +54,7 @@
 								<span class="text-[10px] opacity-40" title="A default startable climate">start</span
 								>
 							{/if}
-						</button>
+						</svelte:element>
 					{:else}
 						<span
 							class="border-surface-400-500/30 flex items-center gap-1.5 rounded border px-2 py-1 text-sm opacity-55"

@@ -5,6 +5,8 @@
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
 
 	let { data }: { data: PageData } = $props();
+	// Debug: render selectable cards as plain elements so their text can be copied.
+	const debug = $derived(data.debugDisableSelection);
 
 	// ── Ethic axes (opposite pairs, displayed as rows) ──────────────────────
 	const AXES: [string, string][] = [
@@ -288,20 +290,22 @@
 						{#each ([leftEthic, leftFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
 							{@const blocked = isBlocked(ethic!.key)}
 							{@const sel = selected.has(ethic!.key)}
-							<button
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<svelte:element
+								this={debug ? 'div' : 'button'}
 								class="btn flex-col gap-0.5 text-sm leading-tight
 									{sel
 									? 'preset-filled-primary-500'
 									: blocked
 										? 'cursor-not-allowed preset-filled opacity-30'
-										: 'preset-filled card-hover'}"
-								onclick={() => toggle(ethic!.key)}
-								disabled={blocked && !sel}
-								title={ethicTooltip(ethic!)}
+										: 'preset-filled card-hover'} {debug ? 'cursor-text select-text' : ''}"
+								onclick={debug ? undefined : () => toggle(ethic!.key)}
+								disabled={debug ? undefined : blocked && !sel}
+								title={debug ? undefined : ethicTooltip(ethic!)}
 							>
 								<span>{ethicLabel(ethic!)}</span>
 								<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
-							</button>
+							</svelte:element>
 						{/each}
 					</div>
 
@@ -313,20 +317,22 @@
 						{#each ([rightEthic, rightFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
 							{@const blocked = isBlocked(ethic!.key)}
 							{@const sel = selected.has(ethic!.key)}
-							<button
+							<!-- svelte-ignore a11y_no_static_element_interactions -->
+							<svelte:element
+								this={debug ? 'div' : 'button'}
 								class="btn flex-col gap-0.5 text-sm leading-tight
 									{sel
 									? 'preset-filled-primary-500'
 									: blocked
 										? 'cursor-not-allowed preset-filled opacity-30'
-										: 'preset-filled card-hover'}"
-								onclick={() => toggle(ethic!.key)}
-								disabled={blocked && !sel}
-								title={ethicTooltip(ethic!)}
+										: 'preset-filled card-hover'} {debug ? 'cursor-text select-text' : ''}"
+								onclick={debug ? undefined : () => toggle(ethic!.key)}
+								disabled={debug ? undefined : blocked && !sel}
+								title={debug ? undefined : ethicTooltip(ethic!)}
 							>
 								<span>{ethicLabel(ethic!)}</span>
 								<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
-							</button>
+							</svelte:element>
 						{/each}
 					</div>
 				</div>
@@ -339,15 +345,19 @@
 			<div class="border-surface-400-500/30 flex items-center gap-2 border-t pt-1">
 				<span class="w-20 shrink-0 text-right text-xs opacity-40">Gestalt</span>
 				<span class="text-xs opacity-20 select-none">|</span>
-				<button
+				<!-- svelte-ignore a11y_no_static_element_interactions -->
+				<svelte:element
+					this={debug ? 'div' : 'button'}
 					class="btn flex-col gap-0.5 text-sm leading-tight
-						{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'}"
-					onclick={selectGestalt}
-					title={ethicTooltip(gestaltEthic)}
+						{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {debug
+						? 'cursor-text select-text'
+						: ''}"
+					onclick={debug ? undefined : selectGestalt}
+					title={debug ? undefined : ethicTooltip(gestaltEthic)}
 				>
 					<span>{ethicLabel(gestaltEthic)}</span>
 					<span class="font-mono text-[10px] opacity-60">{'●'.repeat(gestaltEthic.cost)}</span>
-				</button>
+				</svelte:element>
 			</div>
 		{/each}
 	</div>
