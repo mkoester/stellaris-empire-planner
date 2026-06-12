@@ -2,8 +2,18 @@
 	import type { PageData } from './$types';
 	import type { Origin, Civic } from '$lib/server/db';
 	import { civicTypeLabel } from '$lib/civics';
+	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
+
+	// Current ship type from the empire draft (organic = a biogenesis appearance).
+	const shipType = $derived(
+		empire.draft.graphicalCulture == null
+			? null
+			: empire.draft.graphicalCulture.startsWith('biogenesis')
+				? 'organic'
+				: 'regular'
+	);
 
 	type Req = { kind: string; operator: string; value: string };
 	const shipTypeOrganic = (op: string) => (reqs: Req[]) =>
@@ -42,6 +52,26 @@
 			Ship type is a free pick at empire creation — but some origins and civics force or forbid the
 			organic appearance:
 		</p>
+	</section>
+
+	<!-- Empire ship-type pick -->
+	<section class="space-y-2">
+		<h2 class="text-lg font-semibold">Your ship type</h2>
+		<div class="flex flex-wrap gap-2">
+			{#each [{ id: 'regular', label: 'Regular' }, { id: 'organic', label: 'Organic (bio-ships)' }] as opt (opt.id)}
+				<button
+					type="button"
+					aria-pressed={shipType === opt.id}
+					onclick={() =>
+						empire.setShipType(shipType === opt.id ? null : (opt.id as 'regular' | 'organic'))}
+					class="rounded border px-3 py-1.5 text-sm transition-colors {shipType === opt.id
+						? 'border-primary-500 bg-primary-500/10'
+						: 'border-surface-400-500/30 hover:border-surface-400-500/60'}"
+				>
+					{opt.label}
+				</button>
+			{/each}
+		</div>
 	</section>
 
 	{#if organicOrigins.length || organicCivics.length}

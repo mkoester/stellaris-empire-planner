@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import type { PlanetClass } from '$lib/server/db';
 	import { groupPlanetClasses, climateBadge } from '$lib/planets';
+	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const groups = $derived(groupPlanetClasses(data.planetClasses as PlanetClass[]));
@@ -27,17 +28,34 @@
 
 			<div class="flex flex-wrap gap-2">
 				{#each group.items as pc (pc.key)}
-					<span
-						class="border-surface-400-500/30 flex items-center gap-1.5 rounded border px-2 py-1 text-sm"
-					>
-						{pc.name ?? pc.key}
-						{#if pc.climate}
-							<span class="rounded px-1 text-[10px] {climateBadge(pc.climate)}">{pc.climate}</span>
-						{/if}
-						{#if pc.isStandard}
-							<span class="text-[10px] opacity-40" title="A default startable climate">start</span>
-						{/if}
-					</span>
+					{@const selected = empire.draft.planetClass === pc.key}
+					{#if pc.colonizable}
+						<button
+							type="button"
+							aria-pressed={selected}
+							title="Set as homeworld"
+							onclick={() => empire.setPlanetClass(selected ? null : pc.key)}
+							class="flex items-center gap-1.5 rounded border px-2 py-1 text-sm transition-colors {selected
+								? 'border-primary-500 bg-primary-500/10'
+								: 'border-surface-400-500/30 hover:border-surface-400-500/60'}"
+						>
+							{pc.name ?? pc.key}
+							{#if pc.climate}
+								<span class="rounded px-1 text-[10px] {climateBadge(pc.climate)}">{pc.climate}</span
+								>
+							{/if}
+							{#if pc.isStandard}
+								<span class="text-[10px] opacity-40" title="A default startable climate">start</span
+								>
+							{/if}
+						</button>
+					{:else}
+						<span
+							class="border-surface-400-500/30 flex items-center gap-1.5 rounded border px-2 py-1 text-sm opacity-55"
+						>
+							{pc.name ?? pc.key}
+						</span>
+					{/if}
 				{/each}
 			</div>
 		</section>

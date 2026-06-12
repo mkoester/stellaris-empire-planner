@@ -164,35 +164,39 @@ Key functions:
 **Page data:** `{ civics }` — selectable `Civic[]` from `loadCivics()`. Grouped by type
 (Regular / Gestalt / Corporate / Special) via `groupCivicsByType`; a free-text filter
 over name+description; each card shows needs/excludes chips (`civicRequirementLines`),
-numeric modifiers, and the cleaned effects description. Reference page (no planning
-state yet).
+numeric modifiers, and the cleaned effects description. **Cards are selectable**
+(multi-toggle → `empire.toggleCivic`, highlighted from `empire.draft.civics`).
 
-### `/origins` — Origins reference (`src/routes/origins/+page.svelte`)
+### `/origins` — Origins (`src/routes/origins/+page.svelte`)
 
 **Page data:** `{ origins }` from `loadOrigins()`. Grouped by DLC (base game first),
 free-text filter; each card shows needs/excludes chips + modifiers + cleaned
-description, reusing the civics.ts helpers.
+description. **Single-select** (`empire.setOrigin`, highlighted from
+`empire.draft.origin`).
 
-### `/planets` — Planets reference (`src/routes/planets/+page.svelte`)
+### `/planets` — Planets (`src/routes/planets/+page.svelte`)
 
 **Page data:** `{ planetClasses }` from `loadPlanetClasses()`, grouped by
-`groupPlanetClasses`. World types grouped into wet/dry/cold standard climates, special
-& engineered colonizable worlds, and uninhabitable bodies; climate chips.
+`groupPlanetClasses` (wet/dry/cold standard climates, special & engineered colonizable
+worlds, uninhabitable bodies). **Colonizable worlds are selectable as the homeworld**
+(`empire.setPlanetClass`); uninhabitable bodies are shown dimmed/non-selectable.
 
-### `/ships` — Ships reference (`src/routes/ships/+page.svelte`)
+### `/ships` — Ships (`src/routes/ships/+page.svelte`)
 
-**Page data:** `{ origins, civics }`. A regular-vs-organic (bio-ship) explainer plus
-lists of origins/civics that **force** or **exclude** organic ships, filtered from
-their `ship_type` requirements.
+**Page data:** `{ origins, civics }`. A regular-vs-organic (bio-ship) explainer, a
+**Regular/Organic picker** (`empire.setShipType` → a representative `graphical_culture`),
+plus lists of origins/civics that **force** or **exclude** organic ships (from their
+`ship_type` requirements).
 
 ### `/empire` — Empire (`src/routes/empire/+page.svelte`)
 
 The central empire hub. A shared runes store
 [`src/lib/empire.svelte.ts`](src/lib/empire.svelte.ts) holds the single empire
-`draft` (species/traits/ethics/civics/origin/planet/ship). **The builder pages bind to
-it** — the Species Builder's trait `selected` is `$derived(new Set(empire.draft.traits))`
-(toggles call `empire.setTraits`), and Ethics likewise via `empire.setEthics`; so a
-load populates those pages and edits there flow back. Import a predefined empire (from
+`draft` (species/traits/ethics/civics/origin/planet/ship). **All builder pages bind to
+it** — Species Builder traits (`empire.setTraits`), Ethics (`empire.setEthics`), Civics
+(`empire.toggleCivic`), Origins (`empire.setOrigin`), Planets/homeworld
+(`empire.setPlanetClass`), Ships (`empire.setShipType`). Each page's selected state
+is `$derived` from `empire.draft`, so a load populates every page and edits flow back. Import a predefined empire (from
 `loadPrescriptedEmpires()`) or upload a `user_empire_designs.txt` (parsed client-side
 by [`src/lib/empireFile.ts`](src/lib/empireFile.ts) `parseEmpireFile`).
 

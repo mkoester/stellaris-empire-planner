@@ -3,6 +3,7 @@
 	import type { Origin } from '$lib/server/db';
 	import { dlcBadge } from '$lib/precursors';
 	import { formatModifierValue, modifierColor, civicRequirementLines } from '$lib/civics';
+	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const origins = $derived(data.origins as Origin[]);
@@ -50,7 +51,15 @@
 			<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
 				{#each group.items as origin (origin.key)}
 					{@const reqs = civicRequirementLines(origin.requirements)}
-					<article class="border-surface-400-500/30 space-y-2 rounded-lg border p-3">
+					{@const selected = empire.draft.origin === origin.key}
+					<button
+						type="button"
+						aria-pressed={selected}
+						onclick={() => empire.setOrigin(selected ? null : origin.key)}
+						class="space-y-2 rounded-lg border p-3 text-left transition-colors {selected
+							? 'border-primary-500 bg-primary-500/10'
+							: 'border-surface-400-500/30 hover:border-surface-400-500/60'}"
+					>
 						<h3 class="font-semibold">{origin.name ?? origin.key}</h3>
 
 						{#if reqs.length}
@@ -82,7 +91,7 @@
 						{#if origin.description}
 							<p class="text-xs opacity-55">{origin.description}</p>
 						{/if}
-					</article>
+					</button>
 				{/each}
 			</div>
 		</section>

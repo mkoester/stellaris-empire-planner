@@ -50,6 +50,27 @@ describe('empire store', () => {
 		expect(empire.draft.origin).toBe('origin_default'); // filled
 	});
 
+	it('section setters update the draft and mark those sections as set', () => {
+		empire.setOrigin('origin_shattered_ring');
+		empire.toggleCivic('civic_technocracy');
+		empire.setPlanetClass('pc_ocean');
+		empire.setShipType('organic');
+		expect(empire.draft.origin).toBe('origin_shattered_ring');
+		expect(empire.draft.civics).toEqual(['civic_technocracy']);
+		expect(empire.draft.planetClass).toBe('pc_ocean');
+		expect(empire.draft.graphicalCulture).toBe('biogenesis_01'); // organic
+		expect(empire.setSectionLabels()).toEqual(
+			expect.arrayContaining(['Origin', 'Civics', 'Homeworld', 'Ship type'])
+		);
+	});
+
+	it('toggleCivic adds then removes a civic', () => {
+		empire.toggleCivic('civic_x');
+		expect(empire.draft.civics).toEqual(['civic_x']);
+		empire.toggleCivic('civic_x');
+		expect(empire.draft.civics).toEqual([]);
+	});
+
 	it('reports the set sections and bumps generation on load', () => {
 		const g0 = empire.generation;
 		empire.setEthics(['ethic_pacifist']);

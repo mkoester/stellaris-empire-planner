@@ -117,5 +117,23 @@ export const empire = {
 	},
 	setEthics(e: string[]) {
 		draft.ethics = e;
+	},
+	setOrigin(o: string | null) {
+		draft.origin = o;
+	},
+	setCivics(c: string[]) {
+		draft.civics = c;
+	},
+	toggleCivic(key: string) {
+		draft.civics = draft.civics.includes(key)
+			? draft.civics.filter((c) => c !== key)
+			: [...draft.civics, key];
+	},
+	setPlanetClass(p: string | null) {
+		draft.planetClass = p;
+	},
+	// Ship type: stored as a representative graphical_culture ('biogenesis_01' = organic).
+	setShipType(t: 'regular' | 'organic' | null) {
+		draft.graphicalCulture = t === 'organic' ? 'biogenesis_01' : t === 'regular' ? 'regular' : null;
 	}
 };
