@@ -754,6 +754,185 @@ export function loadRooms(): { key: string; label: string | null }[] {
 	}[];
 }
 
+// ── Jobs (reference) ───────────────────────────────────────────────────────────
+
+export interface JobResource {
+	kind: 'produces' | 'upkeep';
+	resource: string; // e.g. "minerals"
+	amount: number;
+}
+export interface Job {
+	key: string;
+	name: string | null;
+	category: string | null; // worker | specialist | ruler | complex_drone | …
+	description: string | null;
+	resources: JobResource[]; // base produced/upkeep (empty for modifier-only jobs)
+}
+
+export function loadJobs(): Job[] {
+	const d = db();
+	const rows = d
+		.prepare('SELECT key, name, category, description FROM job ORDER BY sort_order')
+		.all() as Array<{
+		key: string;
+		name: string | null;
+		category: string | null;
+		description: string | null;
+	}>;
+	const resRows = d
+		.prepare(
+			'SELECT job_key, kind, resource, amount FROM job_resource ORDER BY job_key, kind, sort_order'
+		)
+		.all() as Array<{ job_key: string; kind: string; resource: string; amount: number }>;
+	const byJob = new Map<string, JobResource[]>();
+	for (const r of resRows) {
+		if (!byJob.has(r.job_key)) byJob.set(r.job_key, []);
+		byJob.get(r.job_key)!.push({
+			kind: r.kind as JobResource['kind'],
+			resource: r.resource,
+			amount: r.amount
+		});
+	}
+	return rows.map((r) => ({ ...r, resources: byJob.get(r.key) ?? [] }));
+}
+
+// ── Job swaps (civic/origin replaces a job) ────────────────────────────────────
+
+export interface JobSwap {
+	baseJob: string;
+	baseName: string | null;
+	swappedJob: string;
+	swappedName: string | null;
+	baseResources: JobResource[];
+	swappedResources: JobResource[];
+}
+
+// Job replacements keyed by the civic/origin that triggers them (e.g. Catalytic
+// Processing → Metallurgist replaced by Catalytic Technician), with each job's base
+// resources for the tooltip. For the Civics / Origins pages.
+export function loadJobSwapsBySource(): Record<string, JobSwap[]> {
+	const d = db();
+	const resByJob = new Map<string, JobResource[]>();
+	for (const r of d
+		.prepare(
+			'SELECT job_key, kind, resource, amount FROM job_resource ORDER BY job_key, kind, sort_order'
+		)
+		.all() as Array<{ job_key: string; kind: string; resource: string; amount: number }>) {
+		if (!resByJob.has(r.job_key)) resByJob.set(r.job_key, []);
+		resByJob.get(r.job_key)!.push({
+			kind: r.kind as JobResource['kind'],
+			resource: r.resource,
+			amount: r.amount
+		});
+	}
+	// The swapped job's effective resources (base under the swap condition), keyed by
+	// source|base|swapped — the swapped job has no row of its own in job_resource.
+	const swapRes = new Map<string, JobResource[]>();
+	for (const r of d
+		.prepare(
+			'SELECT source_key, base_job, swapped_job, kind, resource, amount FROM job_swap_resource'
+		)
+		.all() as Array<{
+		source_key: string;
+		base_job: string;
+		swapped_job: string;
+		kind: string;
+		resource: string;
+		amount: number;
+	}>) {
+		const k = `${r.source_key}|${r.base_job}|${r.swapped_job}`;
+		if (!swapRes.has(k)) swapRes.set(k, []);
+		swapRes.get(k)!.push({
+			kind: r.kind as JobResource['kind'],
+			resource: r.resource,
+			amount: r.amount
+		});
+	}
+	const rows = d
+		.prepare(
+			`SELECT source_key, base_job, base_name, swapped_job, swapped_name
+			 FROM job_swap ORDER BY source_key, sort_order`
+		)
+		.all() as Array<{
+		source_key: string;
+		base_job: string;
+		base_name: string | null;
+		swapped_job: string;
+		swapped_name: string | null;
+	}>;
+	const out: Record<string, JobSwap[]> = {};
+	for (const r of rows) {
+		(out[r.source_key] ??= []).push({
+			baseJob: r.base_job,
+			baseName: r.base_name,
+			swappedJob: r.swapped_job,
+			swappedName: r.swapped_name,
+			baseResources: resByJob.get(r.base_job) ?? [],
+			swappedResources: swapRes.get(`${r.source_key}|${r.base_job}|${r.swapped_job}`) ?? []
+		});
+	}
+	return out;
+}
+
+// ── Buildings (reference) ──────────────────────────────────────────────────────
+
+export interface BuildingResourceRow {
+	kind: 'cost' | 'upkeep' | 'produces';
+	resource: string;
+	amount: number;
+}
+export interface BuildingJobRow {
+	job: string; // display name, e.g. "metallurgist"
+	amount: number; // raw count (Stellaris 4.0 scales jobs ×100)
+}
+export interface ReferenceBuilding {
+	key: string;
+	name: string | null;
+	category: string | null;
+	description: string | null;
+	resources: BuildingResourceRow[];
+	jobs: BuildingJobRow[];
+}
+
+export function loadBuildings(): ReferenceBuilding[] {
+	const d = db();
+	const rows = d
+		.prepare('SELECT key, name, category, description FROM building ORDER BY sort_order')
+		.all() as Array<{
+		key: string;
+		name: string | null;
+		category: string | null;
+		description: string | null;
+	}>;
+	const resRows = d
+		.prepare(
+			'SELECT building_key, kind, resource, amount FROM building_resource ORDER BY building_key, kind, sort_order'
+		)
+		.all() as Array<{ building_key: string; kind: string; resource: string; amount: number }>;
+	const jobRows = d
+		.prepare('SELECT building_key, job, amount FROM building_job ORDER BY building_key, sort_order')
+		.all() as Array<{ building_key: string; job: string; amount: number }>;
+	const resBy = new Map<string, BuildingResourceRow[]>();
+	for (const r of resRows) {
+		if (!resBy.has(r.building_key)) resBy.set(r.building_key, []);
+		resBy.get(r.building_key)!.push({
+			kind: r.kind as BuildingResourceRow['kind'],
+			resource: r.resource,
+			amount: r.amount
+		});
+	}
+	const jobBy = new Map<string, BuildingJobRow[]>();
+	for (const r of jobRows) {
+		if (!jobBy.has(r.building_key)) jobBy.set(r.building_key, []);
+		jobBy.get(r.building_key)!.push({ job: r.job, amount: r.amount });
+	}
+	return rows.map((r) => ({
+		...r,
+		resources: resBy.get(r.key) ?? [],
+		jobs: jobBy.get(r.key) ?? []
+	}));
+}
+
 // Flag assets for the flag editor: icon categories + files, and the background files.
 export function loadFlagAssets(): {
 	categories: string[];

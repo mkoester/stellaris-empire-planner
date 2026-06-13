@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Civic } from '$lib/server/db';
+	import type { Civic, JobSwap } from '$lib/server/db';
 	import { dlcBadge } from '$lib/precursors';
 	import {
 		groupCivicsByType,
@@ -11,6 +11,7 @@
 		civicRequirementLines,
 		requirementChipClass
 	} from '$lib/civics';
+	import { swapsTooltip } from '$lib/jobs';
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import LockIcon from '$lib/LockIcon.svelte';
@@ -18,6 +19,7 @@
 
 	let { data }: { data: PageData } = $props();
 	const civics = $derived(data.civics as Civic[]);
+	const jobSwaps = $derived((data.jobSwaps ?? {}) as Record<string, JobSwap[]>);
 	// Debug: render selectable cards as plain elements so their text can be copied.
 	const debug = $derived(data.debugDisableSelection);
 
@@ -54,6 +56,7 @@
 					{@const reqs = civicRequirementLines(civic.requirements)}
 					{@const selected = empire.draft.civics.includes(civic.key)}
 					{@const mods = sortModifiers(civic.modifiers)}
+					{@const swaps = jobSwaps[civic.key] ?? []}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<svelte:element
 						this={debug ? 'div' : 'button'}
@@ -66,19 +69,25 @@
 							? 'cursor-text select-text'
 							: ''}"
 					>
-						{#if civic.locked}
-							<LockIcon class="absolute top-1.5 right-1.5" />
-						{/if}
-						<header class="flex flex-wrap items-baseline gap-2 pr-5">
+						<header class="flex items-start justify-between gap-2">
 							<h3 class="font-semibold">{civic.name ?? civic.key}</h3>
-							{#if civic.requiredDlc}
-								<span
-									class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(
-										civic.requiredDlc
-									)}"
-									title={civic.requiredDlc}>DLC</span
-								>
-							{/if}
+							<div class="flex shrink-0 items-center gap-1">
+								{#if swaps.length}
+									<span
+										class="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-medium text-orange-200"
+										title={swapsTooltip(swaps)}>Replaces</span
+									>
+								{/if}
+								{#if civic.requiredDlc}
+									<span
+										class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(
+											civic.requiredDlc
+										)}"
+										title={civic.requiredDlc}>DLC</span
+									>
+								{/if}
+								{#if civic.locked}<LockIcon />{/if}
+							</div>
 						</header>
 
 						<!-- Requirements / exclusions -->
@@ -116,9 +125,10 @@
 							{/if}
 						{/if}
 
-						<!-- Effects description pinned to the bottom (divider above it if attunement shown) -->
+						<!-- Effects description pinned to the bottom (divider above it if attunement shown).
+						     When the civic replaces jobs, hovering the description shows the swap details. -->
 						{#if civic.description}
-							<div class="mt-auto">
+							<div class="mt-auto" title={swaps.length ? swapsTooltip(swaps) : undefined}>
 								{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
 								<RuleText text={civic.description} class="text-xs opacity-55" />
 							</div>

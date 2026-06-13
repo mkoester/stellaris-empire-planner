@@ -10,14 +10,17 @@
 		civicRequirementLines,
 		requirementChipClass
 	} from '$lib/civics';
+	import { swapsTooltip } from '$lib/jobs';
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import { keyName } from '$lib/empireFile';
 	import { empire } from '$lib/empire.svelte';
+	import type { JobSwap } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
 	const origins = $derived(data.origins as Origin[]);
 	const names = $derived((data.names ?? {}) as Record<string, string>);
+	const jobSwaps = $derived((data.jobSwaps ?? {}) as Record<string, JobSwap[]>);
 	// Debug: render selectable cards as plain elements so their text can be copied.
 	const debug = $derived(data.debugDisableSelection);
 
@@ -73,6 +76,7 @@
 					{@const reqs = civicRequirementLines(origin.requirements)}
 					{@const selected = empire.draft.origin === origin.key}
 					{@const mods = sortModifiers(origin.modifiers)}
+					{@const swaps = jobSwaps[origin.key] ?? []}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<svelte:element
 						this={debug ? 'div' : 'button'}
@@ -87,8 +91,14 @@
 					>
 						<div class="flex items-start justify-between gap-2">
 							<h3 class="font-semibold">{origin.name ?? origin.key}</h3>
-							{#if origin.ascensionLock || origin.ascensionBlocks.length}
-								<div class="flex shrink-0 flex-wrap justify-end gap-1">
+							{#if swaps.length || origin.ascensionLock || origin.ascensionBlocks.length}
+								<div class="flex shrink-0 flex-wrap items-center justify-end gap-1">
+									{#if swaps.length}
+										<span
+											class="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-medium text-orange-200"
+											title={swapsTooltip(swaps)}>Replaces</span
+										>
+									{/if}
 									{#if origin.ascensionLock}
 										<span
 											class="rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-200"
@@ -166,7 +176,7 @@
 						{/if}
 
 						{#if origin.description}
-							<div class="mt-auto">
+							<div class="mt-auto" title={swaps.length ? swapsTooltip(swaps) : undefined}>
 								{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
 								<RuleText text={origin.description} class="text-xs opacity-55" />
 							</div>

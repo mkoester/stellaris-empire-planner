@@ -21,6 +21,8 @@
 		{ href: '/names', label: 'Names' },
 		{ href: '/flag', label: 'Flag' },
 		{ href: '/room', label: 'Room' },
+		{ href: '/jobs', label: 'Jobs' },
+		{ href: '/buildings', label: 'Buildings' },
 		{ href: '/precursors', label: 'Precursors' }
 	] as const;
 </script>
