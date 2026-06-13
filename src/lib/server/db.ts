@@ -812,37 +812,26 @@ export interface JobSwap {
 // resources for the tooltip. For the Civics / Origins pages.
 export function loadJobSwapsBySource(): Record<string, JobSwap[]> {
 	const d = db();
-	const resByJob = new Map<string, JobResource[]>();
+	// Both sides of each swap's resources, evaluated for the plain empire (side='base') and
+	// with the swap active (side='swapped'), keyed source|base|swapped|side. The swapped job
+	// (and some base jobs, e.g. enforcer) have no row of their own in job_resource.
+	const resBySide = new Map<string, JobResource[]>();
 	for (const r of d
 		.prepare(
-			'SELECT job_key, kind, resource, amount FROM job_resource ORDER BY job_key, kind, sort_order'
-		)
-		.all() as Array<{ job_key: string; kind: string; resource: string; amount: number }>) {
-		if (!resByJob.has(r.job_key)) resByJob.set(r.job_key, []);
-		resByJob.get(r.job_key)!.push({
-			kind: r.kind as JobResource['kind'],
-			resource: r.resource,
-			amount: r.amount
-		});
-	}
-	// The swapped job's effective resources (base under the swap condition), keyed by
-	// source|base|swapped — the swapped job has no row of its own in job_resource.
-	const swapRes = new Map<string, JobResource[]>();
-	for (const r of d
-		.prepare(
-			'SELECT source_key, base_job, swapped_job, kind, resource, amount FROM job_swap_resource'
+			'SELECT source_key, base_job, swapped_job, side, kind, resource, amount FROM job_swap_resource'
 		)
 		.all() as Array<{
 		source_key: string;
 		base_job: string;
 		swapped_job: string;
+		side: string;
 		kind: string;
 		resource: string;
 		amount: number;
 	}>) {
-		const k = `${r.source_key}|${r.base_job}|${r.swapped_job}`;
-		if (!swapRes.has(k)) swapRes.set(k, []);
-		swapRes.get(k)!.push({
+		const k = `${r.source_key}|${r.base_job}|${r.swapped_job}|${r.side}`;
+		if (!resBySide.has(k)) resBySide.set(k, []);
+		resBySide.get(k)!.push({
 			kind: r.kind as JobResource['kind'],
 			resource: r.resource,
 			amount: r.amount
@@ -861,15 +850,30 @@ export function loadJobSwapsBySource(): Record<string, JobSwap[]> {
 		swapped_name: string | null;
 	}>;
 	const out: Record<string, JobSwap[]> = {};
+	const seen: Record<string, Set<string>> = {};
 	for (const r of rows) {
-		(out[r.source_key] ??= []).push({
+		const swap: JobSwap = {
 			baseJob: r.base_job,
 			baseName: r.base_name,
 			swappedJob: r.swapped_job,
 			swappedName: r.swapped_name,
-			baseResources: resByJob.get(r.base_job) ?? [],
-			swappedResources: swapRes.get(`${r.source_key}|${r.base_job}|${r.swapped_job}`) ?? []
-		});
+			baseResources: resBySide.get(`${r.source_key}|${r.base_job}|${r.swapped_job}|base`) ?? [],
+			swappedResources:
+				resBySide.get(`${r.source_key}|${r.base_job}|${r.swapped_job}|swapped`) ?? []
+		};
+		// De-duplicate by what the tooltip actually shows: several distinct base jobs can
+		// share a display name and swapped target (e.g. enforcer + dystopian_enforcer both
+		// render "Enforcer → Educator"). Keep distinct name/resource combos.
+		const sig = JSON.stringify([
+			swap.baseName ?? swap.baseJob,
+			swap.swappedName ?? swap.swappedJob,
+			swap.baseResources,
+			swap.swappedResources
+		]);
+		seen[r.source_key] ??= new Set();
+		if (seen[r.source_key].has(sig)) continue;
+		seen[r.source_key].add(sig);
+		(out[r.source_key] ??= []).push(swap);
 	}
 	return out;
 }
