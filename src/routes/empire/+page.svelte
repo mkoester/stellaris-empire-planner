@@ -95,6 +95,12 @@
 	// Civics that can't be added/removed after game start — marked with a lock icon.
 	const lockedCivics = $derived(new Set(civics.filter((c) => c.locked).map((c) => c.key)));
 
+	// An origin can force the starting world (Shattered Ring → Ring Segment, …) and/or a
+	// fixed home system, overriding what was picked on the Planets page.
+	const selectedOrigin = $derived(origins.find((o) => o.key === draft.origin) ?? null);
+	const forcedWorld = $derived(selectedOrigin?.startingColony ?? null);
+	const forcesSystem = $derived(selectedOrigin?.forcesHomeSystem ?? false);
+
 	const ethicMap = $derived(new Map(ethics.map((e) => [e.key, e])));
 	const selectedEthics = $derived(ethics.filter((e) => draft.ethics.includes(e.key)));
 	const implications = $derived(combineImplications(selectedEthics));
@@ -248,8 +254,15 @@
 				: []),
 			{ label: 'Government', value: name(draft.authority) },
 			{ label: 'Origin', value: name(draft.origin) },
-			{ label: 'Homeworld', value: name(draft.planetClass) },
-			...(draft.initializer ? [{ label: 'Home system', value: name(draft.initializer) }] : []),
+			{
+				label: 'Homeworld',
+				value: forcedWorld ? `${name(forcedWorld)} (forced by origin)` : name(draft.planetClass)
+			},
+			...(forcesSystem
+				? [{ label: 'Home system', value: 'Set by origin' }]
+				: draft.initializer
+					? [{ label: 'Home system', value: name(draft.initializer) }]
+					: []),
 			{ label: 'Ship type', value: shipTypeLabel(draft.graphicalCulture) }
 		]}
 		<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">

@@ -3,15 +3,29 @@
 	// floating panel beside the builder pages so the running choices stay in view.
 	import { empire } from '$lib/empire.svelte';
 	import { keyName, shipTypeLabel } from '$lib/empireFile';
+	import type { OriginStart } from '$lib/server/db';
 	import LockIcon from '$lib/LockIcon.svelte';
 
-	let { names, lockedCivics = [] }: { names: Record<string, string>; lockedCivics?: string[] } =
-		$props();
+	let {
+		names,
+		lockedCivics = [],
+		originStarts = {}
+	}: {
+		names: Record<string, string>;
+		lockedCivics?: string[];
+		originStarts?: Record<string, OriginStart>;
+	} = $props();
 	const locked = $derived(new Set(lockedCivics));
 
 	const draft = $derived(empire.draft);
 	const has = $derived(empire.anySet());
 	const name = (key: string | null) => keyName(key, names);
+
+	// An origin can force the starting world (Shattered Ring → Ring Segment, …) and/or a
+	// fixed home system; both then override the Planets / Home-system picks.
+	const originStart = $derived(draft.origin ? (originStarts[draft.origin] ?? null) : null);
+	const forcedWorld = $derived(originStart?.world ?? null);
+	const forcesSystem = $derived(originStart?.forcesSystem ?? false);
 
 	const rows = $derived([
 		{ label: 'Species', value: draft.speciesClass ? name(draft.speciesClass) : null },
@@ -24,8 +38,18 @@
 		},
 		{ label: 'Government', value: draft.authority ? name(draft.authority) : null },
 		{ label: 'Origin', value: draft.origin ? name(draft.origin) : null },
-		{ label: 'Homeworld', value: draft.planetClass ? name(draft.planetClass) : null },
-		{ label: 'Home system', value: draft.initializer ? name(draft.initializer) : null },
+		{
+			label: 'Homeworld',
+			value: forcedWorld
+				? `${name(forcedWorld)} (origin)`
+				: draft.planetClass
+					? name(draft.planetClass)
+					: null
+		},
+		{
+			label: 'Home system',
+			value: forcesSystem ? 'set by origin' : draft.initializer ? name(draft.initializer) : null
+		},
 		{
 			label: 'Ship type',
 			value: draft.graphicalCulture ? shipTypeLabel(draft.graphicalCulture) : null

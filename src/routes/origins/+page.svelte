@@ -12,10 +12,12 @@
 	} from '$lib/civics';
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
+	import { keyName } from '$lib/empireFile';
 	import { empire } from '$lib/empire.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const origins = $derived(data.origins as Origin[]);
+	const names = $derived((data.names ?? {}) as Record<string, string>);
 	// Debug: render selectable cards as plain elements so their text can be copied.
 	const debug = $derived(data.debugDisableSelection);
 
@@ -115,6 +117,29 @@
 										>{r.type === 'require' ? 'needs' : 'excl.'} {r.text}</span
 									>
 								{/each}
+							</div>
+						{/if}
+
+						{#if origin.startingColony || origin.forcesHomeSystem}
+							<div class="flex flex-wrap gap-1">
+								{#if origin.startingColony}
+									<span
+										class="rounded bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200/90"
+										title="This origin starts you on a specific world, overriding the Planets pick"
+									>
+										Starts on: <span class="font-medium"
+											>{keyName(origin.startingColony, names)}</span
+										>
+									</span>
+								{/if}
+								{#if origin.forcesHomeSystem}
+									<span
+										class="rounded bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200/90"
+										title="This origin places you in a fixed home system, overriding the Home-system pick"
+									>
+										Fixed home system
+									</span>
+								{/if}
 							</div>
 						{/if}
 

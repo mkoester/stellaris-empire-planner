@@ -61,5 +61,9 @@
 
 <!-- Floating running summary of the current empire (hidden on /empire, which shows its own). -->
 {#if page.url.pathname !== '/empire'}
-	<EmpireOverview names={data?.names ?? {}} lockedCivics={data?.lockedCivics ?? []} />
+	<EmpireOverview
+		names={data?.names ?? {}}
+		lockedCivics={data?.lockedCivics ?? []}
+		originStarts={data?.originStarts ?? {}}
+	/>
 {/if}

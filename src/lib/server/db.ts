@@ -543,6 +543,8 @@ export interface Origin {
 	requiredDlc: string | null;
 	ascensionLock: string | null; // locked to this single ascension path (blocks the others)
 	ascensionBlocks: string[]; // ascension paths blocked while still allowing others
+	startingColony: string | null; // forced starting world class (e.g. pc_gaia); null = normal
+	forcesHomeSystem: boolean; // origin forces a fixed home system (a non custom-empire start)
 	icon: string | null;
 	modifiers: Modifier[];
 	requirements: CivicRequirement[];
@@ -552,7 +554,8 @@ export function loadOrigins(): Origin[] {
 	const d = db();
 	const rows = d
 		.prepare(
-			`SELECT key, name, description, required_dlc, ascension_lock, ascension_blocks, icon
+			`SELECT key, name, description, required_dlc, ascension_lock, ascension_blocks,
+			        starting_colony, forces_home_system, icon
 			 FROM origin WHERE selectable = 1 ORDER BY sort_order`
 		)
 		.all() as Array<{
@@ -562,6 +565,8 @@ export function loadOrigins(): Origin[] {
 		required_dlc: string | null;
 		ascension_lock: string | null;
 		ascension_blocks: string | null;
+		starting_colony: string | null;
+		forces_home_system: number;
 		icon: string | null;
 	}>;
 
@@ -620,10 +625,32 @@ export function loadOrigins(): Origin[] {
 		requiredDlc: r.required_dlc,
 		ascensionLock: r.ascension_lock,
 		ascensionBlocks: r.ascension_blocks ? r.ascension_blocks.split(',') : [],
+		startingColony: r.starting_colony,
+		forcesHomeSystem: r.forces_home_system === 1,
 		icon: r.icon,
 		modifiers: modByOrigin.get(r.key) ?? [],
 		requirements: reqByOrigin.get(r.key) ?? []
 	}));
+}
+
+// How an origin overrides the start (for the empire overviews): its forced starting
+// world (pc key) and/or whether it forces a fixed home system. Only origins that
+// override anything are included.
+export interface OriginStart {
+	world: string | null;
+	forcesSystem: boolean;
+}
+export function loadOriginStarts(): Record<string, OriginStart> {
+	const out: Record<string, OriginStart> = {};
+	for (const r of db()
+		.prepare(
+			`SELECT key, starting_colony, forces_home_system FROM origin
+			 WHERE starting_colony IS NOT NULL OR forces_home_system = 1`
+		)
+		.all() as Array<{ key: string; starting_colony: string | null; forces_home_system: number }>) {
+		out[r.key] = { world: r.starting_colony, forcesSystem: r.forces_home_system === 1 };
+	}
+	return out;
 }
 
 // ── Planet classes ───────────────────────────────────────────────────────────
