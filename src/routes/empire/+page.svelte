@@ -7,6 +7,7 @@
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
 	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
 	import RuleText from '$lib/RuleText.svelte';
+	import LockIcon from '$lib/LockIcon.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const predefined = $derived(data.predefined as Empire[]);
@@ -74,6 +75,9 @@
 	const ethics = $derived(data.ethics as Ethic[]);
 	const civics = $derived(data.civics as Civic[]);
 	const origins = $derived(data.origins as Origin[]);
+
+	// Civics that can't be added/removed after game start — marked with a lock icon.
+	const lockedCivics = $derived(new Set(civics.filter((c) => c.locked).map((c) => c.key)));
 
 	const ethicMap = $derived(new Map(ethics.map((e) => [e.key, e])));
 	const selectedEthics = $derived(ethics.filter((e) => draft.ethics.includes(e.key)));
@@ -220,13 +224,15 @@
 				{/each}
 			</dl>
 
-			{#snippet chips(label: string, keys: string[], cls: string)}
+			{#snippet chips(label: string, keys: string[], cls: string, locked?: Set<string>)}
 				{#if keys.length}
 					<div>
 						<div class="mb-1 text-[11px] uppercase opacity-40">{label}</div>
 						<div class="flex flex-wrap gap-1.5">
 							{#each keys as k (k)}
-								<span class="rounded px-1.5 py-0.5 text-xs {cls}">{name(k)}</span>
+								<span class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs {cls}">
+									{name(k)}{#if locked?.has(k)}<LockIcon size={11} />{/if}
+								</span>
 							{/each}
 						</div>
 					</div>
@@ -234,7 +240,7 @@
 			{/snippet}
 
 			{@render chips('Ethics', draft.ethics, 'bg-primary-500/15 text-primary-300/90')}
-			{@render chips('Civics', draft.civics, 'bg-sky-500/15 text-sky-300/90')}
+			{@render chips('Civics', draft.civics, 'bg-sky-500/15 text-sky-300/90', lockedCivics)}
 			{@render chips('Traits', draft.traits, 'bg-emerald-500/15 text-emerald-300/90')}
 		</section>
 

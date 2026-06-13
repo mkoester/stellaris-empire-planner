@@ -3,8 +3,11 @@
 	// floating panel beside the builder pages so the running choices stay in view.
 	import { empire } from '$lib/empire.svelte';
 	import { keyName, shipTypeLabel } from '$lib/empireFile';
+	import LockIcon from '$lib/LockIcon.svelte';
 
-	let { names }: { names: Record<string, string> } = $props();
+	let { names, lockedCivics = [] }: { names: Record<string, string>; lockedCivics?: string[] } =
+		$props();
+	const locked = $derived(new Set(lockedCivics));
 
 	const draft = $derived(empire.draft);
 	const has = $derived(empire.anySet());
@@ -39,19 +42,23 @@
 			{/each}
 		</dl>
 
-		{#snippet group(label: string, keys: string[])}
+		{#snippet group(label: string, keys: string[], lockSet?: Set<string>)}
 			{#if keys.length}
 				<div>
 					<div class="text-[10px] uppercase opacity-40">{label}</div>
 					<div class="flex flex-wrap gap-x-2 gap-y-0.5">
-						{#each keys as k (k)}<span>{name(k)}</span>{/each}
+						{#each keys as k (k)}
+							<span class="inline-flex items-center gap-0.5"
+								>{name(k)}{#if lockSet?.has(k)}<LockIcon size={10} />{/if}</span
+							>
+						{/each}
 					</div>
 				</div>
 			{/if}
 		{/snippet}
 
 		{@render group('Ethics', draft.ethics)}
-		{@render group('Civics', draft.civics)}
+		{@render group('Civics', draft.civics, locked)}
 		{@render group('Traits', draft.traits)}
 	</aside>
 {/if}

@@ -433,6 +433,14 @@ export function loadCivics(): Civic[] {
 	}));
 }
 
+// The civic keys that can't be added/removed after game start (`modification = no`),
+// for marking them with a lock wherever civics are listed (Empire summary, overview).
+export function loadLockedCivicKeys(): string[] {
+	return (db().prepare('SELECT key FROM civic WHERE locked = 1').all() as { key: string }[]).map(
+		(r) => r.key
+	);
+}
+
 // ── Authorities (government types) ─────────────────────────────────────────────
 
 // The empire's government type (Democratic, Imperial, Hive Mind, …). Same modifier +
