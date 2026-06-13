@@ -331,7 +331,7 @@
 		<!-- svelte-ignore a11y_no_static_element_interactions -->
 		<svelte:element
 			this={debug ? 'div' : 'button'}
-			class="relative card text-left transition-all
+			class="relative flex h-full flex-col card text-left transition-all
 				{isBase
 				? 'cursor-default preset-filled opacity-70'
 				: isSelected && !debug
@@ -403,23 +403,24 @@
 						{/each}
 					</div>
 				{/if}
-				{#each [trait.tags.filter((t) => !HIDDEN_CARD_TAGS.has(t))] as visibleTags, i (i)}
-					{#if visibleTags.length > 0}
-						<div class="mt-0.5 flex flex-wrap items-center gap-0.5">
-							{#each visibleTags as tag (tag)}
-								<span
-									class="rounded px-1 text-[9px] leading-tight
-										{activeTags.has(tag)
-										? 'bg-primary-500/20 text-primary-300 opacity-90'
-										: 'bg-surface-500/20 opacity-50'}"
-								>
-									{formatTag(tag)}
-								</span>
-							{/each}
-						</div>
-					{/if}
-				{/each}
 			</div>
+			<!-- Tags always pinned to the bottom of the card -->
+			{#each [trait.tags.filter((t) => !HIDDEN_CARD_TAGS.has(t))] as visibleTags, i (i)}
+				{#if visibleTags.length > 0}
+					<div class="mt-auto flex flex-wrap items-center gap-0.5 pt-1.5">
+						{#each visibleTags as tag (tag)}
+							<span
+								class="rounded px-1 text-[9px] leading-tight
+									{activeTags.has(tag)
+									? 'bg-primary-500/20 text-primary-300 opacity-90'
+									: 'bg-surface-500/20 opacity-50'}"
+							>
+								{formatTag(tag)}
+							</span>
+						{/each}
+					</div>
+				{/if}
+			{/each}
 		</svelte:element>
 	{/snippet}
 
