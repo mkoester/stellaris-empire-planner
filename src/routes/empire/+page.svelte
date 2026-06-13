@@ -15,11 +15,29 @@
 	const modifierIndex = $derived(data.modifierIndex as Record<string, ModifierSource>);
 	const name = (key: string | null) => keyName(key, names);
 
-	let importKey = $state('');
+	let filter = $state(''); // predefined-empire table search
+	let showPicker = $state(false); // the predefined-empire table is toggled open/closed
 	let fileEmpires = $state<Empire[]>([]); // when an uploaded file holds several
 	let fileError = $state('');
 	let pending = $state<Empire | null>(null); // awaiting an override decision
 	let confirmReset = $state(false); // two-step "reset everything" confirmation
+
+	// A predefined empire's display name (the machine-age DLC alternates share a base name).
+	const empireLabel = (p: Empire) =>
+		`${p.name}${p.key.endsWith('_machine_age') ? ' (Machine Age)' : ''}`;
+	const speciesOf = (p: Empire) => p.speciesName || name(p.speciesClass);
+
+	const filteredPredefined = $derived.by(() => {
+		const q = filter.trim().toLowerCase();
+		if (!q) return predefined;
+		return predefined.filter((p) =>
+			`${empireLabel(p)} ${name(p.origin)} ${speciesOf(p)} ${p.ethics
+				.map(name)
+				.join(' ')} ${p.civics.map(name).join(' ')}`
+				.toLowerCase()
+				.includes(q)
+		);
+	});
 
 	function resetEmpire() {
 		empire.reset();
@@ -29,7 +47,6 @@
 
 	// Reset the import controls after a load completes (or is cancelled).
 	function resetControls() {
-		importKey = '';
 		fileEmpires = [];
 	}
 
@@ -67,11 +84,6 @@
 		a.click();
 		a.remove();
 		URL.revokeObjectURL(url);
-	}
-
-	function importPredefined() {
-		const e = predefined.find((p) => p.key === importKey);
-		if (e) tryLoad(e);
 	}
 
 	async function onFile(event: Event) {
@@ -186,30 +198,69 @@
 	</p>
 
 	<!-- Import / load controls -->
-	<div class="border-surface-400-500/30 flex flex-wrap items-end gap-4 rounded-lg border p-4">
-		<label class="flex flex-col gap-1 text-sm">
-			<span class="opacity-60">Predefined empire</span>
-			<span class="flex gap-2">
-				<select class="select" bind:value={importKey}>
-					<option value="" disabled>Choose…</option>
-					{#each predefined as p (p.key)}
-						<!-- The machine-age DLC alternates share a name with their base empire. -->
-						<option value={p.key}
-							>{p.name}{p.key.endsWith('_machine_age') ? ' (Machine Age)' : ''}</option
-						>
-					{/each}
-				</select>
+	<div class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">
+		<div class="space-y-2">
+			<div class="flex flex-wrap items-center justify-between gap-2">
 				<button
-					class="btn preset-filled-primary-500"
-					disabled={!importKey}
-					onclick={importPredefined}
+					class="btn text-sm {showPicker ? 'preset-filled' : 'preset-filled-primary-500'}"
+					onclick={() => (showPicker = !showPicker)}
 				>
-					Import
+					{showPicker ? 'Hide predefined empires' : 'Choose a predefined empire'}
 				</button>
-			</span>
-		</label>
+				{#if showPicker}
+					<input
+						class="input max-w-xs text-sm"
+						type="search"
+						placeholder="Filter empires…"
+						bind:value={filter}
+					/>
+				{/if}
+			</div>
+			{#if showPicker}
+				<p class="text-xs opacity-50">Click a row to import.</p>
+				<div class="border-surface-400-500/30 max-h-96 overflow-auto rounded border">
+					<table class="w-full text-left text-xs">
+						<thead
+							class="sticky top-0 z-10 bg-surface-50-950/95 backdrop-blur"
+							style="background-color: var(--color-surface-50-950)"
+						>
+							<tr class="border-surface-400-500/40 border-b">
+								<th class="px-2 py-1.5 font-medium opacity-60">Name</th>
+								<th class="px-2 py-1.5 font-medium opacity-60">Origin</th>
+								<th class="px-2 py-1.5 font-medium opacity-60">Species</th>
+								<th class="px-2 py-1.5 font-medium opacity-60">Ethics</th>
+								<th class="px-2 py-1.5 font-medium opacity-60">Civics</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each filteredPredefined as p (p.key)}
+								<tr
+									class="border-surface-400-500/20 cursor-pointer border-b align-top hover:bg-primary-500/10"
+									onclick={() => {
+										tryLoad(p);
+										showPicker = false;
+									}}
+								>
+									<td class="px-2 py-1.5 font-medium whitespace-nowrap">{empireLabel(p)}</td>
+									<td class="px-2 py-1.5 opacity-80">{name(p.origin)}</td>
+									<td class="px-2 py-1.5 opacity-80">{speciesOf(p)}</td>
+									<td class="px-2 py-1.5 opacity-70">{p.ethics.map(name).join(', ')}</td>
+									<td class="px-2 py-1.5 opacity-70">{p.civics.map(name).join(', ')}</td>
+								</tr>
+							{/each}
+							{#if filteredPredefined.length === 0}
+								<tr
+									><td class="px-2 py-3 opacity-50" colspan="5">No empires match “{filter}”.</td
+									></tr
+								>
+							{/if}
+						</tbody>
+					</table>
+				</div>
+			{/if}
+		</div>
 
-		<label class="flex flex-col gap-1 text-sm">
+		<label class="flex max-w-md flex-col gap-1 text-sm">
 			<span class="opacity-60">Load empire file</span>
 			<input class="input" type="file" accept=".txt,.stellaris-empire" onchange={onFile} />
 		</label>
