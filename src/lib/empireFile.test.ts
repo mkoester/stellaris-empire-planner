@@ -16,6 +16,15 @@ tzynn = {
 		trait = "trait_strong"
 		trait = "trait_resilient"
 	}
+	secondary_species = {
+		class = "MOL"
+		portrait = "mol8"
+		name = "Tebrid"
+		plural = "Tebrids"
+		adjective = "Tebrid"
+		trait = "trait_organic"
+		trait = "trait_strong"
+	}
 	authority = "auth_imperial"
 	civics = { "civic_police_state" "civic_slaver_guilds" }
 	origin = "origin_default"
@@ -93,6 +102,12 @@ describe('serializeEmpire', () => {
 		'speciesName',
 		'speciesPlural',
 		'speciesAdjective',
+		'secondaryClass',
+		'secondaryPortrait',
+		'secondaryName',
+		'secondaryPlural',
+		'secondaryAdjective',
+		'secondaryTraits',
 		'rulerName',
 		'authority',
 		'government',

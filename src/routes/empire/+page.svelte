@@ -49,7 +49,7 @@
 	// Download the current draft as a single-empire .stellaris-empire file (game format).
 	function saveEmpire() {
 		const d = empire.draft;
-		const text = serializeEmpire(d, d.name || 'empire');
+		const text = serializeEmpire(empire.toSerializable(), d.name || 'empire');
 		const base = (d.name || 'empire').trim().replace(/[^\w-]+/g, '_') || 'empire';
 		const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
 		const url = URL.createObjectURL(blob);
@@ -134,15 +134,29 @@
 		}
 		return out;
 	});
-	// Species traits, grouped per species (one founder species for now, but the model
-	// supports several — e.g. Syncretic Evolution).
+	// Species traits, grouped per species — the founder plus an optional secondary
+	// founding species (Syncretic Evolution / Necrophage / …).
 	const speciesGroups = $derived(
 		collectSpeciesEffects(
 			[
 				{
-					name: draft.speciesClass ? name(draft.speciesClass) : 'Founder species',
+					name:
+						draft.speciesName ||
+						(draft.speciesClass ? name(draft.speciesClass) : 'Founder species'),
 					traits: draft.traits
-				}
+				},
+				...(draft.secondary
+					? [
+							{
+								name:
+									draft.secondary.speciesName ||
+									(draft.secondary.speciesClass
+										? name(draft.secondary.speciesClass)
+										: 'Secondary species'),
+								traits: draft.secondary.traits
+							}
+						]
+					: [])
 			],
 			modifierIndex,
 			names
@@ -224,6 +238,14 @@
 	{#if hasEmpire}
 		{@const rows = [
 			{ label: 'Species', value: name(draft.speciesClass) },
+			...(draft.secondary
+				? [
+						{
+							label: 'Secondary species',
+							value: draft.secondary.speciesName || name(draft.secondary.speciesClass)
+						}
+					]
+				: []),
 			{ label: 'Government', value: name(draft.authority) },
 			{ label: 'Origin', value: name(draft.origin) },
 			{ label: 'Homeworld', value: name(draft.planetClass) },
@@ -264,6 +286,13 @@
 			{@render chips('Ethics', draft.ethics, 'bg-primary-500/15 text-primary-300/90')}
 			{@render chips('Civics', draft.civics, 'bg-sky-500/15 text-sky-300/90', lockedCivics)}
 			{@render chips('Traits', draft.traits, 'bg-emerald-500/15 text-emerald-300/90')}
+			{#if draft.secondary}
+				{@render chips(
+					'Secondary species traits',
+					draft.secondary.traits,
+					'bg-emerald-500/15 text-emerald-300/90'
+				)}
+			{/if}
 		</section>
 
 		<!-- Aggregated numeric effects of the current choices, grouped by theme -->

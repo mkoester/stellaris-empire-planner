@@ -2,6 +2,18 @@
 // Species Builder, …) bind to this shared draft; importing a predefined empire or
 // loading a user_empire_designs.txt applies into it (whole or partial — see apply()).
 import type { Empire } from '$lib/server/db';
+import type { SerializableEmpire } from '$lib/empireFile';
+
+// A second founding species (Syncretic Evolution / Necrophage / …). Same shape as the
+// founder's species fields; null `secondary` means the empire has only one species.
+export interface SecondarySpecies {
+	speciesClass: string | null;
+	speciesPortrait: string | null;
+	speciesName: string;
+	speciesPlural: string;
+	speciesAdjective: string;
+	traits: string[];
+}
 
 export interface EmpireDraft {
 	// Player-facing names typed at empire creation (the /names section). Empty = unset.
@@ -17,6 +29,7 @@ export interface EmpireDraft {
 	speciesClass: string | null;
 	speciesPortrait: string | null;
 	traits: string[];
+	secondary: SecondarySpecies | null;
 	ethics: string[];
 	authority: string | null; // government type, e.g. "auth_imperial"
 	civics: string[];
@@ -24,6 +37,15 @@ export interface EmpireDraft {
 	planetClass: string | null;
 	graphicalCulture: string | null;
 }
+
+const emptySecondary = (): SecondarySpecies => ({
+	speciesClass: null,
+	speciesPortrait: null,
+	speciesName: '',
+	speciesPlural: '',
+	speciesAdjective: '',
+	traits: []
+});
 
 // The editable name fields of the draft (string-valued), in display order.
 export const NAME_FIELDS = [
@@ -52,6 +74,7 @@ const empty = (): EmpireDraft => ({
 	speciesClass: null,
 	speciesPortrait: null,
 	traits: [],
+	secondary: null,
 	ethics: [],
 	authority: null,
 	civics: [],
@@ -99,6 +122,24 @@ const SECTIONS: Section[] = [
 		label: 'Traits',
 		isSet: (d) => d.traits.length > 0,
 		apply: (d, e) => (d.traits = [...e.traits])
+	},
+	{
+		id: 'secondary',
+		label: 'Secondary species',
+		isSet: (d) => d.secondary != null,
+		apply: (d, e) => {
+			const has = !!(e.secondaryClass || e.secondaryName || (e.secondaryTraits?.length ?? 0));
+			d.secondary = has
+				? {
+						speciesClass: e.secondaryClass ?? null,
+						speciesPortrait: e.secondaryPortrait ?? null,
+						speciesName: e.secondaryName ?? '',
+						speciesPlural: e.secondaryPlural ?? '',
+						speciesAdjective: e.secondaryAdjective ?? '',
+						traits: [...(e.secondaryTraits ?? [])]
+					}
+				: null;
+		}
 	},
 	{
 		id: 'ethics',
@@ -172,6 +213,31 @@ export const empire = {
 	setTraits(t: string[]) {
 		draft.traits = t;
 	},
+	// Founder species class (also sets/clears the portrait).
+	setSpeciesClass(cls: string | null, portrait: string | null = null) {
+		draft.speciesClass = cls;
+		draft.speciesPortrait = cls ? portrait : null;
+	},
+	// ── Secondary founding species ──────────────────────────────────────────
+	addSecondary() {
+		if (!draft.secondary) draft.secondary = emptySecondary();
+	},
+	removeSecondary() {
+		draft.secondary = null;
+	},
+	setSecondaryClass(cls: string | null, portrait: string | null = null) {
+		if (!draft.secondary) draft.secondary = emptySecondary();
+		draft.secondary.speciesClass = cls;
+		draft.secondary.speciesPortrait = cls ? portrait : null;
+	},
+	setSecondaryTraits(t: string[]) {
+		if (!draft.secondary) draft.secondary = emptySecondary();
+		draft.secondary.traits = t;
+	},
+	setSecondaryName(field: 'speciesName' | 'speciesPlural' | 'speciesAdjective', value: string) {
+		if (!draft.secondary) draft.secondary = emptySecondary();
+		draft.secondary[field] = value;
+	},
 	setEthics(e: string[]) {
 		draft.ethics = e;
 	},
@@ -195,5 +261,36 @@ export const empire = {
 	// Ship type: stored as a representative graphical_culture ('biogenesis_01' = organic).
 	setShipType(t: 'regular' | 'organic' | null) {
 		draft.graphicalCulture = t === 'organic' ? 'biogenesis_01' : t === 'regular' ? 'regular' : null;
+	},
+	// Flatten the draft (incl. the nested secondary species) into the shape the empire-
+	// file serializer expects. Empty name strings become null so they're omitted.
+	toSerializable(): SerializableEmpire {
+		const s = draft.secondary;
+		return {
+			name: draft.name || null,
+			adjective: draft.adjective || null,
+			shipPrefix: draft.shipPrefix || null,
+			speciesClass: draft.speciesClass,
+			speciesPortrait: draft.speciesPortrait,
+			speciesName: draft.speciesName || null,
+			speciesPlural: draft.speciesPlural || null,
+			speciesAdjective: draft.speciesAdjective || null,
+			secondaryClass: s?.speciesClass ?? null,
+			secondaryPortrait: s?.speciesPortrait ?? null,
+			secondaryName: s?.speciesName || null,
+			secondaryPlural: s?.speciesPlural || null,
+			secondaryAdjective: s?.speciesAdjective || null,
+			secondaryTraits: s?.traits ?? [],
+			rulerName: draft.rulerName || null,
+			authority: draft.authority,
+			origin: draft.origin,
+			planetName: draft.planetName || null,
+			planetClass: draft.planetClass,
+			systemName: draft.systemName || null,
+			graphicalCulture: draft.graphicalCulture,
+			ethics: draft.ethics,
+			civics: draft.civics,
+			traits: draft.traits
+		};
 	}
 };

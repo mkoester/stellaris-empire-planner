@@ -15,6 +15,13 @@
 
 	const rows = $derived([
 		{ label: 'Species', value: draft.speciesClass ? name(draft.speciesClass) : null },
+		{
+			label: 'Secondary species',
+			value: draft.secondary
+				? draft.secondary.speciesName ||
+					(draft.secondary.speciesClass ? name(draft.secondary.speciesClass) : 'Secondary species')
+				: null
+		},
 		{ label: 'Government', value: draft.authority ? name(draft.authority) : null },
 		{ label: 'Origin', value: draft.origin ? name(draft.origin) : null },
 		{ label: 'Homeworld', value: draft.planetClass ? name(draft.planetClass) : null },
@@ -60,5 +67,8 @@
 		{@render group('Ethics', draft.ethics)}
 		{@render group('Civics', draft.civics, locked)}
 		{@render group('Traits', draft.traits)}
+		{#if draft.secondary}
+			{@render group('2nd species traits', draft.secondary.traits)}
+		{/if}
 	</aside>
 {/if}

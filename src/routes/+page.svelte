@@ -19,24 +19,63 @@
 		return classLabelMap.get(key) ?? key.charAt(0).toUpperCase() + key.slice(1).toLowerCase();
 	}
 
-	// Trait selection is backed by the shared empire draft; the archetype/class are
-	// local view state (which traits the picker shows), synced from the draft on load.
+	// The builder edits one species "slot" at a time: the founder species (traits in
+	// draft.traits, class in draft.speciesClass) or an optional secondary species
+	// (draft.secondary). Traits + class are backed by the draft; archetype is local view
+	// state, one per slot.
 	const deriveArchetype = (traits: string[]): ArchetypeGroup =>
 		traits.includes('trait_machine') ? 'MACHINE' : 'BIOLOGICAL';
 
-	let archetypeGroup = $state<ArchetypeGroup>(deriveArchetype(empire.draft.traits));
-	let selectedClassKey = $state<string | null>(null);
-	const selected = $derived(new Set(empire.draft.traits));
+	let activeSlot = $state<'founder' | 'secondary'>('founder');
+	let founderArch = $state<ArchetypeGroup>(deriveArchetype(empire.draft.traits));
+	let secondaryArch = $state<ArchetypeGroup>(deriveArchetype(empire.draft.secondary?.traits ?? []));
 	let activeTags = $state(new Set<string>());
 
-	// When an empire is loaded elsewhere (generation bumps), follow its archetype so
-	// the loaded traits stay visible (and aren't pruned).
+	const archetypeGroup = $derived(activeSlot === 'founder' ? founderArch : secondaryArch);
+	function setArch(g: ArchetypeGroup) {
+		if (activeSlot === 'founder') founderArch = g;
+		else secondaryArch = g;
+	}
+
+	// The active slot's traits + species class, read straight from the draft.
+	const activeTraits = $derived(
+		activeSlot === 'secondary' ? (empire.draft.secondary?.traits ?? []) : empire.draft.traits
+	);
+	const selectedClassKey = $derived(
+		activeSlot === 'secondary'
+			? (empire.draft.secondary?.speciesClass ?? null)
+			: empire.draft.speciesClass
+	);
+	const selected = $derived(new Set(activeTraits));
+	function commitTraits(keys: string[]) {
+		if (activeSlot === 'secondary') empire.setSecondaryTraits(keys);
+		else empire.setTraits(keys);
+	}
+	function setActiveClass(key: string | null, arch: ArchetypeGroup) {
+		if (activeSlot === 'secondary') empire.setSecondaryClass(key);
+		else empire.setSpeciesClass(key);
+		setArch(arch);
+	}
+
+	// Slot switching: opening the secondary slot creates the secondary species.
+	function switchSlot(slot: 'founder' | 'secondary') {
+		if (slot === 'secondary') empire.addSecondary();
+		activeSlot = slot;
+	}
+	function dropSecondary() {
+		empire.removeSecondary();
+		activeSlot = 'founder';
+	}
+
+	// When an empire is loaded elsewhere (generation bumps), follow each slot's archetype
+	// so the loaded traits stay visible (and aren't pruned), and return to the founder.
 	let lastGen = $state(empire.generation);
 	$effect(() => {
 		if (empire.generation !== lastGen) {
 			lastGen = empire.generation;
-			archetypeGroup = deriveArchetype(empire.draft.traits);
-			selectedClassKey = null;
+			founderArch = deriveArchetype(empire.draft.traits);
+			secondaryArch = deriveArchetype(empire.draft.secondary?.traits ?? []);
+			activeSlot = 'founder';
 		}
 	});
 
@@ -102,24 +141,22 @@
 
 	function selectClass(key: string) {
 		if (selectedClassKey === key) {
-			selectedClassKey = null;
+			setActiveClass(null, archetypeGroup);
 		} else {
-			selectedClassKey = key;
 			const cls = data.speciesClasses.find((sc) => sc.key === key);
-			archetypeGroup = cls?.archetype === 'MACHINE' ? 'MACHINE' : 'BIOLOGICAL';
+			setActiveClass(key, cls?.archetype === 'MACHINE' ? 'MACHINE' : 'BIOLOGICAL');
 		}
 	}
 
 	function selectArchetypeGroup(group: ArchetypeGroup) {
-		archetypeGroup = group;
-		selectedClassKey = null;
+		setActiveClass(null, group);
 	}
 
 	// Prune selected traits whenever available traits change
 	$effect(() => {
 		const valid = new Set(visibleTraits.map((t) => t.key));
 		const pruned = [...selected].filter((k) => valid.has(k));
-		if (pruned.length !== selected.size) empire.setTraits(pruned);
+		if (pruned.length !== selected.size) commitTraits(pruned);
 	});
 
 	// Clear tag filters when switching archetype group
@@ -274,7 +311,7 @@
 		} else if (canToggle(trait)) {
 			next.add(trait.key);
 		}
-		empire.setTraits([...next]);
+		commitTraits([...next]);
 	}
 
 	function formatKey(key: string): string {
@@ -428,7 +465,45 @@
 		class="space-y-6 [@media(min-height:700px)]:sticky [@media(min-height:700px)]:top-0 [@media(min-height:700px)]:z-10 [@media(min-height:700px)]:pb-2"
 		style="background-color: var(--color-surface-50-950)"
 	>
-		<h1 class="text-2xl font-bold">Species Builder</h1>
+		<div class="flex flex-wrap items-center gap-x-3 gap-y-2">
+			<h1 class="text-2xl font-bold">Species Builder</h1>
+			<!-- Species slot: founder vs an optional secondary founding species -->
+			<div class="flex items-center gap-1">
+				<button
+					class="btn text-sm {activeSlot === 'founder'
+						? 'preset-filled-primary-500'
+						: 'preset-filled'}"
+					onclick={() => switchSlot('founder')}
+				>
+					Founder
+				</button>
+				{#if empire.draft.secondary}
+					<button
+						class="btn text-sm {activeSlot === 'secondary'
+							? 'preset-filled-primary-500'
+							: 'preset-filled'}"
+						onclick={() => switchSlot('secondary')}
+					>
+						Secondary
+					</button>
+					<button
+						class="btn px-2 text-xs opacity-60 hover:opacity-100"
+						title="Remove the secondary species"
+						aria-label="Remove the secondary species"
+						onclick={dropSecondary}
+					>
+						✕
+					</button>
+				{:else}
+					<button class="btn preset-filled text-sm" onclick={() => switchSlot('secondary')}>
+						+ Secondary species
+					</button>
+				{/if}
+			</div>
+			{#if activeSlot === 'secondary'}
+				<span class="text-xs opacity-50">Editing the secondary founding species</span>
+			{/if}
+		</div>
 
 		<!-- Budget + selection summary -->
 		<div class="card preset-filled p-4">
@@ -447,7 +522,7 @@
 					/ {maxPoints} trait points remaining
 				</span>
 				{#if traitCount > 0}
-					<button class="btn preset-filled text-xs" onclick={() => empire.setTraits([])}>
+					<button class="btn preset-filled text-xs" onclick={() => commitTraits([])}>
 						Clear all
 					</button>
 				{/if}

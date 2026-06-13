@@ -107,6 +107,9 @@ export function parseEmpireFile(text: string): Empire[] {
 		const ruler = def.ruler;
 		const rulerName =
 			ruler && typeof ruler === 'object' && !Array.isArray(ruler) ? asStr(ruler.name) : null;
+		// Optional second founding species (same block shape as `species`).
+		const sec = def.secondary_species;
+		const sx = sec && typeof sec === 'object' && !Array.isArray(sec) ? sec : null;
 		empires.push({
 			key,
 			name: asStr(name) ?? key,
@@ -115,6 +118,12 @@ export function parseEmpireFile(text: string): Empire[] {
 			speciesName: asStr(sp.name),
 			speciesPlural: asStr(sp.plural),
 			speciesAdjective: asStr(sp.adjective),
+			secondaryClass: sx ? asStr(sx.class) : null,
+			secondaryPortrait: sx ? asStr(sx.portrait) : null,
+			secondaryName: sx ? asStr(sx.name) : null,
+			secondaryPlural: sx ? asStr(sx.plural) : null,
+			secondaryAdjective: sx ? asStr(sx.adjective) : null,
+			secondaryTraits: sx ? asList(sx.trait) : [],
 			rulerName,
 			planetName: asStr(def.planet_name),
 			systemName: asStr(def.system_name),
@@ -147,6 +156,12 @@ export interface SerializableEmpire {
 	speciesName?: string | null;
 	speciesPlural?: string | null;
 	speciesAdjective?: string | null;
+	secondaryClass?: string | null;
+	secondaryPortrait?: string | null;
+	secondaryName?: string | null;
+	secondaryPlural?: string | null;
+	secondaryAdjective?: string | null;
+	secondaryTraits?: string[];
 	rulerName?: string | null;
 	authority?: string | null;
 	government?: string | null;
@@ -187,6 +202,21 @@ export function serializeEmpire(e: SerializableEmpire, key?: string): string {
 	sp('adjective', e.speciesAdjective);
 	for (const t of e.traits ?? []) out.push(`\t\ttrait = ${q(t)}`);
 	out.push('\t}');
+
+	// Second founding species — written only when one has been chosen.
+	if (e.secondaryClass || e.secondaryName || (e.secondaryTraits?.length ?? 0) > 0) {
+		out.push('\tsecondary_species = {');
+		const sx = (name: string, v?: string | null) => {
+			if (v) out.push(`\t\t${name} = ${q(v)}`);
+		};
+		sx('class', e.secondaryClass);
+		sx('portrait', e.secondaryPortrait);
+		sx('name', e.secondaryName);
+		sx('plural', e.secondaryPlural);
+		sx('adjective', e.secondaryAdjective);
+		for (const t of e.secondaryTraits ?? []) out.push(`\t\ttrait = ${q(t)}`);
+		out.push('\t}');
+	}
 
 	scalar('authority', e.authority);
 	if (e.civics?.length) out.push(`\tcivics = { ${e.civics.map(q).join(' ')} }`);

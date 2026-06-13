@@ -680,6 +680,13 @@ export interface Empire {
 	systemName?: string | null;
 	speciesClass: string | null;
 	speciesPortrait: string | null;
+	// Second founding species (Syncretic Evolution / Necrophage / …); null parts = none.
+	secondaryClass?: string | null;
+	secondaryPortrait?: string | null;
+	secondaryName?: string | null;
+	secondaryPlural?: string | null;
+	secondaryAdjective?: string | null;
+	secondaryTraits?: string[];
 	authority: string | null;
 	government: string | null;
 	origin: string | null;
@@ -696,7 +703,9 @@ export function loadPrescriptedEmpires(): Empire[] {
 	const rows = d
 		.prepare(
 			`SELECT key, name, adjective, ship_prefix, species_class, species_portrait,
-			        species_name, species_plural, species_adjective, ruler_name,
+			        species_name, species_plural, species_adjective,
+			        secondary_class, secondary_portrait, secondary_name,
+			        secondary_plural, secondary_adjective, ruler_name,
 			        planet_name, system_name, authority, government,
 			        origin, planet_class, graphical_culture
 			 FROM prescripted_empire ORDER BY sort_order`
@@ -711,6 +720,11 @@ export function loadPrescriptedEmpires(): Empire[] {
 		species_name: string | null;
 		species_plural: string | null;
 		species_adjective: string | null;
+		secondary_class: string | null;
+		secondary_portrait: string | null;
+		secondary_name: string | null;
+		secondary_plural: string | null;
+		secondary_adjective: string | null;
 		ruler_name: string | null;
 		planet_name: string | null;
 		system_name: string | null;
@@ -726,11 +740,16 @@ export function loadPrescriptedEmpires(): Empire[] {
 			 ORDER BY empire_key, sort_order`
 		)
 		.all() as Array<{ empire_key: string; kind: string; value: string }>;
-	const items = new Map<string, { traits: string[]; civics: string[]; ethics: string[] }>();
+	const items = new Map<
+		string,
+		{ traits: string[]; secondaryTraits: string[]; civics: string[]; ethics: string[] }
+	>();
 	for (const r of itemRows) {
-		if (!items.has(r.empire_key)) items.set(r.empire_key, { traits: [], civics: [], ethics: [] });
+		if (!items.has(r.empire_key))
+			items.set(r.empire_key, { traits: [], secondaryTraits: [], civics: [], ethics: [] });
 		const e = items.get(r.empire_key)!;
 		if (r.kind === 'trait') e.traits.push(r.value);
+		else if (r.kind === 'secondary_trait') e.secondaryTraits.push(r.value);
 		else if (r.kind === 'civic') e.civics.push(r.value);
 		else if (r.kind === 'ethic') e.ethics.push(r.value);
 	}
@@ -742,6 +761,12 @@ export function loadPrescriptedEmpires(): Empire[] {
 		speciesName: r.species_name,
 		speciesPlural: r.species_plural,
 		speciesAdjective: r.species_adjective,
+		secondaryClass: r.secondary_class,
+		secondaryPortrait: r.secondary_portrait,
+		secondaryName: r.secondary_name,
+		secondaryPlural: r.secondary_plural,
+		secondaryAdjective: r.secondary_adjective,
+		secondaryTraits: items.get(r.key)?.secondaryTraits ?? [],
 		rulerName: r.ruler_name,
 		planetName: r.planet_name,
 		systemName: r.system_name,

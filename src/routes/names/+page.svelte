@@ -4,6 +4,13 @@
 
 	const draft = $derived(empire.draft);
 
+	// Secondary species name fields (only shown when the empire has a second species).
+	const secondaryFields = [
+		{ id: 'speciesName', label: 'Name', placeholder: 'Servile' },
+		{ id: 'speciesPlural', label: 'Plural', placeholder: 'Serviles' },
+		{ id: 'speciesAdjective', label: 'Adjective', placeholder: 'Servile' }
+	] as const;
+
 	// The naming form, grouped the way the in-game empire creator presents them.
 	type Field = { id: NameField; label: string; placeholder: string };
 	const groups: { title: string; hint?: string; fields: Field[] }[] = [
@@ -70,5 +77,30 @@
 				</div>
 			</section>
 		{/each}
+
+		{#if draft.secondary}
+			<section class="border-surface-400-500/30 space-y-3 rounded-lg border p-4">
+				<div>
+					<h2 class="text-lg font-semibold">Secondary species</h2>
+					<p class="text-xs opacity-50">
+						The second founding species (set it up in the Species Builder).
+					</p>
+				</div>
+				<div class="grid gap-3 sm:grid-cols-3">
+					{#each secondaryFields as field (field.id)}
+						<label class="flex flex-col gap-1 text-sm">
+							<span class="opacity-60">{field.label}</span>
+							<input
+								class="input"
+								type="text"
+								placeholder={field.placeholder}
+								value={draft.secondary[field.id]}
+								oninput={(e) => empire.setSecondaryName(field.id, e.currentTarget.value)}
+							/>
+						</label>
+					{/each}
+				</div>
+			</section>
+		{/if}
 	</form>
 </main>
