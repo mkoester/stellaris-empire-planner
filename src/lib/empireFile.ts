@@ -1,6 +1,6 @@
 // Parse a Stellaris empire file (user_empire_designs.txt, same format as the
 // prescripted empires) into Empire objects, and resolve raw keys to display names.
-import type { Empire } from '$lib/server/db';
+import type { Empire, EmpireFlag } from '$lib/server/db';
 
 // ── Clausewitz-ish tokenizer + parser ────────────────────────────────────────
 function tokenize(text: string): string[] {
@@ -110,6 +110,21 @@ export function parseEmpireFile(text: string): Empire[] {
 		// Optional second founding species (same block shape as `species`).
 		const sec = def.secondary_species;
 		const sx = sec && typeof sec === 'object' && !Array.isArray(sec) ? sec : null;
+		// Optional empire flag: icon + background (category/file) over named colours.
+		const obj = (v: Node | undefined) =>
+			v && typeof v === 'object' && !Array.isArray(v) ? v : null;
+		const flagNode = obj(def.empire_flag);
+		const iconNode = flagNode ? obj(flagNode.icon) : null;
+		const bgNode = flagNode ? obj(flagNode.background) : null;
+		const flag: EmpireFlag | null = flagNode
+			? {
+					iconCategory: iconNode ? asStr(iconNode.category) : null,
+					iconFile: iconNode ? asStr(iconNode.file) : null,
+					backgroundCategory: bgNode ? asStr(bgNode.category) : null,
+					backgroundFile: bgNode ? asStr(bgNode.file) : null,
+					colors: asList(flagNode.colors)
+				}
+			: null;
 		empires.push({
 			key,
 			name: asStr(name) ?? key,
@@ -127,6 +142,9 @@ export function parseEmpireFile(text: string): Empire[] {
 			rulerName,
 			planetName: asStr(def.planet_name),
 			systemName: asStr(def.system_name),
+			initializer: asStr(def.initializer) || null, // treat empty "" as no initializer
+			room: asStr(def.room),
+			flag,
 			speciesClass: asStr(sp.class),
 			speciesPortrait: asStr(sp.portrait),
 			authority: asStr(def.authority),
@@ -169,16 +187,41 @@ export interface SerializableEmpire {
 	planetName?: string | null;
 	planetClass?: string | null;
 	systemName?: string | null;
+	initializer?: string | null;
+	room?: string | null;
+	flag?: EmpireFlag | null;
 	graphicalCulture?: string | null;
 	ethics?: string[];
 	civics?: string[];
 	traits?: string[];
 }
 
+// Default per-class name list (the in-game leader/planet name generator) — emitted as a
+// fallback so an exported empire is self-sufficient in-game even when none was chosen.
+const NAME_LIST_DEFAULTS: Record<string, string> = {
+	AQUATIC: 'AQU1',
+	ART: 'ART1',
+	AVI: 'AVI1',
+	FUN: 'FUN1',
+	HUM: 'HUM1',
+	LITHOID: 'LITH1',
+	MAM: 'MAM1',
+	MOL: 'MOL1',
+	NECROID: 'NEC1',
+	PLANT: 'PLANT',
+	REP: 'REP1',
+	TOX: 'TOX1',
+	MACHINE: 'MACHINE1',
+	ROBOT: 'MACHINE1',
+	AI: 'MACHINE1'
+};
+const defaultNameList = (cls?: string | null) => (cls ? (NAME_LIST_DEFAULTS[cls] ?? null) : null);
+
 // Serialize one empire to the game's prescripted/`user_empire_designs.txt` format (one
 // empire per file). The block key defaults to the empire name. Only modelled fields are
-// written and empty values are omitted; field order follows the game's. This is the
-// inverse of parseEmpireFile — serialize → parse round-trips the modelled fields.
+// written and empty values are omitted; field order follows the game's. A few in-game
+// defaults (spawn_enabled, name_list, room, …) are emitted so the file is loadable. This
+// is the inverse of parseEmpireFile — serialize → parse round-trips the modelled fields.
 export function serializeEmpire(e: SerializableEmpire, key?: string): string {
 	const q = (s: string) => `"${s.replace(/"/g, "'")}"`;
 	const id = (key ?? e.name ?? 'empire').trim() || 'empire';
@@ -190,6 +233,7 @@ export function serializeEmpire(e: SerializableEmpire, key?: string): string {
 	scalar('name', e.name);
 	scalar('adjective', e.adjective);
 	scalar('ship_prefix', e.shipPrefix);
+	out.push('\tspawn_enabled = yes');
 
 	out.push('\tspecies = {');
 	const sp = (name: string, v?: string | null) => {
@@ -200,6 +244,7 @@ export function serializeEmpire(e: SerializableEmpire, key?: string): string {
 	sp('name', e.speciesName);
 	sp('plural', e.speciesPlural);
 	sp('adjective', e.speciesAdjective);
+	sp('name_list', defaultNameList(e.speciesClass));
 	for (const t of e.traits ?? []) out.push(`\t\ttrait = ${q(t)}`);
 	out.push('\t}');
 
@@ -214,10 +259,13 @@ export function serializeEmpire(e: SerializableEmpire, key?: string): string {
 		sx('name', e.secondaryName);
 		sx('plural', e.secondaryPlural);
 		sx('adjective', e.secondaryAdjective);
+		sx('name_list', defaultNameList(e.secondaryClass));
 		for (const t of e.secondaryTraits ?? []) out.push(`\t\ttrait = ${q(t)}`);
 		out.push('\t}');
 	}
 
+	out.push(`\troom = ${q(e.room || 'default_room')}`);
+	out.push('\tignore_portrait_duplication = yes');
 	scalar('authority', e.authority);
 	if (e.civics?.length) out.push(`\tcivics = { ${e.civics.map(q).join(' ')} }`);
 	scalar('government', e.government);
@@ -226,7 +274,22 @@ export function serializeEmpire(e: SerializableEmpire, key?: string): string {
 	scalar('planet_name', e.planetName);
 	scalar('planet_class', e.planetClass);
 	scalar('system_name', e.systemName);
+	scalar('initializer', e.initializer);
 	scalar('graphical_culture', e.graphicalCulture);
+
+	const f = e.flag;
+	if (f && (f.iconFile || f.backgroundFile || f.colors?.length)) {
+		out.push('\tempire_flag = {');
+		if (f.iconCategory && f.iconFile)
+			out.push(`\t\ticon = { category = ${q(f.iconCategory)} file = ${q(f.iconFile)} }`);
+		if (f.backgroundCategory && f.backgroundFile)
+			out.push(
+				`\t\tbackground = { category = ${q(f.backgroundCategory)} file = ${q(f.backgroundFile)} }`
+			);
+		if (f.colors?.length) out.push(`\t\tcolors = { ${f.colors.map(q).join(' ')} }`);
+		out.push('\t}');
+	}
+
 	if (e.rulerName) out.push(`\truler = {\n\t\tname = ${q(e.rulerName)}\n\t}`);
 
 	out.push('}', '');

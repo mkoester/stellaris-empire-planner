@@ -249,6 +249,7 @@
 			{ label: 'Government', value: name(draft.authority) },
 			{ label: 'Origin', value: name(draft.origin) },
 			{ label: 'Homeworld', value: name(draft.planetClass) },
+			...(draft.initializer ? [{ label: 'Home system', value: name(draft.initializer) }] : []),
 			{ label: 'Ship type', value: shipTypeLabel(draft.graphicalCulture) }
 		]}
 		<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">

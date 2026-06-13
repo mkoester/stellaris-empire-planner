@@ -1,7 +1,7 @@
 // The single "current empire" the whole app works on. The builder pages (Ethics,
 // Species Builder, …) bind to this shared draft; importing a predefined empire or
 // loading a user_empire_designs.txt applies into it (whole or partial — see apply()).
-import type { Empire } from '$lib/server/db';
+import type { Empire, EmpireFlag } from '$lib/server/db';
 import type { SerializableEmpire } from '$lib/empireFile';
 
 // A second founding species (Syncretic Evolution / Necrophage / …). Same shape as the
@@ -35,8 +35,19 @@ export interface EmpireDraft {
 	civics: string[];
 	origin: string | null;
 	planetClass: string | null;
+	initializer: string; // home-system initializer ('' = default/random)
+	room: string; // diplomacy room backdrop ('' = default_room)
+	flag: EmpireFlag | null;
 	graphicalCulture: string | null;
 }
+
+const emptyFlag = (): EmpireFlag => ({
+	iconCategory: null,
+	iconFile: null,
+	backgroundCategory: 'backgrounds',
+	backgroundFile: null,
+	colors: ['null', 'null', 'null', 'null']
+});
 
 const emptySecondary = (): SecondarySpecies => ({
 	speciesClass: null,
@@ -80,6 +91,9 @@ const empty = (): EmpireDraft => ({
 	civics: [],
 	origin: null,
 	planetClass: null,
+	initializer: '',
+	room: '',
+	flag: null,
 	graphicalCulture: null
 });
 
@@ -168,8 +182,23 @@ const SECTIONS: Section[] = [
 	{
 		id: 'homeworld',
 		label: 'Homeworld',
-		isSet: (d) => d.planetClass != null,
-		apply: (d, e) => (d.planetClass = e.planetClass)
+		isSet: (d) => d.planetClass != null || d.initializer !== '',
+		apply: (d, e) => {
+			d.planetClass = e.planetClass;
+			d.initializer = e.initializer ?? '';
+		}
+	},
+	{
+		id: 'flag',
+		label: 'Flag',
+		isSet: (d) => d.flag != null,
+		apply: (d, e) => (d.flag = e.flag ?? null)
+	},
+	{
+		id: 'room',
+		label: 'Room',
+		isSet: (d) => d.room !== '',
+		apply: (d, e) => (d.room = e.room ?? '')
 	},
 	{
 		id: 'ship',
@@ -258,6 +287,30 @@ export const empire = {
 	setPlanetClass(p: string | null) {
 		draft.planetClass = p;
 	},
+	setInitializer(v: string) {
+		draft.initializer = v;
+	},
+	setRoom(v: string) {
+		draft.room = v;
+	},
+	// ── Empire flag ─────────────────────────────────────────────────────────
+	addFlag() {
+		if (!draft.flag) draft.flag = emptyFlag();
+	},
+	removeFlag() {
+		draft.flag = null;
+	},
+	updateFlag(patch: Partial<EmpireFlag>) {
+		if (!draft.flag) draft.flag = emptyFlag();
+		draft.flag = { ...draft.flag, ...patch };
+	},
+	setFlagColor(index: number, key: string) {
+		if (!draft.flag) draft.flag = emptyFlag();
+		const colors = [...draft.flag.colors];
+		while (colors.length < 4) colors.push('null');
+		colors[index] = key;
+		draft.flag = { ...draft.flag, colors };
+	},
 	// Ship type: stored as a representative graphical_culture ('biogenesis_01' = organic).
 	setShipType(t: 'regular' | 'organic' | null) {
 		draft.graphicalCulture = t === 'organic' ? 'biogenesis_01' : t === 'regular' ? 'regular' : null;
@@ -287,6 +340,9 @@ export const empire = {
 			planetName: draft.planetName || null,
 			planetClass: draft.planetClass,
 			systemName: draft.systemName || null,
+			initializer: draft.initializer || null,
+			room: draft.room || null,
+			flag: draft.flag,
 			graphicalCulture: draft.graphicalCulture,
 			ethics: draft.ethics,
 			civics: draft.civics,

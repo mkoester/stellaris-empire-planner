@@ -6,6 +6,8 @@
 
 	let { data }: { data: PageData } = $props();
 	const groups = $derived(groupPlanetClasses(data.planetClasses as PlanetClass[]));
+	const initializers = $derived(data.initializers);
+	const draft = $derived(empire.draft);
 	// Debug: render selectable cards as plain elements so their text can be copied.
 	const debug = $derived(data.debugDisableSelection);
 </script>
@@ -19,6 +21,29 @@
 		least on a different family — so the climate group, not the individual world, drives
 		habitability.
 	</p>
+
+	<!-- Home system (starting solar-system initializer) -->
+	<section class="border-surface-400-500/30 space-y-2 rounded-lg border p-4">
+		<div>
+			<h2 class="text-lg font-semibold">Home system</h2>
+			<p class="text-xs opacity-50">
+				The starting system. Most empires leave this random; a few origins need a specific one.
+			</p>
+		</div>
+		<label class="flex max-w-xs flex-col gap-1 text-sm">
+			<span class="opacity-60">Starting system</span>
+			<select
+				class="select"
+				value={draft.initializer}
+				onchange={(e) => empire.setInitializer(e.currentTarget.value)}
+			>
+				<option value="">Default (random)</option>
+				{#each initializers as init (init.key)}
+					<option value={init.key}>{init.name || init.key}</option>
+				{/each}
+			</select>
+		</label>
+	</section>
 
 	{#each groups as group (group.label)}
 		<section class="space-y-2">

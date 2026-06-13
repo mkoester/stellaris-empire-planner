@@ -691,11 +691,69 @@ export interface Empire {
 	government: string | null;
 	origin: string | null;
 	planetClass: string | null;
+	initializer?: string | null; // home-system initializer (custom_empire start)
+	room?: string | null; // diplomacy room backdrop
+	flag?: EmpireFlag | null; // empire flag (populated when parsed from a file)
 	graphicalCulture: string | null; // ship appearance
 	ethics: string[];
 	civics: string[];
 	traits: string[];
 	source: 'predefined' | 'file';
+}
+
+// An empire flag: an icon + background (each a category/file pair, .dds assets) over up
+// to four named colours ("null" marks an unused colour slot).
+export interface EmpireFlag {
+	iconCategory: string | null;
+	iconFile: string | null;
+	backgroundCategory: string | null;
+	backgroundFile: string | null;
+	colors: string[];
+}
+
+// Home-system initializers usable as a custom-empire start (for the picker).
+export function loadInitializers(): { key: string; name: string | null }[] {
+	return db().prepare('SELECT key, name FROM initializer ORDER BY sort_order').all() as {
+		key: string;
+		name: string | null;
+	}[];
+}
+
+// Diplomacy rooms (the ruler backdrop) an empire can pick.
+export function loadRooms(): { key: string; label: string | null }[] {
+	return db().prepare('SELECT key, label FROM room ORDER BY sort_order').all() as {
+		key: string;
+		label: string | null;
+	}[];
+}
+
+// Flag assets for the flag editor: icon categories + files, and the background files.
+export function loadFlagAssets(): {
+	categories: string[];
+	iconsByCategory: Record<string, string[]>;
+	backgrounds: string[];
+} {
+	const rows = db()
+		.prepare('SELECT kind, category, file FROM flag_asset ORDER BY category, sort_order')
+		.all() as { kind: string; category: string; file: string }[];
+	const iconsByCategory: Record<string, string[]> = {};
+	const backgrounds: string[] = [];
+	for (const r of rows) {
+		if (r.kind === 'background') backgrounds.push(r.file);
+		else (iconsByCategory[r.category] ??= []).push(r.file);
+	}
+	return { categories: Object.keys(iconsByCategory), iconsByCategory, backgrounds };
+}
+
+// The empire-flag colour palette (named colours) with a CSS hex for swatches.
+export function loadFlagColors(): { key: string; hex: string }[] {
+	const rows = db()
+		.prepare(
+			`SELECT key, r, g, b FROM named_color WHERE source_file = '00_basic_colors.txt' ORDER BY key`
+		)
+		.all() as { key: string; r: number; g: number; b: number }[];
+	const h = (n: number) => n.toString(16).padStart(2, '0');
+	return rows.map((c) => ({ key: c.key, hex: `#${h(c.r)}${h(c.g)}${h(c.b)}` }));
 }
 
 export function loadPrescriptedEmpires(): Empire[] {
@@ -707,7 +765,7 @@ export function loadPrescriptedEmpires(): Empire[] {
 			        secondary_class, secondary_portrait, secondary_name,
 			        secondary_plural, secondary_adjective, ruler_name,
 			        planet_name, system_name, authority, government,
-			        origin, planet_class, graphical_culture
+			        origin, planet_class, initializer, graphical_culture
 			 FROM prescripted_empire ORDER BY sort_order`
 		)
 		.all() as Array<{
@@ -732,6 +790,7 @@ export function loadPrescriptedEmpires(): Empire[] {
 		government: string | null;
 		origin: string | null;
 		planet_class: string | null;
+		initializer: string | null;
 		graphical_culture: string | null;
 	}>;
 	const itemRows = d
@@ -776,6 +835,7 @@ export function loadPrescriptedEmpires(): Empire[] {
 		government: r.government,
 		origin: r.origin,
 		planetClass: r.planet_class,
+		initializer: r.initializer,
 		graphicalCulture: r.graphical_culture,
 		ethics: items.get(r.key)?.ethics ?? [],
 		civics: items.get(r.key)?.civics ?? [],
@@ -795,7 +855,8 @@ export function loadEntityNames(): Record<string, string> {
 		['SELECT key, name FROM civic WHERE name IS NOT NULL', 'civic'],
 		['SELECT key, name FROM origin WHERE name IS NOT NULL', 'origin'],
 		['SELECT key, name FROM authority WHERE name IS NOT NULL', 'authority'],
-		['SELECT key, name FROM planet_class WHERE name IS NOT NULL', 'planet']
+		['SELECT key, name FROM planet_class WHERE name IS NOT NULL', 'planet'],
+		['SELECT key, name FROM initializer WHERE name IS NOT NULL', 'initializer']
 	];
 	for (const [sql] of sources) {
 		for (const r of d.prepare(sql).all() as Array<{ key: string; name: string }>) {

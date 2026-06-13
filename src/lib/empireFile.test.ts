@@ -25,6 +25,7 @@ tzynn = {
 		trait = "trait_organic"
 		trait = "trait_strong"
 	}
+	room = "personality_slaving_despots_room"
 	authority = "auth_imperial"
 	civics = { "civic_police_state" "civic_slaver_guilds" }
 	origin = "origin_default"
@@ -33,12 +34,19 @@ tzynn = {
 	planet_name = "Tzynn Prime"
 	planet_class = "pc_desert"
 	system_name = "Tzynn"
+	initializer = "sol_system_initializer"
 	graphical_culture = "reptilian_01"
+	empire_flag = {
+		icon = { category = "pointy" file = "flag_pointy_2.dds" }
+		background = { category = "backgrounds" file = "v.dds" }
+		colors = { "red" "black" "null" "null" }
+	}
 	ruler = { name = "Grand Khan" gender = male }
 }
 "My Custom Empire" = {
 	name = { key = "My Custom Empire" }
 	species = { class = "MAM" trait = "trait_intelligent" }
+	room = "machine_room"
 	authority = "auth_democratic"
 	civics = { "civic_meritocracy" }
 	origin = "origin_shattered_ring"
@@ -115,6 +123,9 @@ describe('serializeEmpire', () => {
 		'planetName',
 		'planetClass',
 		'systemName',
+		'initializer',
+		'room',
+		'flag',
 		'graphicalCulture',
 		'ethics',
 		'civics',
@@ -129,6 +140,9 @@ describe('serializeEmpire', () => {
 		expect(text).toContain('species = {');
 		expect(text).toContain('civics = { "civic_police_state" "civic_slaver_guilds" }');
 		expect(text).toContain('ethic = "ethic_authoritarian"');
+		expect(text).toContain('spawn_enabled = yes');
+		expect(text).toContain('empire_flag = {');
+		expect(text).toContain('colors = { "red" "black" "null" "null" }');
 		expect(text).toContain('ruler = {');
 
 		const [back] = parseEmpireFile(text);

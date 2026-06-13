@@ -25,6 +25,7 @@
 		{ label: 'Government', value: draft.authority ? name(draft.authority) : null },
 		{ label: 'Origin', value: draft.origin ? name(draft.origin) : null },
 		{ label: 'Homeworld', value: draft.planetClass ? name(draft.planetClass) : null },
+		{ label: 'Home system', value: draft.initializer ? name(draft.initializer) : null },
 		{
 			label: 'Ship type',
 			value: draft.graphicalCulture ? shipTypeLabel(draft.graphicalCulture) : null
