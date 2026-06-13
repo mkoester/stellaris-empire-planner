@@ -59,7 +59,7 @@
 						type={debug ? undefined : 'button'}
 						aria-pressed={debug ? undefined : selected}
 						onclick={debug ? undefined : () => empire.toggleCivic(civic.key)}
-						class="relative space-y-2 rounded-lg border p-3 text-left transition-colors {selected
+						class="relative flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
 							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
 							? 'cursor-text select-text'
@@ -134,10 +134,12 @@
 							{/if}
 						{/if}
 
-						<!-- Effects description (divider after the attunement block too, if present) -->
+						<!-- Effects description pinned to the bottom (divider above it if attunement shown) -->
 						{#if civic.description}
-							{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
-							<RuleText text={civic.description} class="text-xs opacity-55" />
+							<div class="mt-auto">
+								{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
+								<RuleText text={civic.description} class="text-xs opacity-55" />
+							</div>
 						{/if}
 					</svelte:element>
 				{/each}

@@ -44,7 +44,7 @@
 				type={debug ? undefined : 'button'}
 				aria-pressed={debug ? undefined : selected}
 				onclick={debug ? undefined : () => toggle(authority.key)}
-				class="relative space-y-2 rounded-lg border p-3 text-left transition-colors {selected
+				class="relative flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 					? 'border-primary-500 bg-primary-500/10'
 					: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
 					? 'cursor-text select-text'
@@ -88,7 +88,9 @@
 				{/if}
 
 				{#if authority.description}
-					<RuleText text={authority.description} class="text-xs opacity-55" />
+					<div class="mt-auto">
+						<RuleText text={authority.description} class="text-xs opacity-55" />
+					</div>
 				{/if}
 			</svelte:element>
 		{/each}
