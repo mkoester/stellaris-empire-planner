@@ -115,22 +115,26 @@ export interface CivicRequirementLine {
 	type: 'require' | 'exclude';
 	text: string;
 }
+// The display text for one gated value: ship-type gates read "Organic ships",
+// species-archetype gates ("MACHINE") read "Machine", everything else via prettyKey.
+function requirementValueText(kind: string, value: string): string {
+	if (kind === 'ship_type') return `${prettyKey(value)} ships`;
+	if (kind === 'archetype') return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+	return prettyKey(value);
+}
 export function civicRequirementLines(reqs: CivicRequirement[]): CivicRequirementLine[] {
 	const lines: CivicRequirementLine[] = [];
 	const anyGroups = new Map<number, { kind: string; vals: string[] }>();
 	for (const r of reqs) {
 		if (r.operator === 'require_any') {
 			if (!anyGroups.has(r.groupId)) anyGroups.set(r.groupId, { kind: r.kind, vals: [] });
-			anyGroups
-				.get(r.groupId)!
-				.vals.push(r.kind === 'ship_type' ? `${prettyKey(r.value)} ships` : prettyKey(r.value));
+			anyGroups.get(r.groupId)!.vals.push(requirementValueText(r.kind, r.value));
 		}
 	}
 	for (const g of anyGroups.values())
 		lines.push({ kind: g.kind, type: 'require', text: g.vals.join(' or ') });
 	for (const r of reqs) {
-		// Ship-type gates read as "Organic ships" rather than just "Organic".
-		const text = r.kind === 'ship_type' ? `${prettyKey(r.value)} ships` : prettyKey(r.value);
+		const text = requirementValueText(r.kind, r.value);
 		if (r.operator === 'require') lines.push({ kind: r.kind, type: 'require', text });
 		else if (r.operator === 'forbid') lines.push({ kind: r.kind, type: 'exclude', text });
 	}
@@ -148,7 +152,7 @@ export function civicRequirementLines(reqs: CivicRequirement[]): CivicRequiremen
 // Display order for requirement chips: grouped by kind (legend order), alphabetical
 // within — except ethics, which read Gestalt first, then each axis with the regular
 // variant before its Fanatic one ("Egalitarian" before "Fanatic Egalitarian").
-const KIND_ORDER = ['ethic', 'civic', 'origin', 'authority', 'ship_type'];
+const KIND_ORDER = ['ethic', 'civic', 'origin', 'authority', 'archetype', 'ship_type'];
 function ethicSortKey(text: string): [number, string, number] {
 	if (/^gestalt/i.test(text)) return [0, '', 0]; // Gestalt Consciousness first
 	const fanatic = /^fanatic /i.test(text);
@@ -188,6 +192,10 @@ const REQ_KIND_CLASS: Record<string, { require: string; exclude: string }> = {
 		require: 'bg-rose-500/10 text-rose-300/70',
 		exclude: 'bg-rose-500/25 text-rose-200'
 	},
+	archetype: {
+		require: 'bg-lime-500/10 text-lime-300/70',
+		exclude: 'bg-lime-500/25 text-lime-200'
+	},
 	ship_type: { require: 'bg-teal-500/10 text-teal-300/70', exclude: 'bg-teal-500/25 text-teal-200' }
 };
 const REQ_FALLBACK = {
@@ -205,4 +213,11 @@ export const REQUIREMENT_KINDS: { kind: string; label: string }[] = [
 	{ kind: 'origin', label: 'Origin' },
 	{ kind: 'authority', label: 'Government' },
 	{ kind: 'ship_type', label: 'Ship type' }
+];
+
+// The kinds authorities gate on — for the Government page's legend (ethics + the
+// Machine/biological species-archetype split that separates Hive from Machine).
+export const AUTHORITY_REQUIREMENT_KINDS: { kind: string; label: string }[] = [
+	{ kind: 'ethic', label: 'Ethics' },
+	{ kind: 'archetype', label: 'Species type' }
 ];

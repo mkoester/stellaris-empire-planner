@@ -12,6 +12,7 @@
 
 	const rows = $derived([
 		{ label: 'Species', value: draft.speciesClass ? name(draft.speciesClass) : null },
+		{ label: 'Government', value: draft.authority ? name(draft.authority) : null },
 		{ label: 'Origin', value: draft.origin ? name(draft.origin) : null },
 		{ label: 'Homeworld', value: draft.planetClass ? name(draft.planetClass) : null },
 		{

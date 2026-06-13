@@ -18,6 +18,7 @@ export interface EmpireDraft {
 	speciesPortrait: string | null;
 	traits: string[];
 	ethics: string[];
+	authority: string | null; // government type, e.g. "auth_imperial"
 	civics: string[];
 	origin: string | null;
 	planetClass: string | null;
@@ -52,6 +53,7 @@ const empty = (): EmpireDraft => ({
 	speciesPortrait: null,
 	traits: [],
 	ethics: [],
+	authority: null,
 	civics: [],
 	origin: null,
 	planetClass: null,
@@ -103,6 +105,12 @@ const SECTIONS: Section[] = [
 		label: 'Ethics',
 		isSet: (d) => d.ethics.length > 0,
 		apply: (d, e) => (d.ethics = [...e.ethics])
+	},
+	{
+		id: 'authority',
+		label: 'Government',
+		isSet: (d) => d.authority != null,
+		apply: (d, e) => (d.authority = e.authority)
 	},
 	{
 		id: 'civics',
@@ -166,6 +174,9 @@ export const empire = {
 	},
 	setEthics(e: string[]) {
 		draft.ethics = e;
+	},
+	setAuthority(a: string | null) {
+		draft.authority = a;
 	},
 	setOrigin(o: string | null) {
 		draft.origin = o;

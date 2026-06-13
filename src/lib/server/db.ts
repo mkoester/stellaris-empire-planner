@@ -433,6 +433,96 @@ export function loadCivics(): Civic[] {
 	}));
 }
 
+// ── Authorities (government types) ─────────────────────────────────────────────
+
+// The empire's government type (Democratic, Imperial, Hive Mind, …). Same modifier +
+// requirement shape as civics; requirements gate on ethics and species archetype.
+export interface Authority {
+	key: string;
+	name: string | null;
+	description: string | null;
+	requiredDlc: string | null;
+	icon: string | null;
+	modifiers: Modifier[];
+	requirements: CivicRequirement[];
+}
+
+// Player-selectable government authorities (skips ones gated to a non-player country
+// type, e.g. the Ancient Machine Intelligence).
+export function loadAuthorities(): Authority[] {
+	const d = db();
+	const rows = d
+		.prepare(
+			`SELECT key, name, description, required_dlc, icon
+			 FROM authority WHERE selectable = 1 ORDER BY sort_order`
+		)
+		.all() as Array<{
+		key: string;
+		name: string | null;
+		description: string | null;
+		required_dlc: string | null;
+		icon: string | null;
+	}>;
+
+	const modRows = d
+		.prepare(
+			`SELECT am.authority_key, am.modifier_key, am.modifier_value, ml.label, ml.positive_is_good
+			 FROM authority_modifier am
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = am.modifier_key
+			 ORDER BY am.authority_key, am.sort_order`
+		)
+		.all() as Array<{
+		authority_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+	const modByAuth = new Map<string, Modifier[]>();
+	for (const r of modRows) {
+		if (!modByAuth.has(r.authority_key)) modByAuth.set(r.authority_key, []);
+		modByAuth.get(r.authority_key)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+
+	const reqRows = d
+		.prepare(
+			`SELECT authority_key, kind, operator, value, group_id
+			 FROM authority_requirement ORDER BY authority_key, kind, operator`
+		)
+		.all() as Array<{
+		authority_key: string;
+		kind: string;
+		operator: string;
+		value: string;
+		group_id: number;
+	}>;
+	const reqByAuth = new Map<string, CivicRequirement[]>();
+	for (const r of reqRows) {
+		if (!reqByAuth.has(r.authority_key)) reqByAuth.set(r.authority_key, []);
+		reqByAuth.get(r.authority_key)!.push({
+			kind: r.kind,
+			operator: r.operator,
+			value: r.value,
+			groupId: r.group_id
+		});
+	}
+
+	return rows.map((r) => ({
+		key: r.key,
+		name: r.name,
+		description: r.description,
+		requiredDlc: r.required_dlc,
+		icon: r.icon,
+		modifiers: modByAuth.get(r.key) ?? [],
+		requirements: reqByAuth.get(r.key) ?? []
+	}));
+}
+
 // ── Origins ──────────────────────────────────────────────────────────────────
 
 // The empire's starting scenario. Same requirement shape as civics (reuses
@@ -671,6 +761,7 @@ export function loadEntityNames(): Record<string, string> {
 		['SELECT key, label AS name FROM ethic WHERE label IS NOT NULL', 'ethic'],
 		['SELECT key, name FROM civic WHERE name IS NOT NULL', 'civic'],
 		['SELECT key, name FROM origin WHERE name IS NOT NULL', 'origin'],
+		['SELECT key, name FROM authority WHERE name IS NOT NULL', 'authority'],
 		['SELECT key, name FROM planet_class WHERE name IS NOT NULL', 'planet']
 	];
 	for (const [sql] of sources) {
@@ -686,7 +777,7 @@ export function loadEntityNames(): Record<string, string> {
 // `kind` says where the modifier comes from ("ethic"/"civic"/…); names are
 // resolved separately (loadEntityNames + key formatting for traits).
 export interface ModifierSource {
-	kind: 'ethic' | 'civic' | 'origin' | 'trait';
+	kind: 'ethic' | 'authority' | 'civic' | 'origin' | 'trait';
 	modifiers: Modifier[];
 }
 
@@ -696,6 +787,7 @@ export function loadModifierIndex(): Record<string, ModifierSource> {
 		if (modifiers.length) out[key] = { kind, modifiers };
 	};
 	for (const e of loadEthics()) add(e.key, 'ethic', e.modifiers);
+	for (const a of loadAuthorities()) add(a.key, 'authority', a.modifiers);
 	for (const c of loadCivics()) add(c.key, 'civic', c.modifiers);
 	for (const o of loadOrigins()) add(o.key, 'origin', o.modifiers);
 	for (const t of loadTraits()) add(t.key, 'trait', t.modifiers);

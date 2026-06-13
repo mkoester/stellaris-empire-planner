@@ -13,6 +13,7 @@ export interface EffectEntry {
 
 interface EffectDraft {
 	ethics: string[];
+	authority?: string | null;
 	civics: string[];
 	origin: string | null;
 }
@@ -42,7 +43,12 @@ export function collectEffects(
 	names: Record<string, string>
 ): EffectEntry[] {
 	return rowsFor(
-		[...draft.ethics, ...draft.civics, ...(draft.origin ? [draft.origin] : [])],
+		[
+			...draft.ethics,
+			...(draft.authority ? [draft.authority] : []),
+			...draft.civics,
+			...(draft.origin ? [draft.origin] : [])
+		],
 		index,
 		names
 	);

@@ -15,6 +15,10 @@ const index: Record<string, ModifierSource> = {
 		modifiers: [mod('pop_factions_produces_mult', 0.3, 'Faction Resource Output')]
 	},
 	ethic_xenophile: { kind: 'ethic', modifiers: [mod('envoys_add', 1, 'Envoys')] },
+	auth_democratic: {
+		kind: 'authority',
+		modifiers: [mod('country_leader_pool_size', 1, 'Leader Pool Size')]
+	},
 	civic_beacon_of_liberty: {
 		kind: 'civic',
 		modifiers: [mod('pop_happiness', 0.05, 'Pop Happiness')]
@@ -28,15 +32,17 @@ const index: Record<string, ModifierSource> = {
 const names: Record<string, string> = {
 	ethic_fanatic_egalitarian: 'Fanatic Egalitarian',
 	ethic_xenophile: 'Xenophile',
+	auth_democratic: 'Democratic',
 	civic_beacon_of_liberty: 'Beacon of Liberty',
 	origin_idealistic_foundation: 'Idealistic Foundation'
 };
 
 describe('collectEffects', () => {
-	it('walks ethics → civics → origin (not traits), keeping each source grouped', () => {
+	it('walks ethics → authority → civics → origin (not traits), keeping each source grouped', () => {
 		const effects = collectEffects(
 			{
 				ethics: ['ethic_fanatic_egalitarian', 'ethic_xenophile'],
+				authority: 'auth_democratic',
 				civics: ['civic_beacon_of_liberty'],
 				origin: 'origin_idealistic_foundation'
 			},
@@ -46,6 +52,7 @@ describe('collectEffects', () => {
 		expect(effects.map((e) => [e.sourceKind, e.sourceName])).toEqual([
 			['ethic', 'Fanatic Egalitarian'],
 			['ethic', 'Xenophile'],
+			['authority', 'Democratic'],
 			['civic', 'Beacon of Liberty'],
 			['origin', 'Idealistic Foundation']
 		]);

@@ -13,6 +13,7 @@
 		{ href: '/empire', label: 'Empire' },
 		{ href: '/', label: 'Species Builder' },
 		{ href: '/ethics', label: 'Ethics' },
+		{ href: '/government', label: 'Government' },
 		{ href: '/civics', label: 'Civics' },
 		{ href: '/origins', label: 'Origins' },
 		{ href: '/planets', label: 'Planets' },

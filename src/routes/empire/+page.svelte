@@ -203,6 +203,7 @@
 	{#if hasEmpire}
 		{@const rows = [
 			{ label: 'Species', value: name(draft.speciesClass) },
+			{ label: 'Government', value: name(draft.authority) },
 			{ label: 'Origin', value: name(draft.origin) },
 			{ label: 'Homeworld', value: name(draft.planetClass) },
 			{ label: 'Ship type', value: shipTypeLabel(draft.graphicalCulture) }
