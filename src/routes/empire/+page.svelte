@@ -19,6 +19,13 @@
 	let fileEmpires = $state<Empire[]>([]); // when an uploaded file holds several
 	let fileError = $state('');
 	let pending = $state<Empire | null>(null); // awaiting an override decision
+	let confirmReset = $state(false); // two-step "reset everything" confirmation
+
+	function resetEmpire() {
+		empire.reset();
+		confirmReset = false;
+		resetControls();
+	}
 
 	// Reset the import controls after a load completes (or is cancelled).
 	function resetControls() {
@@ -268,9 +275,30 @@
 		<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<h2 class="text-xl font-semibold">{draft.name || 'Current empire'}</h2>
-				<button class="btn preset-filled-primary-500 text-sm" onclick={saveEmpire}>
-					Save .stellaris-empire
-				</button>
+				<div class="flex flex-wrap items-center gap-2">
+					<button class="btn preset-filled-primary-500 text-sm" onclick={saveEmpire}>
+						Save .stellaris-empire
+					</button>
+					{#if confirmReset}
+						<span class="text-sm opacity-70">Reset everything?</span>
+						<button
+							class="btn border border-red-500/50 text-sm text-red-300 hover:bg-red-500/10"
+							onclick={resetEmpire}
+						>
+							Yes, reset
+						</button>
+						<button
+							class="btn preset-filled text-sm opacity-70"
+							onclick={() => (confirmReset = false)}
+						>
+							Cancel
+						</button>
+					{:else}
+						<button class="btn preset-filled text-sm" onclick={() => (confirmReset = true)}>
+							Reset all
+						</button>
+					{/if}
+				</div>
 			</div>
 
 			<dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
