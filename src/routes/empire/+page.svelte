@@ -2,7 +2,7 @@
 	import type { PageData } from './$types';
 	import type { Empire, ModifierSource, Ethic, Civic, Origin } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
-	import { parseEmpireFile, keyName, shipTypeLabel } from '$lib/empireFile';
+	import { parseEmpireFile, serializeEmpire, keyName, shipTypeLabel } from '$lib/empireFile';
 	import { collectEffects, collectSpeciesEffects, groupEffects } from '$lib/effects';
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
 	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
@@ -44,6 +44,22 @@
 	function cancel() {
 		pending = null;
 		resetControls();
+	}
+
+	// Download the current draft as a single-empire .stellaris-empire file (game format).
+	function saveEmpire() {
+		const d = empire.draft;
+		const text = serializeEmpire(d, d.name || 'empire');
+		const base = (d.name || 'empire').trim().replace(/[^\w-]+/g, '_') || 'empire';
+		const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement('a');
+		a.href = url;
+		a.download = `${base}.stellaris-empire`;
+		document.body.appendChild(a);
+		a.click();
+		a.remove();
+		URL.revokeObjectURL(url);
 	}
 
 	function importPredefined() {
@@ -137,8 +153,9 @@
 <main class="mx-auto max-w-5xl space-y-6 p-4">
 	<h1 class="text-2xl font-bold">Empire</h1>
 	<p class="max-w-3xl text-sm opacity-60">
-		Import a predefined empire or load a <code>user_empire_designs.txt</code> as a starting point — it
-		populates the builder sections (Ethics, Species Builder, …). Editing and export come next.
+		Import a predefined empire or load a <code>user_empire_designs.txt</code> as a starting point —
+		it populates the builder sections (Ethics, Species Builder, …). Save the current empire back out
+		as a single-empire <code>.stellaris-empire</code> file below.
 	</p>
 
 	<!-- Import / load controls -->
@@ -164,7 +181,7 @@
 
 		<label class="flex flex-col gap-1 text-sm">
 			<span class="opacity-60">Load empire file</span>
-			<input class="input" type="file" accept=".txt" onchange={onFile} />
+			<input class="input" type="file" accept=".txt,.stellaris-empire" onchange={onFile} />
 		</label>
 	</div>
 
@@ -213,7 +230,12 @@
 			{ label: 'Ship type', value: shipTypeLabel(draft.graphicalCulture) }
 		]}
 		<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">
-			<h2 class="text-xl font-semibold">{draft.name || 'Current empire'}</h2>
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<h2 class="text-xl font-semibold">{draft.name || 'Current empire'}</h2>
+				<button class="btn preset-filled-primary-500 text-sm" onclick={saveEmpire}>
+					Save .stellaris-empire
+				</button>
+			</div>
 
 			<dl class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm sm:grid-cols-4">
 				{#each rows as r (r.label)}

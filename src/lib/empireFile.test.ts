@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseEmpireFile, keyName, shipTypeLabel } from './empireFile';
+import { parseEmpireFile, serializeEmpire, keyName, shipTypeLabel } from './empireFile';
 
 const SAMPLE = `
 # a comment
@@ -79,6 +79,55 @@ describe('parseEmpireFile', () => {
 	});
 	it('ignores non-empire blocks (no species)', () => {
 		expect(parseEmpireFile('foo = { bar = 1 }')).toEqual([]);
+	});
+});
+
+describe('serializeEmpire', () => {
+	// The fields a round-trip must preserve (everything the model captures).
+	const MODELLED = [
+		'name',
+		'adjective',
+		'shipPrefix',
+		'speciesClass',
+		'speciesPortrait',
+		'speciesName',
+		'speciesPlural',
+		'speciesAdjective',
+		'rulerName',
+		'authority',
+		'government',
+		'origin',
+		'planetName',
+		'planetClass',
+		'systemName',
+		'graphicalCulture',
+		'ethics',
+		'civics',
+		'traits'
+	] as const;
+
+	it('emits the game format and round-trips a fully-populated empire', () => {
+		const e = parseEmpireFile(SAMPLE)[0]; // tzynn — has every modelled field
+		const text = serializeEmpire(e, e.key);
+		// Looks like a game empire design
+		expect(text).toMatch(/^"tzynn" = \{/);
+		expect(text).toContain('species = {');
+		expect(text).toContain('civics = { "civic_police_state" "civic_slaver_guilds" }');
+		expect(text).toContain('ethic = "ethic_authoritarian"');
+		expect(text).toContain('ruler = {');
+
+		const [back] = parseEmpireFile(text);
+		for (const f of MODELLED) expect(back[f]).toEqual(e[f]);
+		expect(back.key).toBe('tzynn');
+	});
+
+	it('round-trips a sparse empire, leaving unset fields null/empty', () => {
+		const e = parseEmpireFile(SAMPLE)[1]; // "My Custom Empire" — minimal
+		const [back] = parseEmpireFile(serializeEmpire(e, e.key));
+		for (const f of MODELLED) expect(back[f]).toEqual(e[f]);
+		expect(back.adjective).toBeNull();
+		expect(back.rulerName).toBeNull();
+		expect(back.traits).toEqual(['trait_intelligent']);
 	});
 });
 

@@ -96,7 +96,9 @@ export function parseEmpireFile(text: string): Empire[] {
 	const root = new Parser(tokenize(text)).block();
 	if (typeof root !== 'object' || Array.isArray(root)) return [];
 	const empires: Empire[] = [];
-	for (const [key, def] of Object.entries(root)) {
+	for (const [rawKey, def] of Object.entries(root)) {
+		// The block key may be quoted (user files use the empire name, e.g. "My Empire").
+		const key = unquote(rawKey);
 		if (typeof def !== 'object' || Array.isArray(def)) continue;
 		const sp = def.species;
 		if (typeof sp !== 'object' || Array.isArray(sp)) continue; // not an empire design
@@ -130,6 +132,75 @@ export function parseEmpireFile(text: string): Empire[] {
 		});
 	}
 	return empires;
+}
+
+// ── Empire → file (single empire, the game's empire-design format) ────────────
+
+// The fields serializeEmpire writes. Both the db `Empire` and the planner's draft are
+// structurally assignable to this (the draft just lacks `government`).
+export interface SerializableEmpire {
+	name?: string | null;
+	adjective?: string | null;
+	shipPrefix?: string | null;
+	speciesClass?: string | null;
+	speciesPortrait?: string | null;
+	speciesName?: string | null;
+	speciesPlural?: string | null;
+	speciesAdjective?: string | null;
+	rulerName?: string | null;
+	authority?: string | null;
+	government?: string | null;
+	origin?: string | null;
+	planetName?: string | null;
+	planetClass?: string | null;
+	systemName?: string | null;
+	graphicalCulture?: string | null;
+	ethics?: string[];
+	civics?: string[];
+	traits?: string[];
+}
+
+// Serialize one empire to the game's prescripted/`user_empire_designs.txt` format (one
+// empire per file). The block key defaults to the empire name. Only modelled fields are
+// written and empty values are omitted; field order follows the game's. This is the
+// inverse of parseEmpireFile — serialize → parse round-trips the modelled fields.
+export function serializeEmpire(e: SerializableEmpire, key?: string): string {
+	const q = (s: string) => `"${s.replace(/"/g, "'")}"`;
+	const id = (key ?? e.name ?? 'empire').trim() || 'empire';
+	const out: string[] = [`${q(id)} = {`];
+	const scalar = (name: string, v?: string | null) => {
+		if (v) out.push(`\t${name} = ${q(v)}`);
+	};
+
+	scalar('name', e.name);
+	scalar('adjective', e.adjective);
+	scalar('ship_prefix', e.shipPrefix);
+
+	out.push('\tspecies = {');
+	const sp = (name: string, v?: string | null) => {
+		if (v) out.push(`\t\t${name} = ${q(v)}`);
+	};
+	sp('class', e.speciesClass);
+	sp('portrait', e.speciesPortrait);
+	sp('name', e.speciesName);
+	sp('plural', e.speciesPlural);
+	sp('adjective', e.speciesAdjective);
+	for (const t of e.traits ?? []) out.push(`\t\ttrait = ${q(t)}`);
+	out.push('\t}');
+
+	scalar('authority', e.authority);
+	if (e.civics?.length) out.push(`\tcivics = { ${e.civics.map(q).join(' ')} }`);
+	scalar('government', e.government);
+	scalar('origin', e.origin);
+	for (const et of e.ethics ?? []) out.push(`\tethic = ${q(et)}`);
+	scalar('planet_name', e.planetName);
+	scalar('planet_class', e.planetClass);
+	scalar('system_name', e.systemName);
+	scalar('graphical_culture', e.graphicalCulture);
+	if (e.rulerName) out.push(`\truler = {\n\t\tname = ${q(e.rulerName)}\n\t}`);
+
+	out.push('}', '');
+	return out.join('\n');
 }
 
 // ── Key → display name ───────────────────────────────────────────────────────
