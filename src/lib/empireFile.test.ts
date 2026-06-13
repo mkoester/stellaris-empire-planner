@@ -5,9 +5,14 @@ const SAMPLE = `
 # a comment
 tzynn = {
 	name = "EMPIRE_DESIGN_tzynn"
+	adjective = "Tzynn"
+	ship_prefix = "TIS"
 	species = {
 		class = "REP"
 		portrait = "rep9"
+		name = "Tzynn"
+		plural = "Tzynn"
+		adjective = "Tzynn"
 		trait = "trait_strong"
 		trait = "trait_resilient"
 	}
@@ -16,8 +21,11 @@ tzynn = {
 	origin = "origin_default"
 	ethic = "ethic_authoritarian"
 	ethic = "ethic_fanatic_militarist"
+	planet_name = "Tzynn Prime"
 	planet_class = "pc_desert"
+	system_name = "Tzynn"
 	graphical_culture = "reptilian_01"
+	ruler = { name = "Grand Khan" gender = male }
 }
 "My Custom Empire" = {
 	name = { key = "My Custom Empire" }
@@ -45,6 +53,23 @@ describe('parseEmpireFile', () => {
 		expect(e.ethics).toEqual(['ethic_authoritarian', 'ethic_fanatic_militarist']);
 		expect(e.planetClass).toBe('pc_desert');
 		expect(e.source).toBe('file');
+	});
+	it('parses the player-facing name fields (empire/species/ruler/homeworld)', () => {
+		const e = empires[0];
+		expect(e.adjective).toBe('Tzynn');
+		expect(e.shipPrefix).toBe('TIS');
+		expect(e.speciesName).toBe('Tzynn');
+		expect(e.speciesPlural).toBe('Tzynn');
+		expect(e.speciesAdjective).toBe('Tzynn');
+		expect(e.rulerName).toBe('Grand Khan');
+		expect(e.planetName).toBe('Tzynn Prime');
+		expect(e.systemName).toBe('Tzynn');
+	});
+	it('leaves name fields null when the design omits them', () => {
+		const e = empires[1];
+		expect(e.adjective).toBeNull();
+		expect(e.speciesPlural).toBeNull();
+		expect(e.rulerName).toBeNull();
 	});
 	it('handles the name = { key = … } form and a single-civic list', () => {
 		const e = empires[1];

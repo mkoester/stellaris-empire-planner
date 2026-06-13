@@ -17,6 +17,7 @@
 		{ href: '/origins', label: 'Origins' },
 		{ href: '/planets', label: 'Planets' },
 		{ href: '/ships', label: 'Ships' },
+		{ href: '/names', label: 'Names' },
 		{ href: '/precursors', label: 'Precursors' }
 	] as const;
 </script>

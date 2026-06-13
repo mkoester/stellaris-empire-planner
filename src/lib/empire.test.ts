@@ -64,6 +64,41 @@ describe('empire store', () => {
 		);
 	});
 
+	it("apply 'all' populates the name fields from the empire", () => {
+		empire.apply(
+			mk({
+				name: 'United Nations of Earth',
+				adjective: 'Human',
+				speciesName: 'Human',
+				speciesPlural: 'Humans',
+				rulerName: 'Dolores Muwanga',
+				planetName: 'Earth',
+				systemName: 'Sol'
+			}),
+			'all'
+		);
+		expect(empire.draft.name).toBe('United Nations of Earth');
+		expect(empire.draft.adjective).toBe('Human');
+		expect(empire.draft.speciesPlural).toBe('Humans');
+		expect(empire.draft.rulerName).toBe('Dolores Muwanga');
+		expect(empire.draft.systemName).toBe('Sol');
+	});
+
+	it('setName updates a field and marks the Names section set', () => {
+		empire.setName('name', 'My Empire');
+		empire.setName('systemName', 'Sol');
+		expect(empire.draft.name).toBe('My Empire');
+		expect(empire.draft.systemName).toBe('Sol');
+		expect(empire.setSectionLabels()).toEqual(expect.arrayContaining(['Names']));
+	});
+
+	it("apply 'partial' keeps already-typed names", () => {
+		empire.setName('name', 'My Empire');
+		empire.apply(mk({ name: 'Preset Empire', adjective: 'Preset' }), 'partial');
+		expect(empire.draft.name).toBe('My Empire'); // kept — Names section already set
+		expect(empire.draft.adjective).toBe(''); // not filled piecemeal; whole section was set
+	});
+
 	it('toggleCivic adds then removes a civic', () => {
 		empire.toggleCivic('civic_x');
 		expect(empire.draft.civics).toEqual(['civic_x']);

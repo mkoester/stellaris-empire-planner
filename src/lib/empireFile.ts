@@ -102,9 +102,20 @@ export function parseEmpireFile(text: string): Empire[] {
 		if (typeof sp !== 'object' || Array.isArray(sp)) continue; // not an empire design
 		let name: Node | undefined = def.name;
 		if (name && typeof name === 'object' && !Array.isArray(name)) name = name.key ?? name.name;
+		const ruler = def.ruler;
+		const rulerName =
+			ruler && typeof ruler === 'object' && !Array.isArray(ruler) ? asStr(ruler.name) : null;
 		empires.push({
 			key,
 			name: asStr(name) ?? key,
+			adjective: asStr(def.adjective),
+			shipPrefix: asStr(def.ship_prefix),
+			speciesName: asStr(sp.name),
+			speciesPlural: asStr(sp.plural),
+			speciesAdjective: asStr(sp.adjective),
+			rulerName,
+			planetName: asStr(def.planet_name),
+			systemName: asStr(def.system_name),
 			speciesClass: asStr(sp.class),
 			speciesPortrait: asStr(sp.portrait),
 			authority: asStr(def.authority),

@@ -4,7 +4,16 @@
 import type { Empire } from '$lib/server/db';
 
 export interface EmpireDraft {
-	name: string;
+	// Player-facing names typed at empire creation (the /names section). Empty = unset.
+	name: string; // empire name
+	adjective: string;
+	shipPrefix: string;
+	speciesName: string;
+	speciesPlural: string;
+	speciesAdjective: string;
+	rulerName: string;
+	planetName: string;
+	systemName: string;
 	speciesClass: string | null;
 	speciesPortrait: string | null;
 	traits: string[];
@@ -15,8 +24,30 @@ export interface EmpireDraft {
 	graphicalCulture: string | null;
 }
 
+// The editable name fields of the draft (string-valued), in display order.
+export const NAME_FIELDS = [
+	'name',
+	'adjective',
+	'shipPrefix',
+	'speciesName',
+	'speciesPlural',
+	'speciesAdjective',
+	'rulerName',
+	'planetName',
+	'systemName'
+] as const;
+export type NameField = (typeof NAME_FIELDS)[number];
+
 const empty = (): EmpireDraft => ({
 	name: '',
+	adjective: '',
+	shipPrefix: '',
+	speciesName: '',
+	speciesPlural: '',
+	speciesAdjective: '',
+	rulerName: '',
+	planetName: '',
+	systemName: '',
 	speciesClass: null,
 	speciesPortrait: null,
 	traits: [],
@@ -37,13 +68,28 @@ interface Section {
 }
 const SECTIONS: Section[] = [
 	{
+		id: 'names',
+		label: 'Names',
+		isSet: (d) => NAME_FIELDS.some((f) => d[f] !== ''),
+		apply: (d, e) => {
+			d.name = e.name ?? '';
+			d.adjective = e.adjective ?? '';
+			d.shipPrefix = e.shipPrefix ?? '';
+			d.speciesName = e.speciesName ?? '';
+			d.speciesPlural = e.speciesPlural ?? '';
+			d.speciesAdjective = e.speciesAdjective ?? '';
+			d.rulerName = e.rulerName ?? '';
+			d.planetName = e.planetName ?? '';
+			d.systemName = e.systemName ?? '';
+		}
+	},
+	{
 		id: 'species',
 		label: 'Species',
 		isSet: (d) => d.speciesClass != null,
 		apply: (d, e) => {
 			d.speciesClass = e.speciesClass;
 			d.speciesPortrait = e.speciesPortrait;
-			if (e.name) d.name = e.name;
 		}
 	},
 	{
@@ -111,6 +157,9 @@ export const empire = {
 	reset() {
 		draft = empty();
 		generation++;
+	},
+	setName(field: NameField, value: string) {
+		draft[field] = value;
 	},
 	setTraits(t: string[]) {
 		draft.traits = t;

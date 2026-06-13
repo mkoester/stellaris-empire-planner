@@ -570,6 +570,16 @@ export function loadPlanetClasses(): PlanetClass[] {
 export interface Empire {
 	key: string;
 	name: string;
+	// Player-facing names. Resolved to display text for predefined empires; literal for
+	// user files. Optional so a parsed file that omits them just leaves them blank.
+	adjective?: string | null;
+	shipPrefix?: string | null;
+	speciesName?: string | null;
+	speciesPlural?: string | null;
+	speciesAdjective?: string | null;
+	rulerName?: string | null;
+	planetName?: string | null;
+	systemName?: string | null;
 	speciesClass: string | null;
 	speciesPortrait: string | null;
 	authority: string | null;
@@ -587,15 +597,25 @@ export function loadPrescriptedEmpires(): Empire[] {
 	const d = db();
 	const rows = d
 		.prepare(
-			`SELECT key, name, species_class, species_portrait, authority, government,
+			`SELECT key, name, adjective, ship_prefix, species_class, species_portrait,
+			        species_name, species_plural, species_adjective, ruler_name,
+			        planet_name, system_name, authority, government,
 			        origin, planet_class, graphical_culture
 			 FROM prescripted_empire ORDER BY sort_order`
 		)
 		.all() as Array<{
 		key: string;
 		name: string;
+		adjective: string | null;
+		ship_prefix: string | null;
 		species_class: string | null;
 		species_portrait: string | null;
+		species_name: string | null;
+		species_plural: string | null;
+		species_adjective: string | null;
+		ruler_name: string | null;
+		planet_name: string | null;
+		system_name: string | null;
 		authority: string | null;
 		government: string | null;
 		origin: string | null;
@@ -619,6 +639,14 @@ export function loadPrescriptedEmpires(): Empire[] {
 	return rows.map((r) => ({
 		key: r.key,
 		name: r.name,
+		adjective: r.adjective,
+		shipPrefix: r.ship_prefix,
+		speciesName: r.species_name,
+		speciesPlural: r.species_plural,
+		speciesAdjective: r.species_adjective,
+		rulerName: r.ruler_name,
+		planetName: r.planet_name,
+		systemName: r.system_name,
 		speciesClass: r.species_class,
 		speciesPortrait: r.species_portrait,
 		authority: r.authority,
