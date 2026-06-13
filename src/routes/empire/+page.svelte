@@ -1,10 +1,12 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Empire, ModifierSource } from '$lib/server/db';
+	import type { Empire, ModifierSource, Ethic, Civic, Origin } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
 	import { parseEmpireFile, keyName, shipTypeLabel } from '$lib/empireFile';
 	import { collectEffects, collectSpeciesEffects, groupEffects } from '$lib/effects';
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
+	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
+	import RuleText from '$lib/RuleText.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const predefined = $derived(data.predefined as Empire[]);
@@ -67,6 +69,51 @@
 	const draft = $derived(empire.draft);
 	const hasEmpire = $derived(empire.anySet());
 	const effectGroups = $derived(groupEffects(collectEffects(draft, modifierIndex, names)));
+
+	// ── Gameplay block: ethic implications + civic/origin effect descriptions ────
+	const ethics = $derived(data.ethics as Ethic[]);
+	const civics = $derived(data.civics as Civic[]);
+	const origins = $derived(data.origins as Origin[]);
+
+	const ethicMap = $derived(new Map(ethics.map((e) => [e.key, e])));
+	const selectedEthics = $derived(ethics.filter((e) => draft.ethics.includes(e.key)));
+	const implications = $derived(combineImplications(selectedEthics));
+	const policyRestrictions = $derived(combinePolicyRestrictions(selectedEthics));
+
+	// "Gameplay effects" = the cleaned rule descriptions of the chosen civics + origin.
+	const gameplayEffects = $derived([
+		...civics
+			.filter((c) => draft.civics.includes(c.key) && c.description)
+			.map((c) => ({ kind: 'civic', name: c.name ?? c.key, description: c.description! })),
+		...origins
+			.filter((o) => o.key === draft.origin && o.description)
+			.map((o) => ({ kind: 'origin', name: o.name ?? o.key, description: o.description! }))
+	]);
+
+	// Monument bonuses for exactly the ethics this empire holds (regular vs fanatic).
+	const monumentRows = $derived.by(() => {
+		const out: { ethic: string; effect: string; value: string; good: boolean; fanatic: boolean }[] =
+			[];
+		for (const { ethicKey, rows } of MONUMENT_BONUSES) {
+			const e = ethicMap.get(ethicKey);
+			const hasFanatic = !!(e?.fanatic_variant && draft.ethics.includes(e.fanatic_variant));
+			const hasRegular =
+				draft.ethics.includes(ethicKey) ||
+				!!(e?.regular_variant && draft.ethics.includes(e.regular_variant));
+			if (!hasFanatic && !hasRegular) continue;
+			const ethicName = e?.label ?? ethicKey;
+			for (const row of rows) {
+				out.push({
+					ethic: ethicName,
+					effect: row.label,
+					value: hasFanatic ? (row.fanatic ?? row.regular) : row.regular,
+					good: row.good,
+					fanatic: hasFanatic
+				});
+			}
+		}
+		return out;
+	});
 	// Species traits, grouped per species (one founder species for now, but the model
 	// supports several — e.g. Syncretic Evolution).
 	const speciesGroups = $derived(
@@ -239,6 +286,89 @@
 						{/each}
 					</div>
 				{/each}
+			</section>
+		{/if}
+
+		<!-- Gameplay: ethic implications + civic/origin effect descriptions, with sources -->
+		{#if implications.length || policyRestrictions.length || gameplayEffects.length}
+			<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">
+				<h2 class="text-xl font-semibold">Gameplay</h2>
+
+				{#if implications.length || policyRestrictions.length}
+					<div class="space-y-1">
+						<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">
+							Gameplay Implications <span class="font-normal opacity-60">(from ethics)</span>
+						</h3>
+						<ul class="space-y-1">
+							{#each implications as imp, i (i)}
+								<li class="text-sm">
+									<span class="opacity-80">{imp.label}</span>
+									<span class="text-xs opacity-45"> (from {imp.sources.join(', ')})</span>
+								</li>
+							{/each}
+							{#each policyRestrictions as pr, i (i)}
+								<li class="text-sm">
+									<span class="opacity-80">{pr.label}</span>
+									<span class="text-xs opacity-45"> (from {pr.sources.join(', ')})</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+
+				{#if gameplayEffects.length}
+					<div class="space-y-3">
+						<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">
+							Gameplay Effects <span class="font-normal opacity-60"
+								>(from civics &amp; origins)</span
+							>
+						</h3>
+						{#each gameplayEffects as eff (eff.kind + eff.name)}
+							<div class="space-y-0.5">
+								<div class="text-sm font-medium">
+									{eff.name}
+									<span class="text-xs font-normal opacity-45">({eff.kind})</span>
+								</div>
+								<RuleText text={eff.description} class="text-xs opacity-60" />
+							</div>
+						{/each}
+					</div>
+				{/if}
+			</section>
+		{/if}
+
+		<!-- Monument bonuses per 100 civilians, from the empire's ethics -->
+		{#if monumentRows.length}
+			<section class="border-surface-400-500/30 space-y-3 rounded-lg border p-4">
+				<h2 class="text-xl font-semibold">Monument Bonuses per 100 Civilians</h2>
+				<p class="text-sm opacity-50">
+					Monument buildings grant these per-100-civilian bonuses based on the empire's ethics.
+				</p>
+				<table class="w-full text-sm">
+					<thead>
+						<tr class="border-surface-400-500/40 border-b text-left">
+							<th class="py-1.5 pr-4 font-medium opacity-60">Ethic</th>
+							<th class="py-1.5 pr-4 font-medium opacity-60">Effect</th>
+							<th class="py-1.5 text-right font-medium opacity-60">Per 100</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each monumentRows as row, i (i)}
+							<tr class="border-surface-400-500/20 border-b">
+								<td class="py-1.5 pr-4">
+									{row.ethic}
+									{#if row.fanatic}<span class="text-xs opacity-40">(fanatic)</span>{/if}
+								</td>
+								<td class="py-1.5 pr-4 opacity-70">{row.effect}</td>
+								<td
+									class="py-1.5 text-right font-mono {row.good
+										? 'text-emerald-400'
+										: 'text-red-400'}">{row.value}</td
+								>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</section>
 		{/if}
 	{:else}

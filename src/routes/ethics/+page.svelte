@@ -3,6 +3,7 @@
 	import type { Ethic, Modifier, EthicImplication, PolicyRestriction } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
+	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -102,19 +103,7 @@
 	});
 
 	// Deduplicated implications from all selected ethics, with source tracking
-	const combinedImplications = $derived.by(() => {
-		const seen = new Map<string, { label: string; sources: string[] }>();
-		for (const ethic of selectedEthics) {
-			for (const imp of ethic.implications) {
-				if (seen.has(imp.tag)) {
-					seen.get(imp.tag)!.sources.push(ethic.label ?? ethic.key);
-				} else {
-					seen.set(imp.tag, { label: imp.label, sources: [ethic.label ?? ethic.key] });
-				}
-			}
-		}
-		return [...seen.values()];
-	});
+	const combinedImplications = $derived(combineImplications(selectedEthics));
 
 	// All unique tags across all non-gestalt ethics, for the reference table
 	const allImplicationTags = $derived.by(() => {
@@ -133,21 +122,7 @@
 	);
 
 	// Policy restrictions for the current selection, deduplicated by option key
-	const selectedPolicyRestrictions = $derived.by(() => {
-		const seen = new Map<string, { label: string; sources: string[] }>();
-		for (const ethic of selectedEthics) {
-			for (const pr of ethic.policyRestrictions) {
-				const id = `${pr.policyKey}:${pr.optionKey}`;
-				const label = pr.optionLabel ?? pr.optionKey;
-				if (seen.has(id)) {
-					seen.get(id)!.sources.push(ethic.label ?? ethic.key);
-				} else {
-					seen.set(id, { label, sources: [ethic.label ?? ethic.key] });
-				}
-			}
-		}
-		return [...seen.values()];
-	});
+	const selectedPolicyRestrictions = $derived(combinePolicyRestrictions(selectedEthics));
 
 	// All unique policy restrictions across non-gestalt ethics, for the reference table
 	const allPolicyRestrictions = $derived.by(() => {
@@ -189,51 +164,6 @@
 		}
 		return keys;
 	});
-
-	// Monument bonuses per 100 civilian pops, by ethic (hard-coded from wiki)
-	type MonumentRow = { label: string; regular: string; fanatic?: string; good: boolean };
-	const MONUMENT_BONUSES: { ethicKey: string; rows: MonumentRow[] }[] = [
-		{
-			ethicKey: 'ethic_authoritarian',
-			rows: [{ label: 'Edict Fund', regular: '+1', fanatic: '+2', good: true }]
-		},
-		{
-			ethicKey: 'ethic_egalitarian',
-			rows: [{ label: 'Trade Value', regular: '+0.5', fanatic: '+1', good: true }]
-		},
-		{
-			ethicKey: 'ethic_materialist',
-			rows: [{ label: 'Research', regular: '+0.1', fanatic: '+0.2', good: true }]
-		},
-		{
-			ethicKey: 'ethic_spiritualist',
-			rows: [{ label: 'Unity', regular: '+0.25', fanatic: '+0.5', good: true }]
-		},
-		{
-			ethicKey: 'ethic_militarist',
-			rows: [{ label: 'Naval Capacity', regular: '+0.125', fanatic: '+0.25', good: true }]
-		},
-		{
-			ethicKey: 'ethic_pacifist',
-			rows: [{ label: 'Amenities', regular: '+100', fanatic: '+200', good: true }]
-		},
-		{
-			ethicKey: 'ethic_xenophobe',
-			rows: [{ label: 'Happiness', regular: '+0.625%', fanatic: '+1.25%', good: true }]
-		},
-		{
-			ethicKey: 'ethic_xenophile',
-			rows: [{ label: 'Pop Upkeep', regular: '−0.625%', fanatic: '−1.25%', good: true }]
-		},
-		{
-			ethicKey: 'ethic_gestalt_consciousness',
-			rows: [
-				{ label: 'Unity', regular: '+0.1', good: true },
-				{ label: 'Trade Value', regular: '+0.1', good: true },
-				{ label: 'Minerals Upkeep', regular: '+0.2', good: false }
-			]
-		}
-	];
 
 	// ── Formatting ───────────────────────────────────────────────────────────
 	// Value (fractions vs percentages), good/bad colouring, and label formatting all
