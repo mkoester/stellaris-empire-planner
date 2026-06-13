@@ -793,7 +793,7 @@ export function loadPrescriptedEmpires(): Empire[] {
 			        secondary_plural, secondary_adjective, ruler_name,
 			        planet_name, system_name, authority, government,
 			        origin, planet_class, initializer, graphical_culture
-			 FROM prescripted_empire ORDER BY sort_order`
+			 FROM prescripted_empire WHERE selectable = 1 ORDER BY sort_order`
 		)
 		.all() as Array<{
 		key: string;

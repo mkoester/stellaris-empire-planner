@@ -193,7 +193,10 @@
 				<select class="select" bind:value={importKey}>
 					<option value="" disabled>Choose…</option>
 					{#each predefined as p (p.key)}
-						<option value={p.key}>{p.name}</option>
+						<!-- The machine-age DLC alternates share a name with their base empire. -->
+						<option value={p.key}
+							>{p.name}{p.key.endsWith('_machine_age') ? ' (Machine Age)' : ''}</option
+						>
 					{/each}
 				</select>
 				<button
