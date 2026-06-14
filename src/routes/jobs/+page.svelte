@@ -1,6 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { Job } from '$lib/server/db';
+	import { formatModifierValue, modifierLabel, modifierColor } from '$lib/civics';
 	import RuleText from '$lib/RuleText.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -55,7 +56,8 @@
 	<div class="space-y-1">
 		<h1 class="text-2xl font-bold">Jobs</h1>
 		<p class="text-sm opacity-60">
-			Reference for every pop job. Resources are the <strong>base</strong> figures — conditional bonuses,
+			Reference for every pop job: stockpile resources (green/red) plus non-resource effects like
+			Amenities, Crime, Stability and Naval cap (blue). <strong>Base</strong> figures — conditional bonuses,
 			swaps and empire modifiers aren't included.
 		</p>
 	</div>
@@ -82,6 +84,18 @@
 									>
 										{r.kind === 'produces' ? sign(r.amount) : `−${r.amount}`}
 										{titleCase(r.resource)}
+									</span>
+								{/each}
+							</div>
+						{/if}
+						{#if job.modifiers.length}
+							<!-- Non-resource effects (Amenities, Crime, Stability, Naval cap, …); value
+							     colored good/bad, sky chip to set them apart from stockpile resources. -->
+							<div class="flex flex-wrap gap-1">
+								{#each job.modifiers as m (m.key)}
+									<span class="rounded bg-sky-500/10 px-1.5 py-0.5 text-[11px] {modifierColor(m)}">
+										{formatModifierValue(m).replace('-', '−')}
+										{modifierLabel(m)}
 									</span>
 								{/each}
 							</div>

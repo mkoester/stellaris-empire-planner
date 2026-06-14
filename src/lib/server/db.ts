@@ -767,6 +767,7 @@ export interface Job {
 	category: string | null; // worker | specialist | ruler | complex_drone | …
 	description: string | null;
 	resources: JobResource[]; // base produced/upkeep (empty for modifier-only jobs)
+	modifiers: Modifier[]; // non-resource effects: Amenities, Crime, Stability, Naval cap, …
 }
 
 export function loadJobs(): Job[] {
@@ -793,7 +794,35 @@ export function loadJobs(): Job[] {
 			amount: r.amount
 		});
 	}
-	return rows.map((r) => ({ ...r, resources: byJob.get(r.key) ?? [] }));
+	const modRows = d
+		.prepare(
+			`SELECT jm.job_key, jm.modifier, jm.value, ml.label, ml.positive_is_good
+			 FROM job_modifier jm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = jm.modifier
+			 ORDER BY jm.job_key, jm.sort_order`
+		)
+		.all() as Array<{
+		job_key: string;
+		modifier: string;
+		value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+	const modsByJob = new Map<string, Modifier[]>();
+	for (const r of modRows) {
+		if (!modsByJob.has(r.job_key)) modsByJob.set(r.job_key, []);
+		modsByJob.get(r.job_key)!.push({
+			key: r.modifier,
+			value: r.value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+	return rows.map((r) => ({
+		...r,
+		resources: byJob.get(r.key) ?? [],
+		modifiers: modsByJob.get(r.key) ?? []
+	}));
 }
 
 // ── Job swaps (civic/origin replaces a job) ────────────────────────────────────
@@ -805,11 +834,13 @@ export interface JobSwap {
 	swappedName: string | null;
 	baseResources: JobResource[];
 	swappedResources: JobResource[];
+	baseModifiers: Modifier[];
+	swappedModifiers: Modifier[];
 }
 
 // Job replacements keyed by the civic/origin that triggers them (e.g. Catalytic
-// Processing → Metallurgist replaced by Catalytic Technician), with each job's base
-// resources for the tooltip. For the Civics / Origins pages.
+// Processing → Metallurgist replaced by Catalytic Technician), with each job's base/swapped
+// resources AND modifiers for the tooltip. For the Civics / Origins pages.
 export function loadJobSwapsBySource(): Record<string, JobSwap[]> {
 	const d = db();
 	// Both sides of each swap's resources, evaluated for the plain empire (side='base') and
@@ -837,6 +868,34 @@ export function loadJobSwapsBySource(): Record<string, JobSwap[]> {
 			amount: r.amount
 		});
 	}
+	// Same, for each side's non-resource modifiers (joined to modifier_label for display).
+	const modBySide = new Map<string, Modifier[]>();
+	for (const r of d
+		.prepare(
+			`SELECT jsm.source_key, jsm.base_job, jsm.swapped_job, jsm.side, jsm.modifier, jsm.value,
+			        ml.label, ml.positive_is_good
+			 FROM job_swap_modifier jsm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = jsm.modifier`
+		)
+		.all() as Array<{
+		source_key: string;
+		base_job: string;
+		swapped_job: string;
+		side: string;
+		modifier: string;
+		value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>) {
+		const k = `${r.source_key}|${r.base_job}|${r.swapped_job}|${r.side}`;
+		if (!modBySide.has(k)) modBySide.set(k, []);
+		modBySide.get(k)!.push({
+			key: r.modifier,
+			value: r.value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
 	const rows = d
 		.prepare(
 			`SELECT source_key, base_job, base_name, swapped_job, swapped_name
@@ -852,23 +911,28 @@ export function loadJobSwapsBySource(): Record<string, JobSwap[]> {
 	const out: Record<string, JobSwap[]> = {};
 	const seen: Record<string, Set<string>> = {};
 	for (const r of rows) {
+		const base = `${r.source_key}|${r.base_job}|${r.swapped_job}|base`;
+		const swapped = `${r.source_key}|${r.base_job}|${r.swapped_job}|swapped`;
 		const swap: JobSwap = {
 			baseJob: r.base_job,
 			baseName: r.base_name,
 			swappedJob: r.swapped_job,
 			swappedName: r.swapped_name,
-			baseResources: resBySide.get(`${r.source_key}|${r.base_job}|${r.swapped_job}|base`) ?? [],
-			swappedResources:
-				resBySide.get(`${r.source_key}|${r.base_job}|${r.swapped_job}|swapped`) ?? []
+			baseResources: resBySide.get(base) ?? [],
+			swappedResources: resBySide.get(swapped) ?? [],
+			baseModifiers: modBySide.get(base) ?? [],
+			swappedModifiers: modBySide.get(swapped) ?? []
 		};
 		// De-duplicate by what the tooltip actually shows: several distinct base jobs can
 		// share a display name and swapped target (e.g. enforcer + dystopian_enforcer both
-		// render "Enforcer → Educator"). Keep distinct name/resource combos.
+		// render "Enforcer → Educator"). Keep distinct name/resource/modifier combos.
 		const sig = JSON.stringify([
 			swap.baseName ?? swap.baseJob,
 			swap.swappedName ?? swap.swappedJob,
 			swap.baseResources,
-			swap.swappedResources
+			swap.swappedResources,
+			swap.baseModifiers,
+			swap.swappedModifiers
 		]);
 		seen[r.source_key] ??= new Set();
 		if (seen[r.source_key].has(sig)) continue;
