@@ -158,9 +158,10 @@
 		setActiveClass(null, group);
 	}
 
-	// Prune selected traits whenever available traits change
+	// Prune selected traits whenever available traits change (history traits stay valid while
+	// on a matching archetype; they're pruned when switching away, like any other trait).
 	$effect(() => {
-		const valid = new Set(visibleTraits.map((t) => t.key));
+		const valid = new Set([...visibleTraits, ...historyTraits].map((t) => t.key));
 		const pruned = [...selected].filter((k) => valid.has(k));
 		if (pruned.length !== selected.size) commitTraits(pruned);
 	});
@@ -171,9 +172,31 @@
 		activeTags = new Set();
 	});
 
+	// "background" traits (the machine History picks: artbot/warbot/…) are a free, pick-one
+	// choice shown in their own section, not the normal trait grid or budget.
+	const isHistory = (t: Trait) => t.tags.includes('background');
+	const allHistoryKeys = $derived(new Set(data.traits.filter(isHistory).map((t) => t.key)));
+	const historyTraits = $derived(
+		data.traits
+			.filter((t) => isHistory(t) && t.archetypes.includes(archetype))
+			.sort((a, b) => formatKey(a.key).localeCompare(formatKey(b.key)))
+	);
+	const selectedHistoryKey = $derived([...selected].find((k) => allHistoryKeys.has(k)) ?? null);
+	function selectHistory(key: string) {
+		const next = new Set(selected);
+		const wasSelected = next.has(key);
+		for (const k of allHistoryKeys) next.delete(k); // pick-one: clear any current history
+		if (!wasSelected) next.add(key);
+		commitTraits([...next]);
+	}
+	const historyName = (key: string) => {
+		const s = key.replace('trait_robot_history_', '');
+		return s.charAt(0).toUpperCase() + s.slice(1);
+	};
+
 	const visibleTraits = $derived(
 		data.traits
-			.filter((t) => t.archetypes.includes(archetype))
+			.filter((t) => t.archetypes.includes(archetype) && !isHistory(t))
 			.filter((t) => {
 				if (!selectedClassKey || t.category !== 'phenotype') return true;
 				return t.speciesClasses.length === 0 || t.speciesClasses.includes(selectedClassKey);
@@ -281,7 +304,7 @@
 	const selectedTraits = $derived(data.traits.filter((t) => selected.has(t.key)));
 	const pointsUsed = $derived(selectedTraits.reduce((sum, t) => sum + (t.cost ?? 0), 0));
 	const pointsRemaining = $derived(maxPoints - pointsUsed);
-	const traitCount = $derived(selected.size);
+	const traitCount = $derived([...selected].filter((k) => !allHistoryKeys.has(k)).length);
 
 	// Negative-cost traits give back points, expanding the effective budget.
 	const negativeBonus = $derived(
@@ -689,6 +712,48 @@
 				</div>
 			{/if}
 		</div>
+	{/if}
+
+	<!-- Machine History: a free, pick-one background trait (artbot/warbot/…) -->
+	{#if historyTraits.length > 0}
+		<section>
+			<div class="mb-2 flex items-baseline gap-2">
+				<h2 class="text-sm font-semibold">Machine History</h2>
+				<span class="text-xs opacity-50">free · pick one</span>
+			</div>
+			<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+				{#each historyTraits as trait (trait.key)}
+					{@const isSel = selectedHistoryKey === trait.key}
+					<Tip text={trait.description ?? ''} placement="top">
+						{#snippet trigger(a)}
+							<button
+								{...a}
+								type="button"
+								aria-pressed={isSel}
+								onclick={() => selectHistory(trait.key)}
+								class="border-surface-400-500/30 hover:border-surface-400-500/60 flex h-full w-full flex-col gap-1 rounded-lg border p-2 text-left transition-colors {isSel
+									? 'border-primary-500 bg-primary-500/10'
+									: ''}"
+							>
+								<span class="text-sm font-medium">{historyName(trait.key)}</span>
+								{#if trait.modifiers.length}
+									<ul class="space-y-0.5">
+										{#each trait.modifiers as mod (mod.key)}
+											<li class="flex items-baseline justify-between gap-1 text-[10px]">
+												<span class="leading-tight opacity-60">{modifierLabel(mod)}</span>
+												<span class="shrink-0 font-mono {modifierColor(mod)}"
+													>{formatModifier(mod)}</span
+												>
+											</li>
+										{/each}
+									</ul>
+								{/if}
+							</button>
+						{/snippet}
+					</Tip>
+				{/each}
+			</div>
+		</section>
 	{/if}
 
 	<!-- Category legend -->
