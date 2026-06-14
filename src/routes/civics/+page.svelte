@@ -13,10 +13,12 @@
 	} from '$lib/civics';
 	import SwapTables from '$lib/SwapTables.svelte';
 	import Tip from '$lib/Tip.svelte';
+	import BanIcon from '$lib/BanIcon.svelte';
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import LockIcon from '$lib/LockIcon.svelte';
 	import { empire } from '$lib/empire.svelte';
+	import { settings } from '$lib/settings.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const civics = $derived(data.civics as Civic[]);
@@ -26,6 +28,13 @@
 
 	// Free-text filter across name + description.
 	let query = $state('');
+
+	// Per-card override of the global "show exclusions" default, keyed by civic key.
+	// A card's exclusions show when its override is set, else the global setting.
+	let openExcl = $state<Record<string, boolean>>({});
+	function toggleExcl(key: string) {
+		openExcl = { ...openExcl, [key]: !(openExcl[key] ?? settings.showExclusions) };
+	}
 	const groups = $derived(
 		groupCivicsByType(
 			query.trim()
@@ -43,7 +52,15 @@
 		<RequirementLegend />
 	</div>
 
-	<input class="input max-w-sm" type="search" placeholder="Filter civics…" bind:value={query} />
+	<div class="flex flex-wrap items-center gap-2">
+		<input class="input max-w-sm" type="search" placeholder="Filter civics…" bind:value={query} />
+		<button
+			class="rounded px-2 py-1 text-[11px] opacity-60 hover:bg-surface-500/20 hover:opacity-100"
+			onclick={() => settings.toggleExclusions()}
+		>
+			{settings.showExclusions ? 'Hide exclusions' : 'Show exclusions'}
+		</button>
+	</div>
 
 	{#each groups as group (group.type)}
 		<section class="space-y-3">
@@ -55,6 +72,9 @@
 			<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
 				{#each group.items as civic (civic.key)}
 					{@const reqs = civicRequirementLines(civic.requirements)}
+					{@const needs = reqs.filter((r) => r.type === 'require')}
+					{@const excls = reqs.filter((r) => r.type === 'exclude')}
+					{@const showExcl = openExcl[civic.key] ?? settings.showExclusions}
 					{@const selected = empire.draft.civics.includes(civic.key)}
 					{@const mods = sortModifiers(civic.modifiers)}
 					{@const swaps = jobSwaps[civic.key] ?? []}
@@ -88,14 +108,52 @@
 							</div>
 						</header>
 
-						<!-- Requirements / exclusions -->
-						{#if reqs.length}
-							<div class="flex flex-wrap gap-1">
-								{#each reqs as r, i (i)}
-									<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}"
-										>{r.type === 'require' ? 'needs' : 'excl.'} {r.text}</span
-									>
-								{/each}
+						<!-- Requirements / exclusions. Toggle pinned top-right; badges wrap on the left. -->
+						{#if needs.length || excls.length}
+							<div class="flex items-start gap-1">
+								<div class="flex grow flex-wrap items-center gap-1">
+									{#each needs as r, i (i)}
+										<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}"
+											>needs {r.text}</span
+										>
+									{/each}
+									{#if showExcl}
+										{#each excls as r, i (i)}
+											<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}"
+												>excl. {r.text}</span
+											>
+										{/each}
+									{/if}
+								</div>
+								{#if excls.length}
+									<Tip text={showExcl ? 'Hide exclusions' : 'Show exclusions'}>
+										{#snippet trigger(a)}
+											<span
+												{...a}
+												role="button"
+												tabindex="0"
+												aria-pressed={showExcl}
+												aria-label="{showExcl ? 'Hide' : 'Show'} exclusions"
+												onclick={(e) => {
+													e.stopPropagation();
+													toggleExcl(civic.key);
+												}}
+												onkeydown={(e) => {
+													if (e.key === 'Enter' || e.key === ' ') {
+														e.preventDefault();
+														e.stopPropagation();
+														toggleExcl(civic.key);
+													}
+												}}
+												class="inline-flex shrink-0 cursor-pointer items-center rounded px-0.5 py-0.5 transition-colors {showExcl
+													? 'text-red-400'
+													: 'text-red-400/40 hover:text-red-400/70'}"
+											>
+												<BanIcon />
+											</span>
+										{/snippet}
+									</Tip>
+								{/if}
 							</div>
 						{/if}
 

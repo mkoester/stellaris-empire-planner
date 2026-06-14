@@ -5,11 +5,21 @@
 // inline with " | " separators.
 let ruleLayout = $state<'inline' | 'lines'>('lines');
 
+// Whether the civics/origins cards show their "excl." (exclusion) requirement badges.
+// "needs" badges always show; exclusions are hidden by default to reduce clutter.
+let showExclusions = $state(false);
+
 export const settings = {
 	get ruleLayout() {
 		return ruleLayout;
 	},
 	toggleRuleLayout() {
 		ruleLayout = ruleLayout === 'inline' ? 'lines' : 'inline';
+	},
+	get showExclusions() {
+		return showExclusions;
+	},
+	toggleExclusions() {
+		showExclusions = !showExclusions;
 	}
 };
