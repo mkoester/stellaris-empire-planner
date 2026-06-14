@@ -1,6 +1,6 @@
 // Presentation-layer helpers for the /civics route. Pure data → display logic so
 // they can be unit-tested; types come in type-only.
-import type { Civic, CivicRequirement, Modifier } from '$lib/server/db';
+import type { Civic, CivicRequirement, Modifier, ScalingModifier } from '$lib/server/db';
 
 export function civicTypeLabel(t: string): string {
 	return (
@@ -80,6 +80,19 @@ export function formatModifierValue(mod: Modifier): string {
 export function modifierColor(mod: Modifier): string {
 	const good = mod.value > 0 === mod.positiveIsGood;
 	return good ? 'text-emerald-400' : 'text-red-400';
+}
+
+// A per-pop-count scaling effect as one line, wiki-style:
+// "+0.1% Happiness per 100 Familial pops (max +20%)".
+export function formatScalingModifier(m: ScalingModifier): string {
+	const asMod = (value: number): Modifier => ({
+		key: m.key,
+		value,
+		label: m.label,
+		positiveIsGood: m.positiveIsGood
+	});
+	const per = m.countLabel ? `100 ${m.countLabel} pops` : '100 pops';
+	return `${formatModifierValue(asMod(m.perHundred))} ${modifierLabel(asMod(m.perHundred))} per ${per} (max ${formatModifierValue(asMod(m.cap))})`;
 }
 
 // Order a modifier list for display: alphabetical by label, with the Shroud

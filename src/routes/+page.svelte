@@ -2,7 +2,12 @@
 	import type { PageData } from './$types';
 	import type { Trait } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
+	import {
+		formatModifierValue,
+		modifierColor,
+		modifierLabel,
+		formatScalingModifier
+	} from '$lib/civics';
 	import Tip from '$lib/Tip.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -431,6 +436,21 @@
 								{/each}
 							</ul>
 						{/if}
+						{#if trait.scalingModifiers.length > 0}
+							<ul class="space-y-0.5">
+								{#each trait.scalingModifiers as sm (sm.key)}
+									{@const smMod = {
+										key: sm.key,
+										value: sm.perHundred,
+										label: sm.label,
+										positiveIsGood: sm.positiveIsGood
+									}}
+									<li class="text-[10px] leading-tight {modifierColor(smMod)}">
+										{formatScalingModifier(sm)}
+									</li>
+								{/each}
+							</ul>
+						{/if}
 						{#if trait.speciesClasses.length > 0}
 							<div class="flex flex-wrap items-center gap-1">
 								{#each trait.speciesClasses as cls (cls)}
@@ -445,6 +465,16 @@
 									</Tip>
 								{/each}
 							</div>
+						{/if}
+						{#if trait.description}
+							<!-- Flavour text (clamped to 3 lines; full text on hover). Especially useful
+							     for traits whose effect is a special mechanic with no modifier chips. -->
+							<Tip
+								text={trait.description}
+								class="line-clamp-3 block text-[10px] leading-snug opacity-50"
+							>
+								{trait.description}
+							</Tip>
 						{/if}
 					</div>
 					<!-- Tags always pinned to the bottom of the card -->

@@ -92,7 +92,7 @@ export function loadTraitsForKeys(keys: string[]): Trait[] {
 	const rows = db()
 		.prepare(
 			`SELECT
-				t.key, t.cost, t.category, t.initial, t.hidden, t.required_dlc,
+				t.key, t.cost, t.category, t.initial, t.hidden, t.required_dlc, t.description,
 				GROUP_CONCAT(DISTINCT ta.archetype) AS archetypes,
 				GROUP_CONCAT(DISTINCT to2.opposite_key) AS opposites,
 				GROUP_CONCAT(DISTINCT tt.tag) AS tags,
@@ -112,6 +112,7 @@ export function loadTraitsForKeys(keys: string[]): Trait[] {
 		initial: number;
 		hidden: number;
 		required_dlc: string | null;
+		description: string | null;
 		archetypes: string | null;
 		opposites: string | null;
 		tags: string | null;
@@ -125,6 +126,7 @@ export function loadTraitsForKeys(keys: string[]): Trait[] {
 		initial: r.initial,
 		hidden: r.hidden,
 		required_dlc: r.required_dlc,
+		description: r.description,
 		archetypes: r.archetypes ? r.archetypes.split(',') : [],
 		opposites: r.opposites ? r.opposites.split(',') : [],
 		tags: r.tags ? r.tags.split(',') : [],
@@ -159,7 +161,49 @@ export function loadTraitsForKeys(keys: string[]): Trait[] {
 		});
 	}
 
-	return traits.map((t) => ({ ...t, modifiers: modByTrait.get(t.key) ?? [] }));
+	const scaling = scalingModifiersByTrait(keys);
+	return traits.map((t) => ({
+		...t,
+		modifiers: modByTrait.get(t.key) ?? [],
+		scalingModifiers: scaling.get(t.key) ?? []
+	}));
+}
+
+// Per-pop-count scaling effects keyed by trait (Familial, Noxious), joined to modifier_label.
+function scalingModifiersByTrait(keys?: string[]): Map<string, ScalingModifier[]> {
+	const where =
+		keys && keys.length ? `WHERE sm.trait_key IN (${keys.map(() => '?').join(',')})` : '';
+	const rows = db()
+		.prepare(
+			`SELECT sm.trait_key, sm.modifier_key, sm.per_hundred, sm.cap, sm.count_label,
+			        ml.label, ml.positive_is_good
+			 FROM trait_scaling_modifier sm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = sm.modifier_key
+			 ${where}
+			 ORDER BY sm.trait_key, sm.sort_order`
+		)
+		.all(...(keys ?? [])) as Array<{
+		trait_key: string;
+		modifier_key: string;
+		per_hundred: number;
+		cap: number;
+		count_label: string | null;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+	const m = new Map<string, ScalingModifier[]>();
+	for (const r of rows) {
+		if (!m.has(r.trait_key)) m.set(r.trait_key, []);
+		m.get(r.trait_key)!.push({
+			key: r.modifier_key,
+			perHundred: r.per_hundred,
+			cap: r.cap,
+			countLabel: r.count_label,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+	return m;
 }
 
 export function loadArchetypes(): Record<string, Archetype> {
@@ -209,6 +253,19 @@ export interface Trait {
 	tags: string[]; // from trait_tag
 	speciesClasses: string[]; // from trait_species_class — empty = no restriction
 	modifiers: Modifier[]; // from trait_modifier + modifier_label
+	scalingModifiers: ScalingModifier[]; // per-pop-count scaling effects (Familial, Noxious)
+	description: string | null; // cleaned flavour text from trait_<key>_desc
+}
+
+// A modifier that scales with a pop count, e.g. Familial: +0.1% Happiness per 100 Familial
+// pops, capped at +20%. perHundred/cap are values (formatted via the normal modifier rules).
+export interface ScalingModifier {
+	key: string; // modifier key, e.g. "pop_happiness"
+	perHundred: number; // value per 100 counted pops
+	cap: number; // value at the counter's maximum
+	countLabel: string | null; // what's counted, e.g. "Familial" (null = generic "pops")
+	label: string | null;
+	positiveIsGood: boolean;
 }
 
 export interface EthicImplication {
@@ -1810,6 +1867,7 @@ export function loadTraits(): Trait[] {
 			t.initial,
 			t.hidden,
 			t.required_dlc,
+			t.description,
 			GROUP_CONCAT(DISTINCT ta.archetype) AS archetypes,
 			GROUP_CONCAT(DISTINCT to2.opposite_key) AS opposites,
 			GROUP_CONCAT(DISTINCT tt.tag) AS tags,
@@ -1838,6 +1896,7 @@ export function loadTraits(): Trait[] {
 		initial: number;
 		hidden: number;
 		required_dlc: string | null;
+		description: string | null;
 		archetypes: string | null;
 		opposites: string | null;
 		tags: string | null;
@@ -1851,6 +1910,7 @@ export function loadTraits(): Trait[] {
 		initial: r.initial,
 		hidden: r.hidden,
 		required_dlc: r.required_dlc,
+		description: r.description,
 		archetypes: r.archetypes ? r.archetypes.split(',') : [],
 		opposites: r.opposites ? r.opposites.split(',') : [],
 		tags: r.tags ? r.tags.split(',') : [],
@@ -1884,5 +1944,10 @@ export function loadTraits(): Trait[] {
 		});
 	}
 
-	return traits.map((t) => ({ ...t, modifiers: modByTrait.get(t.key) ?? [] }));
+	const scaling = scalingModifiersByTrait();
+	return traits.map((t) => ({
+		...t,
+		modifiers: modByTrait.get(t.key) ?? [],
+		scalingModifiers: scaling.get(t.key) ?? []
+	}));
 }
