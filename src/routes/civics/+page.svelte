@@ -11,7 +11,7 @@
 		civicRequirementLines,
 		requirementChipClass
 	} from '$lib/civics';
-	import { swapsTooltip } from '$lib/jobs';
+	import SwapTables from '$lib/SwapTables.svelte';
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import LockIcon from '$lib/LockIcon.svelte';
@@ -73,10 +73,7 @@
 							<h3 class="font-semibold">{civic.name ?? civic.key}</h3>
 							<div class="flex shrink-0 items-center gap-1">
 								{#if swaps.length}
-									<span
-										class="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-medium text-orange-200"
-										title={swapsTooltip(swaps)}>Replaces</span
-									>
+									<SwapTables {swaps} />
 								{/if}
 								{#if civic.requiredDlc}
 									<span
@@ -126,12 +123,19 @@
 						{/if}
 
 						<!-- Effects description pinned to the bottom (divider above it if attunement shown).
-						     When the civic replaces jobs, hovering the description shows the swap details. -->
+						     When the civic replaces jobs, hovering the description also opens the swap table. -->
+						{#snippet descBody()}
+							{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
+							<RuleText text={civic.description!} class="text-xs opacity-55" />
+						{/snippet}
 						{#if civic.description}
-							<div class="mt-auto" title={swaps.length ? swapsTooltip(swaps) : undefined}>
-								{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
-								<RuleText text={civic.description} class="text-xs opacity-55" />
-							</div>
+							{#if swaps.length}
+								<SwapTables {swaps} placement="top-start" triggerClass="mt-auto block cursor-help">
+									{@render descBody()}
+								</SwapTables>
+							{:else}
+								<div class="mt-auto">{@render descBody()}</div>
+							{/if}
 						{/if}
 					</svelte:element>
 				{/each}

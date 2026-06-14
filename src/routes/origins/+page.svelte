@@ -10,7 +10,7 @@
 		civicRequirementLines,
 		requirementChipClass
 	} from '$lib/civics';
-	import { swapsTooltip } from '$lib/jobs';
+	import SwapTables from '$lib/SwapTables.svelte';
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import { keyName } from '$lib/empireFile';
@@ -94,10 +94,7 @@
 							{#if swaps.length || origin.ascensionLock || origin.ascensionBlocks.length}
 								<div class="flex shrink-0 flex-wrap items-center justify-end gap-1">
 									{#if swaps.length}
-										<span
-											class="rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-medium text-orange-200"
-											title={swapsTooltip(swaps)}>Replaces</span
-										>
+										<SwapTables {swaps} />
 									{/if}
 									{#if origin.ascensionLock}
 										<span
@@ -175,11 +172,18 @@
 							{/if}
 						{/if}
 
+						{#snippet descBody()}
+							{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
+							<RuleText text={origin.description!} class="text-xs opacity-55" />
+						{/snippet}
 						{#if origin.description}
-							<div class="mt-auto" title={swaps.length ? swapsTooltip(swaps) : undefined}>
-								{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
-								<RuleText text={origin.description} class="text-xs opacity-55" />
-							</div>
+							{#if swaps.length}
+								<SwapTables {swaps} placement="top-start" triggerClass="mt-auto block cursor-help">
+									{@render descBody()}
+								</SwapTables>
+							{:else}
+								<div class="mt-auto">{@render descBody()}</div>
+							{/if}
 						{/if}
 					</svelte:element>
 				{/each}

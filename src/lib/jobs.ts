@@ -1,41 +1,86 @@
-// Shared formatting for job resources / modifiers / job-swap tooltips (Civics + Origins + Jobs).
+// Structured diff for the civic/origin job-swap table tooltips (and shared num/titleCase).
 import type { JobResource, JobSwap, Modifier } from '$lib/server/db';
-import { formatModifierValue, modifierLabel } from '$lib/civics';
+import { formatModifierValue, modifierLabel, modifierColor } from '$lib/civics';
 
 const titleCase = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 const num = (n: number) => (Number.isInteger(n) ? n : parseFloat(n.toFixed(2)));
 
-// "+3 Alloys, −6 Minerals" (produces = +, upkeep = −).
-export function formatJobResources(resources: JobResource[]): string {
-	return resources
-		.map((r) => `${r.kind === 'produces' ? '+' : '−'}${num(r.amount)} ${titleCase(r.resource)}`)
-		.join(', ');
+// ── Structured diff for the table tooltip ──────────────────────────────────────
+// Each swap becomes a 2-row table (original / replacement); columns are the input/output
+// stats that actually change — added, removed or different value — so unchanged stats
+// (and pure renames) don't clutter the view.
+
+export interface SwapCell {
+	text: string; // "+3", "−6", "+10%", or "—" when absent on this side
+	cls: string; // colour class (green/red), or muted for an absent cell
+}
+export interface SwapColumn {
+	label: string; // "Alloys", "Crime", …
+	base: SwapCell;
+	swapped: SwapCell;
+}
+export interface SwapTableData {
+	baseName: string;
+	swappedName: string;
+	columns: SwapColumn[];
 }
 
-// "−25 Crime, +0.2 Stability, +10% Ethics Attraction" — the job's non-resource effects,
-// formatted with the same label/percentage rules the civics & origins pages use.
-export function formatJobModifiers(mods: Modifier[]): string {
-	// Use the same − glyph as resources for a leading minus (formatModifierValue emits ASCII -).
-	return mods
-		.map((m) => `${formatModifierValue(m).replace(/^-/, '−')} ${modifierLabel(m)}`)
-		.join(', ');
+interface Stat {
+	key: string; // stable column id (r:<resource> | m:<modifier>)
+	label: string;
+	cmp: number; // signed magnitude used to detect a change
+	text: string;
+	cls: string;
 }
 
-// One side of a swap: resources then modifiers, comma-joined ("" when a job has neither).
-function sideEffects(resources: JobResource[], mods: Modifier[]): string {
-	return [formatJobResources(resources), formatJobModifiers(mods)].filter(Boolean).join(', ');
+function resourceStat(r: JobResource): Stat {
+	const produces = r.kind === 'produces';
+	return {
+		key: `r:${r.resource}`,
+		label: titleCase(r.resource),
+		cmp: produces ? r.amount : -r.amount,
+		text: `${produces ? '+' : '−'}${num(r.amount)}`,
+		cls: produces ? 'text-emerald-400' : 'text-red-400'
+	};
+}
+function modifierStat(m: Modifier): Stat {
+	return {
+		key: `m:${m.key}`,
+		label: modifierLabel(m),
+		cmp: m.value,
+		text: formatModifierValue(m).replace(/^-/, '−'),
+		cls: modifierColor(m)
+	};
 }
 
-// Tooltip for one swap: "Enforcer (−25 Crime, …) → Educator (+2.5 Unity, −20 Crime, …)".
-export function swapTitle(s: JobSwap): string {
-	const base = sideEffects(s.baseResources, s.baseModifiers);
-	const swapped = sideEffects(s.swappedResources, s.swappedModifiers);
-	const left = `${s.baseName ?? s.baseJob}${base ? ` (${base})` : ''}`;
-	const right = `${s.swappedName ?? s.swappedJob}${swapped ? ` (${swapped})` : ''}`;
-	return `${left}  →  ${right}`;
-}
+const ABSENT: SwapCell = { text: '—', cls: 'opacity-30' };
 
-// Combined tooltip for all of a civic/origin's swaps (one per line).
-export function swapsTooltip(swaps: JobSwap[]): string {
-	return swaps.map(swapTitle).join('\n');
+// Build the 2-row diff table for one swap.
+export function swapTable(s: JobSwap): SwapTableData {
+	const baseStats = [...s.baseResources.map(resourceStat), ...s.baseModifiers.map(modifierStat)];
+	const swapStats = [
+		...s.swappedResources.map(resourceStat),
+		...s.swappedModifiers.map(modifierStat)
+	];
+	const baseBy = new Map(baseStats.map((st) => [st.key, st]));
+	const swapBy = new Map(swapStats.map((st) => [st.key, st]));
+	const order: string[] = [];
+	for (const st of [...baseStats, ...swapStats]) if (!order.includes(st.key)) order.push(st.key);
+
+	const columns: SwapColumn[] = [];
+	for (const key of order) {
+		const b = baseBy.get(key);
+		const w = swapBy.get(key);
+		if ((b?.cmp ?? null) === (w?.cmp ?? null)) continue; // unchanged → skip
+		columns.push({
+			label: (b ?? w)!.label,
+			base: b ? { text: b.text, cls: b.cls } : ABSENT,
+			swapped: w ? { text: w.text, cls: w.cls } : ABSENT
+		});
+	}
+	return {
+		baseName: s.baseName ?? s.baseJob,
+		swappedName: s.swappedName ?? s.swappedJob,
+		columns
+	};
 }
