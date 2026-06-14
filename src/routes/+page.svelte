@@ -3,6 +3,7 @@
 	import type { Trait } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
+	import Tip from '$lib/Tip.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -365,100 +366,107 @@
 					? 'No trait picks remaining'
 					: 'Not enough points remaining'
 				: undefined}
-		<!-- svelte-ignore a11y_no_static_element_interactions -->
-		<svelte:element
-			this={debug ? 'div' : 'button'}
-			class="relative flex h-full flex-col card text-left transition-all
+		<Tip text={isBase ? 'Always included — not counted toward picks or points' : tooltip}>
+			{#snippet trigger(a)}
+				<svelte:element
+					this={debug ? 'div' : 'button'}
+					{...a}
+					class="relative flex h-full flex-col card text-left transition-all
 				{isBase
-				? 'cursor-default preset-filled opacity-70'
-				: isSelected && !debug
-					? 'preset-filled-primary-500'
-					: isConflicted && !debug
-						? 'cursor-not-allowed preset-filled opacity-50 ring-2 ring-red-500/80 ring-inset'
-						: isBlockable && !debug
-							? 'cursor-not-allowed preset-filled opacity-35'
-							: debug
-								? 'cursor-text preset-filled select-text'
-								: 'cursor-pointer preset-filled card-hover'}
+						? 'cursor-default preset-filled opacity-70'
+						: isSelected && !debug
+							? 'preset-filled-primary-500'
+							: isConflicted && !debug
+								? 'cursor-not-allowed preset-filled opacity-50 ring-2 ring-red-500/80 ring-inset'
+								: isBlockable && !debug
+									? 'cursor-not-allowed preset-filled opacity-35'
+									: debug
+										? 'cursor-text preset-filled select-text'
+										: 'cursor-pointer preset-filled card-hover'}
 				p-3"
-			style="border-top: 2px solid {borderColor}"
-			title={isBase ? 'Always included — not counted toward picks or points' : tooltip}
-			onclick={debug ? undefined : () => toggle(trait)}
-			disabled={!debug && isBlockable}
-		>
-			{#if isBase}
-				<span class="absolute top-1.5 left-1.5 font-mono text-[10px] leading-tight text-amber-400">
-					Base
-				</span>
-			{:else}
-				<span
-					class="absolute top-1.5 left-1.5 font-mono text-[10px] leading-tight {costClass(
-						trait.cost,
-						isSelected
-					)}"
+					style="border-top: 2px solid {borderColor}"
+					onclick={debug ? undefined : () => toggle(trait)}
+					disabled={!debug && isBlockable}
 				>
-					{costLabel(trait.cost)}
-				</span>
-			{/if}
-			{#if trait.required_dlc}
-				<span
-					class="absolute top-1.5 right-1.5 rounded bg-secondary-500 px-1 text-[10px] leading-tight text-secondary-contrast-500"
-				>
-					{trait.required_dlc}
-				</span>
-			{/if}
-			<div class="flex flex-col gap-1 pt-4">
-				<span
-					class="text-sm leading-tight font-medium {!isSelected &&
-					trait.cost !== null &&
-					trait.cost < 0
-						? 'text-red-400'
-						: ''}">{formatKey(trait.key)}</span
-				>
-				{#if trait.modifiers.length > 0}
-					<ul class="space-y-0.5">
-						{#each trait.modifiers as mod (mod.key)}
-							<li class="flex items-baseline justify-between gap-1 text-[10px]">
-								<span class="leading-tight opacity-60">{modifierLabel(mod)}</span>
-								<span class="shrink-0 font-mono {modifierColor(mod)}">{formatModifier(mod)}</span>
-							</li>
-						{/each}
-					</ul>
-				{/if}
-				{#if trait.speciesClasses.length > 0}
-					<div class="flex flex-wrap items-center gap-1">
-						{#each trait.speciesClasses as cls (cls)}
-							{@const clsLabel = formatClassKey(cls)}
-							{@const clsColor = speciesClassColor(clsLabel)}
-							<span
-								class="rounded px-1 text-[10px] leading-tight opacity-80"
-								style="background-color: {clsColor}33; border: 1px solid {clsColor}88; color: {clsColor}"
-								title="Requires {clsLabel} species"
-							>
-								{clsLabel}
-							</span>
-						{/each}
+					{#if isBase}
+						<span
+							class="absolute top-1.5 left-1.5 font-mono text-[10px] leading-tight text-amber-400"
+						>
+							Base
+						</span>
+					{:else}
+						<span
+							class="absolute top-1.5 left-1.5 font-mono text-[10px] leading-tight {costClass(
+								trait.cost,
+								isSelected
+							)}"
+						>
+							{costLabel(trait.cost)}
+						</span>
+					{/if}
+					{#if trait.required_dlc}
+						<span
+							class="absolute top-1.5 right-1.5 rounded bg-secondary-500 px-1 text-[10px] leading-tight text-secondary-contrast-500"
+						>
+							{trait.required_dlc}
+						</span>
+					{/if}
+					<div class="flex flex-col gap-1 pt-4">
+						<span
+							class="text-sm leading-tight font-medium {!isSelected &&
+							trait.cost !== null &&
+							trait.cost < 0
+								? 'text-red-400'
+								: ''}">{formatKey(trait.key)}</span
+						>
+						{#if trait.modifiers.length > 0}
+							<ul class="space-y-0.5">
+								{#each trait.modifiers as mod (mod.key)}
+									<li class="flex items-baseline justify-between gap-1 text-[10px]">
+										<span class="leading-tight opacity-60">{modifierLabel(mod)}</span>
+										<span class="shrink-0 font-mono {modifierColor(mod)}"
+											>{formatModifier(mod)}</span
+										>
+									</li>
+								{/each}
+							</ul>
+						{/if}
+						{#if trait.speciesClasses.length > 0}
+							<div class="flex flex-wrap items-center gap-1">
+								{#each trait.speciesClasses as cls (cls)}
+									{@const clsLabel = formatClassKey(cls)}
+									{@const clsColor = speciesClassColor(clsLabel)}
+									<Tip
+										text="Requires {clsLabel} species"
+										class="rounded px-1 text-[10px] leading-tight opacity-80"
+										style="background-color: {clsColor}33; border: 1px solid {clsColor}88; color: {clsColor}"
+									>
+										{clsLabel}
+									</Tip>
+								{/each}
+							</div>
+						{/if}
 					</div>
-				{/if}
-			</div>
-			<!-- Tags always pinned to the bottom of the card -->
-			{#each [trait.tags.filter((t) => !HIDDEN_CARD_TAGS.has(t))] as visibleTags, i (i)}
-				{#if visibleTags.length > 0}
-					<div class="mt-auto flex flex-wrap items-center gap-0.5 pt-1.5">
-						{#each visibleTags as tag (tag)}
-							<span
-								class="rounded px-1 text-[9px] leading-tight
+					<!-- Tags always pinned to the bottom of the card -->
+					{#each [trait.tags.filter((t) => !HIDDEN_CARD_TAGS.has(t))] as visibleTags, i (i)}
+						{#if visibleTags.length > 0}
+							<div class="mt-auto flex flex-wrap items-center gap-0.5 pt-1.5">
+								{#each visibleTags as tag (tag)}
+									<span
+										class="rounded px-1 text-[9px] leading-tight
 									{activeTags.has(tag)
-									? 'bg-primary-500/20 text-primary-300 opacity-90'
-									: 'bg-surface-500/20 opacity-50'}"
-							>
-								{formatTag(tag)}
-							</span>
-						{/each}
-					</div>
-				{/if}
-			{/each}
-		</svelte:element>
+											? 'bg-primary-500/20 text-primary-300 opacity-90'
+											: 'bg-surface-500/20 opacity-50'}"
+									>
+										{formatTag(tag)}
+									</span>
+								{/each}
+							</div>
+						{/if}
+					{/each}
+				</svelte:element>
+			{/snippet}
+		</Tip>
 	{/snippet}
 
 	<div
@@ -486,14 +494,18 @@
 					>
 						Secondary
 					</button>
-					<button
-						class="btn px-2 text-xs opacity-60 hover:opacity-100"
-						title="Remove the secondary species"
-						aria-label="Remove the secondary species"
-						onclick={dropSecondary}
-					>
-						✕
-					</button>
+					<Tip text="Remove the secondary species">
+						{#snippet trigger(a)}
+							<button
+								{...a}
+								class="btn px-2 text-xs opacity-60 hover:opacity-100"
+								aria-label="Remove the secondary species"
+								onclick={dropSecondary}
+							>
+								✕
+							</button>
+						{/snippet}
+					</Tip>
 				{:else}
 					<button class="btn preset-filled text-sm" onclick={() => switchSlot('secondary')}>
 						+ Secondary species

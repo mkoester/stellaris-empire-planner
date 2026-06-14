@@ -3,6 +3,7 @@
 	import type { PlanetClass } from '$lib/server/db';
 	import { groupPlanetClasses, climateBadge } from '$lib/planets';
 	import { empire } from '$lib/empire.svelte';
+	import Tip from '$lib/Tip.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const groups = $derived(groupPlanetClasses(data.planetClasses as PlanetClass[]));
@@ -57,29 +58,36 @@
 				{#each group.items as pc (pc.key)}
 					{@const selected = empire.draft.planetClass === pc.key}
 					{#if pc.colonizable}
-						<!-- svelte-ignore a11y_no_static_element_interactions -->
-						<svelte:element
-							this={debug ? 'div' : 'button'}
-							type={debug ? undefined : 'button'}
-							aria-pressed={debug ? undefined : selected}
-							title={debug ? undefined : 'Set as homeworld'}
-							onclick={debug ? undefined : () => empire.setPlanetClass(selected ? null : pc.key)}
-							class="flex items-center gap-1.5 rounded border px-2 py-1 text-sm transition-colors {selected
-								? 'border-primary-500 bg-primary-500/10'
-								: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
-								? 'cursor-text select-text'
-								: ''}"
-						>
-							{pc.name ?? pc.key}
-							{#if pc.climate}
-								<span class="rounded px-1 text-[10px] {climateBadge(pc.climate)}">{pc.climate}</span
+						<Tip text={debug ? undefined : 'Set as homeworld'}>
+							{#snippet trigger(a)}
+								<svelte:element
+									this={debug ? 'div' : 'button'}
+									{...a}
+									type={debug ? undefined : 'button'}
+									aria-pressed={debug ? undefined : selected}
+									onclick={debug
+										? undefined
+										: () => empire.setPlanetClass(selected ? null : pc.key)}
+									class="flex items-center gap-1.5 rounded border px-2 py-1 text-sm transition-colors {selected
+										? 'border-primary-500 bg-primary-500/10'
+										: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
+										? 'cursor-text select-text'
+										: ''}"
 								>
-							{/if}
-							{#if pc.isStandard}
-								<span class="text-[10px] opacity-40" title="A default startable climate">start</span
-								>
-							{/if}
-						</svelte:element>
+									{pc.name ?? pc.key}
+									{#if pc.climate}
+										<span class="rounded px-1 text-[10px] {climateBadge(pc.climate)}"
+											>{pc.climate}</span
+										>
+									{/if}
+									{#if pc.isStandard}
+										<Tip text="A default startable climate" class="text-[10px] opacity-40"
+											>start</Tip
+										>
+									{/if}
+								</svelte:element>
+							{/snippet}
+						</Tip>
 					{:else}
 						<span
 							class="border-surface-400-500/30 flex items-center gap-1.5 rounded border px-2 py-1 text-sm opacity-55"

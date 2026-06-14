@@ -37,6 +37,7 @@
 		dlcBadge,
 		groupByDlc
 	} from '$lib/precursors';
+	import Tip from '$lib/Tip.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -57,21 +58,19 @@
 	{@const chips = depositChips(planet.deposits)}
 	<li class="text-xs">
 		<div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-			{#if planet.isHomeworld}<span class="text-amber-300/80" title="Precursor homeworld">★</span
-				>{/if}
+			{#if planet.isHomeworld}<Tip text="Precursor homeworld" class="text-amber-300/80">★</Tip>{/if}
 			<span class="opacity-80">{planet.planetClassLabel ?? planet.planetClass}</span>
 			{#if planet.size != null}<span class="opacity-40">size {planet.size}</span>{/if}
 			{#if isHabitable(planet)}
-				<span
-					class="rounded bg-emerald-500/15 px-1 text-[10px] text-emerald-300/90"
-					title="A colonizable world">habitable</span
+				<Tip
+					text="A colonizable world"
+					class="rounded bg-emerald-500/15 px-1 text-[10px] text-emerald-300/90">habitable</Tip
 				>
 			{/if}
 			{#if isTerraformable(planet)}
-				<span
-					class="rounded bg-sky-500/10 px-1 text-[10px] text-sky-300/80"
-					title="Terraformable into a colony (e.g. with the right ascension perk)"
-					>terraformable</span
+				<Tip
+					text="Terraformable into a colony (e.g. with the right ascension perk)"
+					class="rounded bg-sky-500/10 px-1 text-[10px] text-sky-300/80">terraformable</Tip
 				>
 			{/if}
 			{#each chips.resources as r, i (i)}
@@ -81,10 +80,10 @@
 				<span class="rounded bg-surface-500/15 px-1 text-[10px] opacity-50">{o}</span>
 			{/each}
 			{#each chips.blockers as b (b.name)}
-				<span class="rounded bg-surface-500/20 px-1 text-[10px] opacity-50" title="Planet blocker">
+				<Tip text="Planet blocker" class="rounded bg-surface-500/20 px-1 text-[10px] opacity-50">
 					{b.name}{#if b.count > 1}
 						×{b.count}{/if}
-				</span>
+				</Tip>
 			{/each}
 		</div>
 		{#each planet.modifiers as mod (mod.key)}
@@ -125,7 +124,7 @@
 
 		<!-- Build restrictions -->
 		<div class="mt-0.5 flex flex-wrap gap-x-3 text-[10px] opacity-40">
-			{#if limit}<span title="How many you can build">Limit: {limit}</span>{/if}
+			{#if limit}<Tip text="How many you can build">Limit: {limit}</Tip>{/if}
 			{#if b.buildTimeDays != null}<span>{b.buildTimeDays}d build time</span>{/if}
 			{#if b.canDemolish === false}<span>cannot demolish</span>{/if}
 		</div>
@@ -191,15 +190,19 @@
 	<!-- Empire-type filter: highlights the effects that apply to the chosen type -->
 	<div class="flex flex-wrap items-center gap-2">
 		<span class="text-sm opacity-60">Highlight for empire type:</span>
-		<button
-			class="btn text-xs {empireFilter === 'planner'
-				? 'preset-filled-primary-500'
-				: 'preset-filled card-hover'}"
-			title="Will use your empire from the Species Builder (coming soon)"
-			onclick={() => (empireFilter = 'planner')}
-		>
-			From planner <span class="opacity-50">(soon)</span>
-		</button>
+		<Tip text="Will use your empire from the Species Builder (coming soon)">
+			{#snippet trigger(a)}
+				<button
+					{...a}
+					class="btn text-xs {empireFilter === 'planner'
+						? 'preset-filled-primary-500'
+						: 'preset-filled card-hover'}"
+					onclick={() => (empireFilter = 'planner')}
+				>
+					From planner <span class="opacity-50">(soon)</span>
+				</button>
+			{/snippet}
+		</Tip>
 		{#each EMPIRE_TYPES as et (et.key)}
 			<button
 				class="btn text-xs {empireFilter === et.key
@@ -493,10 +496,10 @@
 														</span>
 													{/each}
 													{#if hasMoltenWorld(sys)}
-														<span
+														<Tip
+															text="A Molten World here can host an Arc Furnace, which adds a mining deposit (1–4 minerals each, by furnace level) to every non-habitable body in the system"
 															class="rounded bg-orange-500/15 px-1.5 py-0.5 text-[10px] text-orange-300/90"
-															title="A Molten World here can host an Arc Furnace, which adds a mining deposit (1–4 minerals each, by furnace level) to every non-habitable body in the system"
-															>Arc Furnace → {arcFurnaceDepositCount(sys)} mining deposits</span
+															>Arc Furnace → {arcFurnaceDepositCount(sys)} mining deposits</Tip
 														>
 													{/if}
 												</div>

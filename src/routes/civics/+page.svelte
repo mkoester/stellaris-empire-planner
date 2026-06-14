@@ -12,6 +12,7 @@
 		requirementChipClass
 	} from '$lib/civics';
 	import SwapTables from '$lib/SwapTables.svelte';
+	import Tip from '$lib/Tip.svelte';
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import LockIcon from '$lib/LockIcon.svelte';
@@ -76,11 +77,11 @@
 									<SwapTables {swaps} />
 								{/if}
 								{#if civic.requiredDlc}
-									<span
+									<Tip
+										text={civic.requiredDlc}
 										class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(
 											civic.requiredDlc
-										)}"
-										title={civic.requiredDlc}>DLC</span
+										)}">DLC</Tip
 									>
 								{/if}
 								{#if civic.locked}<LockIcon />{/if}

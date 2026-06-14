@@ -11,6 +11,7 @@
 		requirementChipClass
 	} from '$lib/civics';
 	import SwapTables from '$lib/SwapTables.svelte';
+	import Tip from '$lib/Tip.svelte';
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import { keyName } from '$lib/empireFile';
@@ -97,20 +98,20 @@
 										<SwapTables {swaps} />
 									{/if}
 									{#if origin.ascensionLock}
-										<span
+										<Tip
+											text="Locked to {origin.ascensionLock} Ascension — blocks all other ascension paths"
 											class="rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-200"
-											title="Locked to {origin.ascensionLock} Ascension — blocks all other ascension paths"
 										>
 											{origin.ascensionLock} ascension only
-										</span>
+										</Tip>
 									{:else}
 										{#each origin.ascensionBlocks as path (path)}
-											<span
+											<Tip
+												text="Cannot pursue {path} Ascension"
 												class="rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-200"
-												title="Cannot pursue {path} Ascension"
 											>
 												no {path} ascension
-											</span>
+											</Tip>
 										{/each}
 									{/if}
 								</div>
@@ -130,22 +131,22 @@
 						{#if origin.startingColony || origin.forcesHomeSystem}
 							<div class="flex flex-wrap gap-1">
 								{#if origin.startingColony}
-									<span
+									<Tip
+										text="This origin starts you on a specific world, overriding the Planets pick"
 										class="rounded bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200/90"
-										title="This origin starts you on a specific world, overriding the Planets pick"
 									>
 										Starts on: <span class="font-medium"
 											>{keyName(origin.startingColony, names)}</span
 										>
-									</span>
+									</Tip>
 								{/if}
 								{#if origin.forcesHomeSystem}
-									<span
+									<Tip
+										text="This origin places you in a fixed home system, overriding the Home-system pick"
 										class="rounded bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200/90"
-										title="This origin places you in a fixed home system, overriding the Home-system pick"
 									>
 										Fixed home system
-									</span>
+									</Tip>
 								{/if}
 							</div>
 						{/if}

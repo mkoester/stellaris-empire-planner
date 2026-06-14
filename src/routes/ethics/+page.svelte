@@ -4,6 +4,7 @@
 	import { empire } from '$lib/empire.svelte';
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
 	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
+	import Tip from '$lib/Tip.svelte';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -220,22 +221,25 @@
 						{#each ([leftEthic, leftFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
 							{@const blocked = isBlocked(ethic!.key)}
 							{@const sel = selected.has(ethic!.key)}
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<svelte:element
-								this={debug ? 'div' : 'button'}
-								class="btn flex-col gap-0.5 text-sm leading-tight
+							<Tip text={debug ? undefined : ethicTooltip(ethic!)}>
+								{#snippet trigger(a)}
+									<svelte:element
+										this={debug ? 'div' : 'button'}
+										{...a}
+										class="btn flex-col gap-0.5 text-sm leading-tight
 									{sel
-									? 'preset-filled-primary-500'
-									: blocked
-										? 'cursor-not-allowed preset-filled opacity-30'
-										: 'preset-filled card-hover'} {debug ? 'cursor-text select-text' : ''}"
-								onclick={debug ? undefined : () => toggle(ethic!.key)}
-								disabled={debug ? undefined : blocked && !sel}
-								title={debug ? undefined : ethicTooltip(ethic!)}
-							>
-								<span>{ethicLabel(ethic!)}</span>
-								<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
-							</svelte:element>
+											? 'preset-filled-primary-500'
+											: blocked
+												? 'cursor-not-allowed preset-filled opacity-30'
+												: 'preset-filled card-hover'} {debug ? 'cursor-text select-text' : ''}"
+										onclick={debug ? undefined : () => toggle(ethic!.key)}
+										disabled={debug ? undefined : blocked && !sel}
+									>
+										<span>{ethicLabel(ethic!)}</span>
+										<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
+									</svelte:element>
+								{/snippet}
+							</Tip>
 						{/each}
 					</div>
 
@@ -247,22 +251,25 @@
 						{#each ([rightEthic, rightFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
 							{@const blocked = isBlocked(ethic!.key)}
 							{@const sel = selected.has(ethic!.key)}
-							<!-- svelte-ignore a11y_no_static_element_interactions -->
-							<svelte:element
-								this={debug ? 'div' : 'button'}
-								class="btn flex-col gap-0.5 text-sm leading-tight
+							<Tip text={debug ? undefined : ethicTooltip(ethic!)}>
+								{#snippet trigger(a)}
+									<svelte:element
+										this={debug ? 'div' : 'button'}
+										{...a}
+										class="btn flex-col gap-0.5 text-sm leading-tight
 									{sel
-									? 'preset-filled-primary-500'
-									: blocked
-										? 'cursor-not-allowed preset-filled opacity-30'
-										: 'preset-filled card-hover'} {debug ? 'cursor-text select-text' : ''}"
-								onclick={debug ? undefined : () => toggle(ethic!.key)}
-								disabled={debug ? undefined : blocked && !sel}
-								title={debug ? undefined : ethicTooltip(ethic!)}
-							>
-								<span>{ethicLabel(ethic!)}</span>
-								<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
-							</svelte:element>
+											? 'preset-filled-primary-500'
+											: blocked
+												? 'cursor-not-allowed preset-filled opacity-30'
+												: 'preset-filled card-hover'} {debug ? 'cursor-text select-text' : ''}"
+										onclick={debug ? undefined : () => toggle(ethic!.key)}
+										disabled={debug ? undefined : blocked && !sel}
+									>
+										<span>{ethicLabel(ethic!)}</span>
+										<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
+									</svelte:element>
+								{/snippet}
+							</Tip>
 						{/each}
 					</div>
 				</div>
@@ -275,19 +282,22 @@
 			<div class="border-surface-400-500/30 flex items-center gap-2 border-t pt-1">
 				<span class="w-20 shrink-0 text-right text-xs opacity-40">Gestalt</span>
 				<span class="text-xs opacity-20 select-none">|</span>
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<svelte:element
-					this={debug ? 'div' : 'button'}
-					class="btn flex-col gap-0.5 text-sm leading-tight
+				<Tip text={debug ? undefined : ethicTooltip(gestaltEthic)}>
+					{#snippet trigger(a)}
+						<svelte:element
+							this={debug ? 'div' : 'button'}
+							{...a}
+							class="btn flex-col gap-0.5 text-sm leading-tight
 						{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {debug
-						? 'cursor-text select-text'
-						: ''}"
-					onclick={debug ? undefined : selectGestalt}
-					title={debug ? undefined : ethicTooltip(gestaltEthic)}
-				>
-					<span>{ethicLabel(gestaltEthic)}</span>
-					<span class="font-mono text-[10px] opacity-60">{'●'.repeat(gestaltEthic.cost)}</span>
-				</svelte:element>
+								? 'cursor-text select-text'
+								: ''}"
+							onclick={debug ? undefined : selectGestalt}
+						>
+							<span>{ethicLabel(gestaltEthic)}</span>
+							<span class="font-mono text-[10px] opacity-60">{'●'.repeat(gestaltEthic.cost)}</span>
+						</svelte:element>
+					{/snippet}
+				</Tip>
 			</div>
 		{/each}
 	</div>
@@ -442,14 +452,14 @@
 										{#if hasReg && hasFan}
 											<span class={active ? 'font-bold text-primary-400' : 'opacity-60'}>●</span>
 										{:else if hasReg}
-											<span
-												class={active ? 'font-bold text-primary-400' : 'opacity-50'}
-												title="Regular only">reg</span
+											<Tip
+												text="Regular only"
+												class={active ? 'font-bold text-primary-400' : 'opacity-50'}>reg</Tip
 											>
 										{:else if hasFan}
-											<span
-												class={active ? 'font-bold text-primary-400' : 'opacity-50'}
-												title="Fanatic only">fan</span
+											<Tip
+												text="Fanatic only"
+												class={active ? 'font-bold text-primary-400' : 'opacity-50'}>fan</Tip
 											>
 										{:else}
 											<span class="opacity-15">—</span>
@@ -470,8 +480,8 @@
 							</tr>
 							{#each allPolicyRestrictions as pr (pr.policyKey + pr.optionKey)}
 								<tr class="border-surface-400-500/20 border-b hover:bg-surface-500/10">
-									<td class="py-1.5 pr-4 leading-tight opacity-70" title="{pr.policyKey} policy"
-										>{pr.label}</td
+									<td class="py-1.5 pr-4 leading-tight opacity-70"
+										><Tip text="{pr.policyKey} policy">{pr.label}</Tip></td
 									>
 									{#each tableEthicPairs as { regular, fanatic } (regular.key)}
 										{@const hasReg = regular.policyRestrictions.some(
@@ -489,14 +499,14 @@
 											{#if hasReg && hasFan}
 												<span class={active ? 'font-bold text-primary-400' : 'opacity-60'}>●</span>
 											{:else if hasReg}
-												<span
-													class={active ? 'font-bold text-primary-400' : 'opacity-50'}
-													title="Regular only">reg</span
+												<Tip
+													text="Regular only"
+													class={active ? 'font-bold text-primary-400' : 'opacity-50'}>reg</Tip
 												>
 											{:else if hasFan}
-												<span
-													class={active ? 'font-bold text-primary-400' : 'opacity-50'}
-													title="Fanatic only">fan</span
+												<Tip
+													text="Fanatic only"
+													class={active ? 'font-bold text-primary-400' : 'opacity-50'}>fan</Tip
 												>
 											{:else}
 												<span class="opacity-15">—</span>

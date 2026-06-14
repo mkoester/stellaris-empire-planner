@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import type { ReferenceBuilding } from '$lib/server/db';
 	import RuleText from '$lib/RuleText.svelte';
+	import Tip from '$lib/Tip.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const buildings = $derived(data.buildings as ReferenceBuilding[]);
@@ -70,17 +71,17 @@
 						{#if b.resources.length}
 							<div class="flex flex-wrap gap-1">
 								{#each b.resources as r (r.kind + r.resource)}
-									<span
+									<Tip
+										text={r.kind}
 										class="rounded px-1.5 py-0.5 text-[11px] {r.kind === 'produces'
 											? 'bg-emerald-500/15 text-emerald-300/90'
 											: r.kind === 'upkeep'
 												? 'bg-red-500/15 text-red-300/90'
 												: 'bg-surface-500/20 opacity-80'}"
-										title={r.kind}
 									>
 										{r.kind === 'produces' ? '+' : r.kind === 'upkeep' ? '−' : ''}{num(r.amount)}
 										{titleCase(r.resource)}
-									</span>
+									</Tip>
 								{/each}
 							</div>
 						{/if}

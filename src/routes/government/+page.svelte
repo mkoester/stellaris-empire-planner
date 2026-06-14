@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import type { Authority } from '$lib/server/db';
 	import { dlcBadge } from '$lib/precursors';
+	import Tip from '$lib/Tip.svelte';
 	import {
 		formatModifierValue,
 		modifierColor,
@@ -53,11 +54,11 @@
 				<header class="flex flex-wrap items-baseline gap-2">
 					<h3 class="font-semibold">{authority.name ?? authority.key}</h3>
 					{#if authority.requiredDlc}
-						<span
+						<Tip
+							text={authority.requiredDlc}
 							class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(
 								authority.requiredDlc
-							)}"
-							title={authority.requiredDlc}>DLC</span
+							)}">DLC</Tip
 						>
 					{/if}
 				</header>

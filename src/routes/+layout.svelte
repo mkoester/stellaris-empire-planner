@@ -4,6 +4,7 @@
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import EmpireOverview from '$lib/EmpireOverview.svelte';
+	import Tip from '$lib/Tip.svelte';
 	import { settings } from '$lib/settings.svelte';
 
 	let { children, data } = $props();
@@ -44,17 +45,21 @@
 				{item.label}
 			</a>
 		{/each}
-		<button
-			onclick={() => settings.toggleRuleLayout()}
-			class="ml-auto rounded px-2 py-1 text-[11px] opacity-60 hover:bg-surface-500/20 hover:opacity-100"
-			title="Toggle how multi-rule effect descriptions are laid out"
-		>
-			Rules: {settings.ruleLayout === 'inline' ? 'inline ·|·' : 'one per line'}
-		</button>
+		<Tip text="Toggle how multi-rule effect descriptions are laid out" placement="bottom-end">
+			{#snippet trigger(a)}
+				<button
+					{...a}
+					onclick={() => settings.toggleRuleLayout()}
+					class="ml-auto rounded px-2 py-1 text-[11px] opacity-60 hover:bg-surface-500/20 hover:opacity-100"
+				>
+					Rules: {settings.ruleLayout === 'inline' ? 'inline ·|·' : 'one per line'}
+				</button>
+			{/snippet}
+		</Tip>
 		{#if data?.gameVersion}
-			<span class="text-[11px] opacity-40" title={data.gameVersion.version}>
+			<Tip text={data.gameVersion.version} class="text-[11px] opacity-40">
 				Stellaris {data.gameVersion.raw ?? data.gameVersion.version}
-			</span>
+			</Tip>
 		{/if}
 	</div>
 </nav>
