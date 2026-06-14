@@ -141,9 +141,10 @@
 	const archetypeConfig = $derived(data.archetypes[archetype]);
 	const maxPoints = $derived(archetypeConfig?.traitPoints ?? 2);
 	const maxTraits = $derived(archetypeConfig?.maxTraits ?? 5);
-	const baseTraitObj = $derived(
-		archetypeConfig?.baseTrait ? (data.baseTraits[archetypeConfig.baseTrait] ?? null) : null
-	);
+	// The auto-included base trait: the selected class's own (e.g. INF/Thermophile →
+	// trait_infernal, alloy upkeep) takes precedence over the archetype default (trait_organic).
+	const baseTraitKey = $derived(selectedClass?.baseTrait ?? archetypeConfig?.baseTrait ?? null);
+	const baseTraitObj = $derived(baseTraitKey ? (data.baseTraits[baseTraitKey] ?? null) : null);
 
 	function selectClass(key: string) {
 		if (selectedClassKey === key) {
@@ -464,7 +465,7 @@
 								{#each trait.scalingModifiers as sm (sm.key)}
 									{@const smMod = {
 										key: sm.key,
-										value: sm.perHundred,
+										value: sm.rate,
 										label: sm.label,
 										positiveIsGood: sm.positiveIsGood
 									}}

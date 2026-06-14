@@ -2,13 +2,14 @@
 // the Empire page's "Effects" block. Empire-wide picks (ethics/civics/origin) are
 // grouped by theme; species traits are kept separate, grouped per species, since a
 // trait only affects that species' own pops. Pure data → display logic, unit-tested.
-import type { Modifier, ModifierSource } from '$lib/server/db';
+import type { Modifier, ModifierSource, ScalingModifier } from '$lib/server/db';
 import { keyName } from './empireFile';
 
 export interface EffectEntry {
 	sourceKind: ModifierSource['kind']; // "ethic" | "civic" | "origin" | "trait"
 	sourceName: string; // resolved display name of the choice it comes from
 	mod: Modifier;
+	scaling?: ScalingModifier; // set for count-scaled effects (Familial/Genetic Memory); render via formatScalingModifier
 }
 
 interface EffectDraft {
@@ -28,8 +29,19 @@ function rowsFor(
 	for (const key of keys) {
 		const src = index[key];
 		if (!src) continue;
+		const sourceName = keyName(key, names);
 		for (const mod of src.modifiers) {
-			out.push({ sourceKind: src.kind, sourceName: keyName(key, names), mod });
+			out.push({ sourceKind: src.kind, sourceName, mod });
+		}
+		// Count-scaled effects carry a representative `mod` (key/label, value = per-unit rate)
+		// so partitioning and colouring still work; `scaling` drives the "per X (max Y)" text.
+		for (const s of src.scaling ?? []) {
+			out.push({
+				sourceKind: src.kind,
+				sourceName,
+				mod: { key: s.key, value: s.rate, label: s.label, positiveIsGood: s.positiveIsGood },
+				scaling: s
+			});
 		}
 	}
 	return out;

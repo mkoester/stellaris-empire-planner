@@ -9,13 +9,22 @@
 	let {
 		names,
 		lockedCivics = [],
-		originStarts = {}
+		originStarts = {},
+		traitCosts = {},
+		baseTraitByClass = {}
 	}: {
 		names: Record<string, string>;
 		lockedCivics?: string[];
 		originStarts?: Record<string, OriginStart>;
+		traitCosts?: Record<string, number>;
+		baseTraitByClass?: Record<string, string>;
 	} = $props();
 	const locked = $derived(new Set(lockedCivics));
+
+	// Trait colour: amber for the species' auto-included base trait (matching the builder),
+	// red for negative-cost (drawback) traits, default otherwise.
+	const traitColor = (k: string, base: string | undefined) =>
+		k === base ? 'text-amber-400' : (traitCosts[k] ?? 0) < 0 ? 'text-red-400' : '';
 
 	const draft = $derived(empire.draft);
 	const has = $derived(empire.anySet());
@@ -89,11 +98,31 @@
 			{/if}
 		{/snippet}
 
+		<!-- Traits: prepend the species' auto-included base trait; colour base/negatives. -->
+		{#snippet traitGroup(label: string, classKey: string | null, traitKeys: string[])}
+			{@const base = classKey ? baseTraitByClass[classKey] : undefined}
+			{@const all = base && !traitKeys.includes(base) ? [base, ...traitKeys] : traitKeys}
+			{#if all.length}
+				<div>
+					<div class="text-[10px] uppercase opacity-40">{label}</div>
+					<div class="flex flex-wrap gap-x-2 gap-y-0.5">
+						{#each all as k (k)}
+							<span class={traitColor(k, base)}>{name(k)}</span>
+						{/each}
+					</div>
+				</div>
+			{/if}
+		{/snippet}
+
 		{@render group('Ethics', draft.ethics)}
 		{@render group('Civics', draft.civics, locked)}
-		{@render group('Traits', draft.traits)}
+		{@render traitGroup('Traits', draft.speciesClass, draft.traits)}
 		{#if draft.secondary}
-			{@render group('2nd species traits', draft.secondary.traits)}
+			{@render traitGroup(
+				'2nd species traits',
+				draft.secondary.speciesClass,
+				draft.secondary.traits
+			)}
 		{/if}
 	</aside>
 {/if}

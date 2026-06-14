@@ -82,8 +82,8 @@ export function modifierColor(mod: Modifier): string {
 	return good ? 'text-emerald-400' : 'text-red-400';
 }
 
-// A per-pop-count scaling effect as one line, wiki-style:
-// "+0.1% Happiness per 100 Familial pops (max +20%)".
+// A scaling effect as one line, wiki-style: "+0.1% Happiness per 100 Familial pops
+// (max +20%)" or "+0.5% Habitability per year of colony age (max +25%)".
 export function formatScalingModifier(m: ScalingModifier): string {
 	const asMod = (value: number): Modifier => ({
 		key: m.key,
@@ -91,8 +91,7 @@ export function formatScalingModifier(m: ScalingModifier): string {
 		label: m.label,
 		positiveIsGood: m.positiveIsGood
 	});
-	const per = m.countLabel ? `100 ${m.countLabel} pops` : '100 pops';
-	return `${formatModifierValue(asMod(m.perHundred))} ${modifierLabel(asMod(m.perHundred))} per ${per} (max ${formatModifierValue(asMod(m.cap))})`;
+	return `${formatModifierValue(asMod(m.rate))} ${modifierLabel(asMod(m.rate))} per ${m.unit} (max ${formatModifierValue(asMod(m.cap))})`;
 }
 
 // Order a modifier list for display: alphabetical by label, with the Shroud

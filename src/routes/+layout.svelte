@@ -72,5 +72,7 @@
 		names={data?.names ?? {}}
 		lockedCivics={data?.lockedCivics ?? []}
 		originStarts={data?.originStarts ?? {}}
+		traitCosts={data?.traitCosts ?? {}}
+		baseTraitByClass={data?.baseTraitByClass ?? {}}
 	/>
 {/if}

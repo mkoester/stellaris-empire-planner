@@ -45,6 +45,7 @@ export interface SpeciesClass {
 	key: string;
 	label: string;
 	archetype: string;
+	baseTrait: string | null; // the class's own auto-included base trait (e.g. INF → trait_infernal)
 }
 
 export function loadTraitCategories(): TraitCategory[] {
@@ -78,12 +79,22 @@ export function loadTraitCategories(): TraitCategory[] {
 export function loadSpeciesClasses(): SpeciesClass[] {
 	const rows = db()
 		.prepare(
-			`SELECT key, label, archetype FROM species_class
+			`SELECT key, label, archetype, base_trait FROM species_class
 			 WHERE label IS NOT NULL AND archetype IN ('BIOLOGICAL', 'LITHOID', 'MACHINE')
 			 ORDER BY archetype, label`
 		)
-		.all() as Array<{ key: string; label: string; archetype: string }>;
-	return rows.map((r) => ({ key: r.key, label: r.label, archetype: r.archetype }));
+		.all() as Array<{
+		key: string;
+		label: string;
+		archetype: string;
+		base_trait: string | null;
+	}>;
+	return rows.map((r) => ({
+		key: r.key,
+		label: r.label,
+		archetype: r.archetype,
+		baseTrait: r.base_trait
+	}));
 }
 
 export function loadTraitsForKeys(keys: string[]): Trait[] {
@@ -175,7 +186,7 @@ function scalingModifiersByTrait(keys?: string[]): Map<string, ScalingModifier[]
 		keys && keys.length ? `WHERE sm.trait_key IN (${keys.map(() => '?').join(',')})` : '';
 	const rows = db()
 		.prepare(
-			`SELECT sm.trait_key, sm.modifier_key, sm.per_hundred, sm.cap, sm.count_label,
+			`SELECT sm.trait_key, sm.modifier_key, sm.rate, sm.cap, sm.unit,
 			        ml.label, ml.positive_is_good
 			 FROM trait_scaling_modifier sm
 			 LEFT JOIN modifier_label ml ON ml.modifier_key = sm.modifier_key
@@ -185,9 +196,9 @@ function scalingModifiersByTrait(keys?: string[]): Map<string, ScalingModifier[]
 		.all(...(keys ?? [])) as Array<{
 		trait_key: string;
 		modifier_key: string;
-		per_hundred: number;
+		rate: number;
 		cap: number;
-		count_label: string | null;
+		unit: string;
 		label: string | null;
 		positive_is_good: number | null;
 	}>;
@@ -196,9 +207,9 @@ function scalingModifiersByTrait(keys?: string[]): Map<string, ScalingModifier[]
 		if (!m.has(r.trait_key)) m.set(r.trait_key, []);
 		m.get(r.trait_key)!.push({
 			key: r.modifier_key,
-			perHundred: r.per_hundred,
+			rate: r.rate,
 			cap: r.cap,
-			countLabel: r.count_label,
+			unit: r.unit,
 			label: r.label,
 			positiveIsGood: r.positive_is_good !== 0
 		});
@@ -253,17 +264,18 @@ export interface Trait {
 	tags: string[]; // from trait_tag
 	speciesClasses: string[]; // from trait_species_class — empty = no restriction
 	modifiers: Modifier[]; // from trait_modifier + modifier_label
-	scalingModifiers: ScalingModifier[]; // per-pop-count scaling effects (Familial, Noxious)
+	scalingModifiers: ScalingModifier[]; // scaling effects (Familial, Noxious, Genetic Memory)
 	description: string | null; // cleaned flavour text from trait_<key>_desc
 }
 
-// A modifier that scales with a pop count, e.g. Familial: +0.1% Happiness per 100 Familial
-// pops, capped at +20%. perHundred/cap are values (formatted via the normal modifier rules).
+// A modifier that scales with a count, e.g. Familial: +0.1% Happiness per 100 Familial pops
+// (max +20%), or Genetic Memory: +0.5% Habitability per year of colony age (max +25%).
+// rate/cap are values (formatted via the normal modifier rules); unit is the "per X" label.
 export interface ScalingModifier {
 	key: string; // modifier key, e.g. "pop_happiness"
-	perHundred: number; // value per 100 counted pops
-	cap: number; // value at the counter's maximum
-	countLabel: string | null; // what's counted, e.g. "Familial" (null = generic "pops")
+	rate: number; // value per one display unit
+	cap: number; // value at the scaling value's maximum
+	unit: string; // the "per X" unit, e.g. "100 Familial pops", "year of colony age"
 	label: string | null;
 	positiveIsGood: boolean;
 }
@@ -1197,6 +1209,41 @@ export function loadEntityNames(): Record<string, string> {
 	return out;
 }
 
+// trait key → point cost, for the empire overviews to colour negative (drawback) traits.
+export function loadTraitCosts(): Record<string, number> {
+	const out: Record<string, number> = {};
+	for (const r of db()
+		.prepare('SELECT key, cost FROM trait WHERE cost IS NOT NULL')
+		.all() as Array<{ key: string; cost: number }>) {
+		out[r.key] = r.cost;
+	}
+	return out;
+}
+
+// species class key → its auto-included base trait. Each class declares its own `trait`
+// (HUM→trait_organic, INF/Thermophile→trait_infernal, LITHOID→trait_lithoid, MACHINE→
+// trait_machine_unit), which is authoritative; fall back to the archetype default for any
+// class that doesn't. So the overviews show the base trait the builder includes implicitly.
+export function loadBaseTraitByClass(): Record<string, string> {
+	const d = db();
+	const archBase: Record<string, string> = {};
+	for (const r of d
+		.prepare('SELECT key, base_trait FROM species_archetype WHERE base_trait IS NOT NULL')
+		.all() as Array<{ key: string; base_trait: string }>) {
+		archBase[r.key] = r.base_trait;
+	}
+	const out: Record<string, string> = {};
+	for (const r of d.prepare('SELECT key, archetype, base_trait FROM species_class').all() as Array<{
+		key: string;
+		archetype: string | null;
+		base_trait: string | null;
+	}>) {
+		const bt = r.base_trait ?? (r.archetype ? archBase[r.archetype] : undefined);
+		if (bt) out[r.key] = bt;
+	}
+	return out;
+}
+
 // Per-key modifier index for the chosen-empire "Effects" summary: every ethic,
 // civic, origin and trait that carries numeric modifiers, keyed by its raw key.
 // `kind` says where the modifier comes from ("ethic"/"civic"/…); names are
@@ -1204,18 +1251,55 @@ export function loadEntityNames(): Record<string, string> {
 export interface ModifierSource {
 	kind: 'ethic' | 'authority' | 'civic' | 'origin' | 'trait';
 	modifiers: Modifier[];
+	scaling?: ScalingModifier[]; // count-scaled effects (Familial, Noxious, Genetic Memory)
 }
 
 export function loadModifierIndex(): Record<string, ModifierSource> {
 	const out: Record<string, ModifierSource> = {};
-	const add = (key: string, kind: ModifierSource['kind'], modifiers: Modifier[]) => {
-		if (modifiers.length) out[key] = { kind, modifiers };
+	const add = (
+		key: string,
+		kind: ModifierSource['kind'],
+		modifiers: Modifier[],
+		scaling: ScalingModifier[] = []
+	) => {
+		if (modifiers.length || scaling.length) out[key] = { kind, modifiers, scaling };
 	};
 	for (const e of loadEthics()) add(e.key, 'ethic', e.modifiers);
 	for (const a of loadAuthorities()) add(a.key, 'authority', a.modifiers);
 	for (const c of loadCivics()) add(c.key, 'civic', c.modifiers);
 	for (const o of loadOrigins()) add(o.key, 'origin', o.modifiers);
-	for (const t of loadTraits()) add(t.key, 'trait', t.modifiers);
+	// ALL trait modifiers (not just builder-visible traits): an empire can carry 0-cost /
+	// null-category traits like the base trait_organic/_lithoid/_mechanical, whose modifiers
+	// (e.g. −1 Food upkeep) must still be attributed in the Species traits effects.
+	const traitMods = new Map<string, Modifier[]>();
+	for (const r of db()
+		.prepare(
+			`SELECT tm.trait_key, tm.modifier_key, tm.modifier_value, ml.label, ml.positive_is_good
+			 FROM trait_modifier tm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = tm.modifier_key
+			 ORDER BY tm.trait_key, tm.sort_order`
+		)
+		.all() as Array<{
+		trait_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>) {
+		if (!traitMods.has(r.trait_key)) traitMods.set(r.trait_key, []);
+		traitMods.get(r.trait_key)!.push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	}
+	// Count-scaled trait effects (Familial/Noxious/Genetic Memory) — some traits carry ONLY
+	// these (no flat modifier), so union the keys so those traits still get a source entry.
+	const traitScaling = scalingModifiersByTrait();
+	for (const key of new Set([...traitMods.keys(), ...traitScaling.keys()])) {
+		add(key, 'trait', traitMods.get(key) ?? [], traitScaling.get(key) ?? []);
+	}
 	return out;
 }
 

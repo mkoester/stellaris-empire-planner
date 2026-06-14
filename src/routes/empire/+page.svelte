@@ -3,8 +3,18 @@
 	import type { Empire, ModifierSource, Ethic, Civic, Origin } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
 	import { parseEmpireFile, serializeEmpire, keyName, shipTypeLabel } from '$lib/empireFile';
-	import { collectEffects, collectSpeciesEffects, groupEffects } from '$lib/effects';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
+	import {
+		collectEffects,
+		collectSpeciesEffects,
+		groupEffects,
+		type EffectEntry
+	} from '$lib/effects';
+	import {
+		formatModifierValue,
+		formatScalingModifier,
+		modifierColor,
+		modifierLabel
+	} from '$lib/civics';
 	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
 	import RuleText from '$lib/RuleText.svelte';
 	import LockIcon from '$lib/LockIcon.svelte';
@@ -14,6 +24,60 @@
 	const names = $derived(data.names as Record<string, string>);
 	const modifierIndex = $derived(data.modifierIndex as Record<string, ModifierSource>);
 	const name = (key: string | null) => keyName(key, names);
+
+	// Trait chip colour: amber for the species' auto-included base trait (matching the
+	// builder), red for negative-cost (drawback) traits, emerald otherwise.
+	const traitCosts = $derived((data.traitCosts ?? {}) as Record<string, number>);
+	const baseTraitByClass = $derived((data.baseTraitByClass ?? {}) as Record<string, string>);
+	const traitChipClass = (k: string, base: string | undefined) =>
+		k === base
+			? 'bg-amber-500/15 text-amber-300/90'
+			: (traitCosts[k] ?? 0) < 0
+				? 'bg-red-500/15 text-red-300/90'
+				: 'bg-emerald-500/15 text-emerald-300/90';
+	// Prepend the species' auto-included base trait (Organic/Lithoid/…) so its modifiers
+	// (e.g. −1 Food upkeep) are attributed too — deduped if the empire already lists it.
+	const withBase = (classKey: string | null, traits: string[]) => {
+		const base = classKey ? baseTraitByClass[classKey] : undefined;
+		return base && !traits.includes(base) ? [base, ...traits] : traits;
+	};
+
+	// Species-trait effects are shown in three blocks: the base resource upkeep first,
+	// then the other modifiers (alphabetical), then habitability preferences/modifiers.
+	const RESOURCE_KEYS = new Set([
+		'food',
+		'minerals',
+		'energy',
+		'alloys',
+		'consumer_goods',
+		'unity',
+		'influence',
+		'exotic_gases',
+		'volatile_motes',
+		'rare_crystals',
+		'sr_living_metal',
+		'sr_dark_matter',
+		'sr_zro',
+		'nanites'
+	]);
+	const isResourceMod = (k: string) => RESOURCE_KEYS.has(k);
+	const isHabitabilityMod = (k: string) =>
+		k.includes('habitability') || k === 'pop_environment_tolerance';
+	function partitionEffects(entries: EffectEntry[]) {
+		const upkeep: EffectEntry[] = [];
+		const hab: EffectEntry[] = [];
+		const other: EffectEntry[] = [];
+		for (const e of entries) {
+			if (isResourceMod(e.mod.key)) upkeep.push(e);
+			else if (isHabitabilityMod(e.mod.key)) hab.push(e);
+			else other.push(e);
+		}
+		const byLabel = (a: EffectEntry, b: EffectEntry) =>
+			modifierLabel(a.mod).localeCompare(modifierLabel(b.mod));
+		other.sort(byLabel);
+		hab.sort(byLabel);
+		return { upkeep, hab, other };
+	}
 
 	let filter = $state(''); // predefined-empire table search
 	let showPicker = $state(false); // the predefined-empire table is toggled open/closed
@@ -168,7 +232,7 @@
 					name:
 						draft.speciesName ||
 						(draft.speciesClass ? name(draft.speciesClass) : 'Founder species'),
-					traits: draft.traits
+					traits: withBase(draft.speciesClass, draft.traits)
 				},
 				...(draft.secondary
 					? [
@@ -178,7 +242,7 @@
 									(draft.secondary.speciesClass
 										? name(draft.secondary.speciesClass)
 										: 'Secondary species'),
-								traits: draft.secondary.traits
+								traits: withBase(draft.secondary.speciesClass, draft.secondary.traits)
 							}
 						]
 					: [])
@@ -379,14 +443,34 @@
 				{/if}
 			{/snippet}
 
+			{#snippet traitChips(label: string, classKey: string | null, traitKeys: string[])}
+				{@const base = classKey ? baseTraitByClass[classKey] : undefined}
+				{@const all = base && !traitKeys.includes(base) ? [base, ...traitKeys] : traitKeys}
+				{#if all.length}
+					<div>
+						<div class="mb-1 text-[11px] uppercase opacity-40">{label}</div>
+						<div class="flex flex-wrap gap-1.5">
+							{#each all as k (k)}
+								<span
+									class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs {traitChipClass(
+										k,
+										base
+									)}">{name(k)}</span
+								>
+							{/each}
+						</div>
+					</div>
+				{/if}
+			{/snippet}
+
 			{@render chips('Ethics', draft.ethics, 'bg-primary-500/15 text-primary-300/90')}
 			{@render chips('Civics', draft.civics, 'bg-sky-500/15 text-sky-300/90', lockedCivics)}
-			{@render chips('Traits', draft.traits, 'bg-emerald-500/15 text-emerald-300/90')}
+			{@render traitChips('Traits', draft.speciesClass, draft.traits)}
 			{#if draft.secondary}
-				{@render chips(
+				{@render traitChips(
 					'Secondary species traits',
-					draft.secondary.traits,
-					'bg-emerald-500/15 text-emerald-300/90'
+					draft.secondary.speciesClass,
+					draft.secondary.traits
 				)}
 			{/if}
 		</section>
@@ -417,27 +501,54 @@
 			</section>
 		{/if}
 
-		<!-- Species traits, kept separate and grouped per species -->
+		<!-- Species traits, grouped per species: base upkeep · other (alphabetical) · habitability -->
 		{#if speciesGroups.length}
+			{#snippet effectRow(e: EffectEntry)}
+				<div class="flex items-baseline gap-3 text-sm">
+					{#if e.scaling}
+						<span class="flex-1 {modifierColor(e.mod)}">
+							{formatScalingModifier(e.scaling)}
+							<span class="opacity-45">(from trait {e.sourceName})</span>
+						</span>
+					{:else}
+						<span class="flex-1">
+							{modifierLabel(e.mod)}
+							<span class="opacity-45">(from trait {e.sourceName})</span>
+						</span>
+						<span class="shrink-0 text-right font-medium tabular-nums {modifierColor(e.mod)}">
+							{formatModifierValue(e.mod)}
+						</span>
+					{/if}
+				</div>
+			{/snippet}
 			<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">
 				<h2 class="text-xl font-semibold">Species traits</h2>
-				{#each speciesGroups as sg (sg.species)}
+				{#each speciesGroups as sg, i (sg.species)}
+					{@const parts = partitionEffects(sg.entries)}
+					{@const home = i === 0 ? draft.planetClass : null}
 					<div class="space-y-1">
 						<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">
 							{sg.species}
 							<span class="font-normal opacity-60">· {sg.entries.length}</span>
 						</h3>
-						{#each sg.entries as e, i (i)}
+
+						{#each parts.upkeep as e, j (j)}{@render effectRow(e)}{/each}
+
+						{#if parts.upkeep.length && (parts.other.length || parts.hab.length || home)}
+							<hr class="border-surface-400-500/20 my-1" />
+						{/if}
+						{#each parts.other as e, j (j)}{@render effectRow(e)}{/each}
+
+						{#if (parts.upkeep.length || parts.other.length) && (parts.hab.length || home)}
+							<hr class="border-surface-400-500/20 my-1" />
+						{/if}
+						{#if home}
 							<div class="flex items-baseline gap-3 text-sm">
-								<span class="flex-1">
-									{modifierLabel(e.mod)}
-									<span class="opacity-45">(from trait {e.sourceName})</span>
-								</span>
-								<span class="shrink-0 text-right font-medium tabular-nums {modifierColor(e.mod)}">
-									{formatModifierValue(e.mod)}
-								</span>
+								<span class="flex-1">Preferred climate <span class="opacity-45">(home)</span></span>
+								<span class="shrink-0 text-right font-medium text-emerald-400">{name(home)}</span>
 							</div>
-						{/each}
+						{/if}
+						{#each parts.hab as e, j (j)}{@render effectRow(e)}{/each}
 					</div>
 				{/each}
 			</section>
