@@ -1,5 +1,6 @@
 import Database from 'better-sqlite3';
 import { env } from '$env/dynamic/private';
+import { formatModifierValue, formatScalingModifier, modifierLabel } from '$lib/civics';
 
 let _db: Database.Database | null = null;
 
@@ -1381,6 +1382,35 @@ export function loadModifierIndex(): Record<string, ModifierSource> {
 	const traitScaling = scalingModifiersByTrait();
 	for (const key of new Set([...traitMods.keys(), ...traitScaling.keys()])) {
 		add(key, 'trait', traitMods.get(key) ?? [], traitScaling.get(key) ?? []);
+	}
+	return out;
+}
+
+// key → a short hover-tooltip string for the floating empire overview: each item's
+// effects (modifiers/scaling) followed by its flavour description, so items that lack a
+// description (e.g. Mining Guilds, Meritocracy) still show their effects.
+export function loadOverviewTooltips(): Record<string, string> {
+	const out: Record<string, string> = {};
+	const fx = (mods: Modifier[]) => mods.map((m) => `${formatModifierValue(m)} ${modifierLabel(m)}`);
+	const set = (key: string, effects: string[], description?: string | null) => {
+		const text = [effects.join('\n'), description ?? ''].filter(Boolean).join('\n\n');
+		if (text) out[key] = text;
+	};
+	for (const e of loadEthics()) set(e.key, fx(e.modifiers));
+	for (const a of loadAuthorities()) set(a.key, fx(a.modifiers), a.description);
+	for (const c of loadCivics()) set(c.key, fx(c.modifiers), c.description);
+	for (const o of loadOrigins()) set(o.key, fx(o.modifiers), o.description);
+	// All traits (loadTraits drops 0-cost/null-category base traits like trait_lithoid, which
+	// the overview still shows) — load every key so the base trait gets a tooltip too.
+	const traitKeys = (db().prepare('SELECT key FROM trait').all() as { key: string }[]).map(
+		(r) => r.key
+	);
+	for (const t of loadTraitsForKeys(traitKeys)) {
+		set(
+			t.key,
+			[...fx(t.modifiers), ...t.scalingModifiers.map(formatScalingModifier)],
+			t.description
+		);
 	}
 	return out;
 }

@@ -5,20 +5,24 @@
 	import { keyName, shipTypeLabel } from '$lib/empireFile';
 	import type { OriginStart } from '$lib/server/db';
 	import LockIcon from '$lib/LockIcon.svelte';
+	import Tip from '$lib/Tip.svelte';
 
 	let {
 		names,
 		lockedCivics = [],
 		originStarts = {},
 		traitCosts = {},
-		baseTraitByClass = {}
+		baseTraitByClass = {},
+		tooltips = {}
 	}: {
 		names: Record<string, string>;
 		lockedCivics?: string[];
 		originStarts?: Record<string, OriginStart>;
 		traitCosts?: Record<string, number>;
 		baseTraitByClass?: Record<string, string>;
+		tooltips?: Record<string, string>;
 	} = $props();
+	const tip = (key: string | null) => (key ? (tooltips[key] ?? '') : '');
 	const locked = $derived(new Set(lockedCivics));
 
 	// Trait colour: amber for the species' auto-included base trait (matching the builder),
@@ -30,38 +34,55 @@
 	const has = $derived(empire.anySet());
 	const name = (key: string | null) => keyName(key, names);
 
+	// Alphabetical by display name; traits additionally push negative-cost (drawback) traits last.
+	const byName = (keys: string[]) => [...keys].sort((a, b) => name(a).localeCompare(name(b)));
+	const sortTraits = (keys: string[]) =>
+		[...keys].sort(
+			(a, b) =>
+				Number((traitCosts[a] ?? 0) < 0) - Number((traitCosts[b] ?? 0) < 0) ||
+				name(a).localeCompare(name(b))
+		);
+
 	// An origin can force the starting world (Shattered Ring → Ring Segment, …) and/or a
 	// fixed home system; both then override the Planets / Home-system picks.
 	const originStart = $derived(draft.origin ? (originStarts[draft.origin] ?? null) : null);
 	const forcedWorld = $derived(originStart?.world ?? null);
 	const forcesSystem = $derived(originStart?.forcesSystem ?? false);
 
-	const rows = $derived([
-		{ label: 'Species', value: draft.speciesClass ? name(draft.speciesClass) : null },
+	const rows = $derived<{ label: string; value: string | null; tipKey: string | null }[]>([
+		{ label: 'Species', value: draft.speciesClass ? name(draft.speciesClass) : null, tipKey: null },
 		{
 			label: 'Secondary species',
 			value: draft.secondary
 				? draft.secondary.speciesName ||
 					(draft.secondary.speciesClass ? name(draft.secondary.speciesClass) : 'Secondary species')
-				: null
+				: null,
+			tipKey: null
 		},
-		{ label: 'Government', value: draft.authority ? name(draft.authority) : null },
-		{ label: 'Origin', value: draft.origin ? name(draft.origin) : null },
+		{
+			label: 'Government',
+			value: draft.authority ? name(draft.authority) : null,
+			tipKey: draft.authority
+		},
+		{ label: 'Origin', value: draft.origin ? name(draft.origin) : null, tipKey: draft.origin },
 		{
 			label: 'Homeworld',
 			value: forcedWorld
 				? `${name(forcedWorld)} (origin)`
 				: draft.planetClass
 					? name(draft.planetClass)
-					: null
+					: null,
+			tipKey: null
 		},
 		{
 			label: 'Home system',
-			value: forcesSystem ? 'set by origin' : draft.initializer ? name(draft.initializer) : null
+			value: forcesSystem ? 'set by origin' : draft.initializer ? name(draft.initializer) : null,
+			tipKey: null
 		},
 		{
 			label: 'Ship type',
-			value: draft.graphicalCulture ? shipTypeLabel(draft.graphicalCulture) : null
+			value: draft.graphicalCulture ? shipTypeLabel(draft.graphicalCulture) : null,
+			tipKey: null
 		}
 	]);
 </script>
@@ -77,7 +98,7 @@
 				{#if r.value}
 					<div>
 						<dt class="text-[10px] uppercase opacity-40">{r.label}</dt>
-						<dd>{r.value}</dd>
+						<dd><Tip text={tip(r.tipKey)}>{r.value}</Tip></dd>
 					</div>
 				{/if}
 			{/each}
@@ -89,8 +110,8 @@
 					<div class="text-[10px] uppercase opacity-40">{label}</div>
 					<div class="flex flex-wrap gap-x-2 gap-y-0.5">
 						{#each keys as k (k)}
-							<span class="inline-flex items-center gap-0.5"
-								>{name(k)}{#if lockSet?.has(k)}<LockIcon size={10} />{/if}</span
+							<Tip text={tip(k)} class="inline-flex items-center gap-0.5"
+								>{name(k)}{#if lockSet?.has(k)}<LockIcon size={10} />{/if}</Tip
 							>
 						{/each}
 					</div>
@@ -101,13 +122,14 @@
 		<!-- Traits: prepend the species' auto-included base trait; colour base/negatives. -->
 		{#snippet traitGroup(label: string, classKey: string | null, traitKeys: string[])}
 			{@const base = classKey ? baseTraitByClass[classKey] : undefined}
-			{@const all = base && !traitKeys.includes(base) ? [base, ...traitKeys] : traitKeys}
+			{@const rest = sortTraits(base ? traitKeys.filter((k) => k !== base) : traitKeys)}
+			{@const all = base ? [base, ...rest] : rest}
 			{#if all.length}
 				<div>
 					<div class="text-[10px] uppercase opacity-40">{label}</div>
 					<div class="flex flex-wrap gap-x-2 gap-y-0.5">
 						{#each all as k (k)}
-							<span class={traitColor(k, base)}>{name(k)}</span>
+							<Tip text={tip(k)} class={traitColor(k, base)}>{name(k)}</Tip>
 						{/each}
 					</div>
 				</div>
@@ -115,7 +137,7 @@
 		{/snippet}
 
 		{@render group('Ethics', draft.ethics)}
-		{@render group('Civics', draft.civics, locked)}
+		{@render group('Civics', byName(draft.civics), locked)}
 		{@render traitGroup('Traits', draft.speciesClass, draft.traits)}
 		{#if draft.secondary}
 			{@render traitGroup(

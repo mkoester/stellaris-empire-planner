@@ -75,5 +75,6 @@
 		originStarts={data?.originStarts ?? {}}
 		traitCosts={data?.traitCosts ?? {}}
 		baseTraitByClass={data?.baseTraitByClass ?? {}}
+		tooltips={data?.overviewTooltips ?? {}}
 	/>
 {/if}
