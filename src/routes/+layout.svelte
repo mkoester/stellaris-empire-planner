@@ -11,8 +11,9 @@
 
 	// Global navigation — every section reachable from every page (order matters).
 	const NAV = [
+		{ href: '/', label: 'Home' },
 		{ href: '/empire', label: 'Empire' },
-		{ href: '/', label: 'Species Builder' },
+		{ href: '/species', label: 'Species Builder' },
 		{ href: '/portraits', label: 'Portraits' },
 		{ href: '/ethics', label: 'Ethics' },
 		{ href: '/government', label: 'Government' },
@@ -118,8 +119,9 @@
 
 {@render children()}
 
-<!-- Floating running summary of the current empire (hidden on /empire, which shows its own). -->
-{#if page.url.pathname !== '/empire'}
+<!-- Floating running summary of the current empire (hidden on /empire, which shows its
+     own, and on the / landing page, which isn't part of empire creation). -->
+{#if page.url.pathname !== '/empire' && page.url.pathname !== '/'}
 	<EmpireOverview
 		names={data?.names ?? {}}
 		lockedCivics={data?.lockedCivics ?? []}
