@@ -89,13 +89,15 @@
 	// A predefined empire's display name (the machine-age DLC alternates share a base name).
 	const empireLabel = (p: Empire) =>
 		`${p.name}${p.key.endsWith('_machine_age') ? ' (Machine Age)' : ''}`;
-	const speciesOf = (p: Empire) => p.speciesName || name(p.speciesClass);
+	// Show the phenotype (species class, e.g. "Fungoid"), not the species' proper name — the
+	// loader table is about picking by archetype; proper names belong in Names / the overview.
+	const phenotypeOf = (p: Empire) => name(p.speciesClass);
 
 	const filteredPredefined = $derived.by(() => {
 		const q = filter.trim().toLowerCase();
 		if (!q) return predefined;
 		return predefined.filter((p) =>
-			`${empireLabel(p)} ${name(p.origin)} ${speciesOf(p)} ${p.ethics
+			`${empireLabel(p)} ${name(p.origin)} ${phenotypeOf(p)} ${p.ethics
 				.map(name)
 				.join(' ')} ${p.civics.map(name).join(' ')}`
 				.toLowerCase()
@@ -291,7 +293,7 @@
 							<tr class="border-surface-400-500/40 border-b">
 								<th class="px-2 py-1.5 font-medium opacity-60">Name</th>
 								<th class="px-2 py-1.5 font-medium opacity-60">Origin</th>
-								<th class="px-2 py-1.5 font-medium opacity-60">Species</th>
+								<th class="px-2 py-1.5 font-medium opacity-60">Phenotype</th>
 								<th class="px-2 py-1.5 font-medium opacity-60">Ethics</th>
 								<th class="px-2 py-1.5 font-medium opacity-60">Civics</th>
 							</tr>
@@ -307,7 +309,7 @@
 								>
 									<td class="px-2 py-1.5 font-medium whitespace-nowrap">{empireLabel(p)}</td>
 									<td class="px-2 py-1.5 opacity-80">{name(p.origin)}</td>
-									<td class="px-2 py-1.5 opacity-80">{speciesOf(p)}</td>
+									<td class="px-2 py-1.5 opacity-80">{phenotypeOf(p)}</td>
 									<td class="px-2 py-1.5 opacity-70">{p.ethics.map(name).join(', ')}</td>
 									<td class="px-2 py-1.5 opacity-70">{p.civics.map(name).join(', ')}</td>
 								</tr>
