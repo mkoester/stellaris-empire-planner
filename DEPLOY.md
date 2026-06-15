@@ -18,9 +18,9 @@ Quadlet files (symlinked into place by the steps below):
 
 | File | Purpose |
 |------|---------|
-| `empire-planner.container` | the Quadlet unit |
-| `empire-planner.env` | committed, non-secret defaults |
-| `empire-planner.override.env.template` | copy → `.override.env`, set `ORIGIN` |
+| `stellaris-empire-planner.container` | the Quadlet unit |
+| `stellaris-empire-planner.env` | committed, non-secret defaults |
+| `stellaris-empire-planner.override.env.template` | copy → `.override.env`, set `ORIGIN` |
 
 ## 1. Build and ship the image (run on your dev box)
 
@@ -31,54 +31,53 @@ The image isn't in a registry yet, so build locally and copy the tarball over:
 scp stellaris-empire-planner_latest.tar root@vps:/tmp/
 ```
 
-## 2. Load the image on the VPS
+## 2. Create the service user and clone the repo
 
 ```sh
-ssh root@vps
-sudo -u empire-planner podman load -i /tmp/stellaris-empire-planner_latest.tar
+sudo useradd -m -d /var/lib/stellaris-empire-planner -s /usr/sbin/nologin stellaris-empire-planner
+sudo loginctl enable-linger stellaris-empire-planner
+
+REPO_URL=https://github.com/mkoester/stellaris-empire-planner.git
+REPO=~stellaris-empire-planner/stellaris-empire-planner
+
+sudo -u stellaris-empire-planner git clone $REPO_URL $REPO
+sudo -u stellaris-empire-planner mkdir -p ~stellaris-empire-planner/.config/containers/systemd
+```
+
+## 3. Load the image on the VPS (needs the user from step 2)
+
+```sh
+sudo -u stellaris-empire-planner podman load -i /tmp/stellaris-empire-planner_latest.tar
 ```
 
 (Run this again to update — `AutoUpdate=local` + `podman auto-update` will pick up
-the newer local image, or just `systemctl --user restart empire-planner`.)
-
-## 3. Create the service user and clone the repo
-
-```sh
-sudo useradd -m -d /var/lib/empire-planner -s /usr/sbin/nologin empire-planner
-sudo loginctl enable-linger empire-planner
-
-REPO_URL=https://github.com/mkoester/stellaris-empire-planner.git
-REPO=~empire-planner/stellaris-empire-planner
-
-sudo -u empire-planner git clone $REPO_URL $REPO
-sudo -u empire-planner mkdir -p ~empire-planner/.config/containers/systemd
-```
+the newer local image, or just `systemctl --user restart stellaris-empire-planner`.)
 
 ## 4. Configure the per-deployment override (set your public URL)
 
 ```sh
-sudo -u empire-planner cp \
-  $REPO/empire-planner.override.env.template \
-  $REPO/empire-planner.override.env
-sudo -u empire-planner nano $REPO/empire-planner.override.env   # set ORIGIN=https://...
+sudo -u stellaris-empire-planner cp \
+  $REPO/stellaris-empire-planner.override.env.template \
+  $REPO/stellaris-empire-planner.override.env
+sudo -u stellaris-empire-planner nano $REPO/stellaris-empire-planner.override.env   # set ORIGIN=https://...
 ```
 
 ## 5. Symlink the unit + env files into the Quadlet dir
 
 ```sh
-QSD=~empire-planner/.config/containers/systemd
-sudo -u empire-planner ln -s $REPO/empire-planner.container       $QSD/empire-planner.container
-sudo -u empire-planner ln -s $REPO/empire-planner.env            $QSD/empire-planner.env
-sudo -u empire-planner ln -s $REPO/empire-planner.override.env   $QSD/empire-planner.override.env
+QSD=~stellaris-empire-planner/.config/containers/systemd
+sudo -u stellaris-empire-planner ln -s $REPO/stellaris-empire-planner.container       $QSD/stellaris-empire-planner.container
+sudo -u stellaris-empire-planner ln -s $REPO/stellaris-empire-planner.env            $QSD/stellaris-empire-planner.env
+sudo -u stellaris-empire-planner ln -s $REPO/stellaris-empire-planner.override.env   $QSD/stellaris-empire-planner.override.env
 ```
 
 ## 6. Start and verify
 
 ```sh
-EP_RT=/run/user/$(id -u empire-planner)
-sudo -u empire-planner XDG_RUNTIME_DIR=$EP_RT systemctl --user daemon-reload
-sudo -u empire-planner XDG_RUNTIME_DIR=$EP_RT systemctl --user start empire-planner
-sudo -u empire-planner XDG_RUNTIME_DIR=$EP_RT systemctl --user status empire-planner
+EP_RT=/run/user/$(id -u stellaris-empire-planner)
+sudo -u stellaris-empire-planner XDG_RUNTIME_DIR=$EP_RT systemctl --user daemon-reload
+sudo -u stellaris-empire-planner XDG_RUNTIME_DIR=$EP_RT systemctl --user start stellaris-empire-planner
+sudo -u stellaris-empire-planner XDG_RUNTIME_DIR=$EP_RT systemctl --user status stellaris-empire-planner
 ```
 
 It should report `active (running)` and the container `(healthy)`. Confirm:

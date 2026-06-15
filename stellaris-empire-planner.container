@@ -20,8 +20,8 @@ Pull=never
 # (Updating the game DB = rebuild + reship the image.)
 
 # Environment: committed defaults + per-deployment overrides (ORIGIN, etc.).
-EnvironmentFile=%h/.config/containers/systemd/empire-planner.env
-EnvironmentFile=%h/.config/containers/systemd/empire-planner.override.env
+EnvironmentFile=%h/.config/containers/systemd/stellaris-empire-planner.env
+EnvironmentFile=%h/.config/containers/systemd/stellaris-empire-planner.override.env
 
 # Bind to loopback only — fronted by the host's reverse proxy.
 PublishPort=127.0.0.1:3000:3000

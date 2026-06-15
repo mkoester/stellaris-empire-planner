@@ -5,7 +5,7 @@ node_modules
 *.tar
 
 # Quadlet: per-deployment override (the .template is committed)
-empire-planner.override.env
+stellaris-empire-planner.override.env
 
 # Output
 .output
