@@ -1,0 +1,41 @@
+[Unit]
+Description=Stellaris Empire Planner (SvelteKit + adapter-node)
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+# Local image loaded from a tarball (podman load) for now. Switch to a registry
+# ref + AutoUpdate=registry once the app is pushed somewhere.
+Image=localhost/stellaris-empire-planner:latest
+AutoUpdate=local
+# Never reach out to a registry — the image is supplied locally via `podman load`.
+Pull=never
+
+# No UserNS/User/Group override: the image already runs as its own `node` user
+# (UID 1000) and there are NO host-mounted writable paths to match ownership with,
+# so the keep-id/chown dance from the guide does not apply here.
+
+# The SQLite game DB is baked into the image at /app/data/stellaris.sqlite, so this
+# container is read-only/stateless — no Volume mounts and no persistent dirs needed.
+# (Updating the game DB = rebuild + reship the image.)
+
+# Environment: committed defaults + per-deployment overrides (ORIGIN, etc.).
+EnvironmentFile=%h/.config/containers/systemd/empire-planner.env
+EnvironmentFile=%h/.config/containers/systemd/empire-planner.override.env
+
+# Bind to loopback only — fronted by the host's reverse proxy.
+PublishPort=127.0.0.1:3000:3000
+
+# Health check via Node (the slim image has no curl/wget); `/` returns 200.
+HealthCmd=node -e "fetch('http://localhost:3000/').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+HealthInterval=30s
+HealthTimeout=10s
+HealthRetries=3
+
+[Service]
+Restart=always
+# adapter-node boots in ~1-2s; generous ceiling, well under the guide's 900s.
+TimeoutStartSec=60
+
+[Install]
+WantedBy=default.target

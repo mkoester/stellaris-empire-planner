@@ -1,5 +1,12 @@
 node_modules
 
+# Container build: staged DB copy + exported image tarballs
+/data
+*.tar
+
+# Quadlet: per-deployment override (the .template is committed)
+empire-planner.override.env
+
 # Output
 .output
 .vercel

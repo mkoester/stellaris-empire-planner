@@ -1,0 +1,12 @@
+# Keep the build context small and reproducible. Mirrors .dockerignore.
+.git
+node_modules
+.svelte-kit
+build
+ideation
+.vscode
+.claude
+.env
+.env.*
+!.env.example
+*.md
