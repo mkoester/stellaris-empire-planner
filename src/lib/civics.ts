@@ -91,7 +91,8 @@ export function formatScalingModifier(m: ScalingModifier): string {
 		label: m.label,
 		positiveIsGood: m.positiveIsGood
 	});
-	return `${formatModifierValue(asMod(m.rate))} ${modifierLabel(asMod(m.rate))} per ${m.unit} (max ${formatModifierValue(asMod(m.cap))})`;
+	const base = `${formatModifierValue(asMod(m.rate))} ${modifierLabel(asMod(m.rate))} per ${m.unit}`;
+	return m.cap === null ? base : `${base} (max ${formatModifierValue(asMod(m.cap))})`;
 }
 
 // Order a modifier list for display: alphabetical by label, with the Shroud

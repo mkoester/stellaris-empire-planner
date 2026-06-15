@@ -280,7 +280,7 @@ function scalingModifiersByTrait(keys?: string[]): Map<string, ScalingModifier[]
 		trait_key: string;
 		modifier_key: string;
 		rate: number;
-		cap: number;
+		cap: number | null;
 		unit: string;
 		label: string | null;
 		positive_is_good: number | null;
@@ -357,8 +357,8 @@ export interface Trait {
 export interface ScalingModifier {
 	key: string; // modifier key, e.g. "pop_happiness"
 	rate: number; // value per one display unit
-	cap: number; // value at the scaling value's maximum
-	unit: string; // the "per X" unit, e.g. "100 Familial pops", "year of colony age"
+	cap: number | null; // value at the scaling value's maximum; null when uncapped (Invasive)
+	unit: string; // the "per X" unit, e.g. "100 Familial pops", "negative trait"
 	label: string | null;
 	positiveIsGood: boolean;
 }
