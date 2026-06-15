@@ -23,7 +23,9 @@ export const load: PageServerLoad = () => {
 			...t.scalingModifiers.map((s) => formatScalingModifier(s))
 		];
 		traitInfo[t.key] = {
-			tooltip: [effects.join('\n'), t.description ?? ''].filter(Boolean).join('\n\n'),
+			tooltip: [effects.join('\n'), t.effect ?? '', t.description ?? '']
+				.filter(Boolean)
+				.join('\n\n'),
 			negative: t.tags.includes('negative') || (t.cost != null && t.cost < 0)
 		};
 	}

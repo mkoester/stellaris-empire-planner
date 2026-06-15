@@ -490,6 +490,13 @@
 								{/each}
 							</div>
 						{/if}
+						{#if trait.effect}
+							<!-- Non-numeric behavioural effects from custom_tooltip (e.g. Rooted's
+							     "Pops will not Automatically Resettle") — not expressible as a modifier chip. -->
+							<div class="text-[10px] leading-snug whitespace-pre-line text-amber-300/80">
+								{trait.effect}
+							</div>
+						{/if}
 						{#if trait.description}
 							<!-- Flavour text (clamped to 3 lines; full text on hover). Especially useful
 							     for traits whose effect is a special mechanic with no modifier chips. -->

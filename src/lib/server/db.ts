@@ -186,7 +186,7 @@ export function loadTraitsForKeys(keys: string[]): Trait[] {
 	const rows = db()
 		.prepare(
 			`SELECT
-				t.key, t.cost, t.category, t.initial, t.hidden, t.required_dlc, t.description,
+				t.key, t.cost, t.category, t.initial, t.hidden, t.required_dlc, t.description, t.effect,
 				GROUP_CONCAT(DISTINCT ta.archetype) AS archetypes,
 				GROUP_CONCAT(DISTINCT to2.opposite_key) AS opposites,
 				GROUP_CONCAT(DISTINCT tt.tag) AS tags,
@@ -207,6 +207,7 @@ export function loadTraitsForKeys(keys: string[]): Trait[] {
 		hidden: number;
 		required_dlc: string | null;
 		description: string | null;
+		effect: string | null;
 		archetypes: string | null;
 		opposites: string | null;
 		tags: string | null;
@@ -221,6 +222,7 @@ export function loadTraitsForKeys(keys: string[]): Trait[] {
 		hidden: r.hidden,
 		required_dlc: r.required_dlc,
 		description: r.description,
+		effect: r.effect,
 		archetypes: r.archetypes ? r.archetypes.split(',') : [],
 		opposites: r.opposites ? r.opposites.split(',') : [],
 		tags: r.tags ? r.tags.split(',') : [],
@@ -349,6 +351,7 @@ export interface Trait {
 	modifiers: Modifier[]; // from trait_modifier + modifier_label
 	scalingModifiers: ScalingModifier[]; // scaling effects (Familial, Noxious, Genetic Memory)
 	description: string | null; // cleaned flavour text from trait_<key>_desc
+	effect: string | null; // non-numeric behavioural lines from custom_tooltip (e.g. Rooted's "Pops will not Automatically Resettle")
 }
 
 // A modifier that scales with a count, e.g. Familial: +0.1% Happiness per 100 Familial pops
@@ -1406,11 +1409,9 @@ export function loadOverviewTooltips(): Record<string, string> {
 		(r) => r.key
 	);
 	for (const t of loadTraitsForKeys(traitKeys)) {
-		set(
-			t.key,
-			[...fx(t.modifiers), ...t.scalingModifiers.map(formatScalingModifier)],
-			t.description
-		);
+		const effects = [...fx(t.modifiers), ...t.scalingModifiers.map(formatScalingModifier)];
+		const text = [effects.join('\n'), t.effect, t.description].filter(Boolean).join('\n\n');
+		if (text) out[t.key] = text;
 	}
 	return out;
 }
@@ -2064,6 +2065,7 @@ export function loadTraits(): Trait[] {
 			t.hidden,
 			t.required_dlc,
 			t.description,
+			t.effect,
 			GROUP_CONCAT(DISTINCT ta.archetype) AS archetypes,
 			GROUP_CONCAT(DISTINCT to2.opposite_key) AS opposites,
 			GROUP_CONCAT(DISTINCT tt.tag) AS tags,
@@ -2093,6 +2095,7 @@ export function loadTraits(): Trait[] {
 		hidden: number;
 		required_dlc: string | null;
 		description: string | null;
+		effect: string | null;
 		archetypes: string | null;
 		opposites: string | null;
 		tags: string | null;
@@ -2107,6 +2110,7 @@ export function loadTraits(): Trait[] {
 		hidden: r.hidden,
 		required_dlc: r.required_dlc,
 		description: r.description,
+		effect: r.effect,
 		archetypes: r.archetypes ? r.archetypes.split(',') : [],
 		opposites: r.opposites ? r.opposites.split(',') : [],
 		tags: r.tags ? r.tags.split(',') : [],
