@@ -22,14 +22,27 @@
 		{ href: '/ships', label: 'Ships' },
 		{ href: '/names', label: 'Names' },
 		{ href: '/flag', label: 'Flag' },
-		{ href: '/room', label: 'Room' },
-		{ href: '/jobs', label: 'Jobs' },
-		{ href: '/buildings', label: 'Buildings' },
-		{ href: '/precursors', label: 'Precursors' }
+		{ href: '/room', label: 'Room' }
 	] as const;
+
+	// Reference game-data tables that augment the planner (not part of empire creation) —
+	// grouped under an "Information" dropdown.
+	const INFO = [
+		{ href: '/precursors', label: 'Precursors' },
+		{ href: '/jobs', label: 'Jobs' },
+		{ href: '/buildings', label: 'Buildings' }
+	] as const;
+
+	let infoOpen = $state(false);
+	const infoActive = $derived(INFO.some((i) => i.href === page.url.pathname));
 </script>
 
 <svelte:head><link rel="icon" href={favicon} /></svelte:head>
+
+<svelte:window
+	onclick={() => (infoOpen = false)}
+	onkeydown={(e) => e.key === 'Escape' && (infoOpen = false)}
+/>
 
 <nav
 	class="border-surface-400-500/30 sticky top-0 z-40 border-b bg-surface-50-950/80 backdrop-blur"
@@ -46,6 +59,41 @@
 				{item.label}
 			</a>
 		{/each}
+
+		<!-- Information dropdown: reference tables (Precursors / Jobs / Buildings). -->
+		<div class="relative">
+			<button
+				onclick={(e) => {
+					e.stopPropagation();
+					infoOpen = !infoOpen;
+				}}
+				aria-haspopup="menu"
+				aria-expanded={infoOpen}
+				class="rounded px-3 py-1.5 text-sm transition-colors {infoActive
+					? 'preset-filled-primary-500'
+					: 'opacity-60 hover:bg-surface-500/20 hover:opacity-100'}"
+			>
+				Information <span class="text-[10px] opacity-70">{infoOpen ? '▴' : '▾'}</span>
+			</button>
+			{#if infoOpen}
+				<div
+					class="border-surface-400-500/30 absolute top-full left-0 z-50 mt-1 flex min-w-36 flex-col rounded-md border bg-surface-50-950 p-1 shadow-lg"
+				>
+					{#each INFO as item (item.href)}
+						<a
+							href={resolve(item.href)}
+							aria-current={page.url.pathname === item.href ? 'page' : undefined}
+							class="rounded px-3 py-1.5 text-sm transition-colors {page.url.pathname === item.href
+								? 'preset-filled-primary-500'
+								: 'opacity-70 hover:bg-surface-500/20 hover:opacity-100'}"
+						>
+							{item.label}
+						</a>
+					{/each}
+				</div>
+			{/if}
+		</div>
+
 		<Tip text="Toggle how multi-rule effect descriptions are laid out" placement="bottom-end">
 			{#snippet trigger(a)}
 				<button
@@ -61,6 +109,9 @@
 			<Tip text={data.gameVersion.version} class="text-[11px] opacity-40">
 				Stellaris {data.gameVersion.raw ?? data.gameVersion.version}
 			</Tip>
+		{/if}
+		{#if data?.appVersion}
+			<span class="text-[11px] opacity-40">· v{data.appVersion}</span>
 		{/if}
 	</div>
 </nav>

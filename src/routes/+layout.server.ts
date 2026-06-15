@@ -8,9 +8,11 @@ import {
 	loadOverviewTooltips
 } from '$lib/server/db';
 import { env } from '$env/dynamic/private';
+import { version as appVersion } from '../../package.json';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = () => ({
+	appVersion,
 	gameVersion: loadGameVersion(),
 	names: loadEntityNames(),
 	lockedCivics: loadLockedCivicKeys(),
