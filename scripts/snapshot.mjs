@@ -11,7 +11,8 @@
 //     pages/<route>.html  SSR HTML of every static route (hash-normalized + pretty)
 //     stellaris.sql       the extractor's git-tracked plain-text dump (recreates the DB)
 //     manifest.json       full SHAs, game version, route list, timestamp
-//     patchnotes.md       capture checklist (template; only created if absent)
+// Plus a per-minor-version capture checklist at <comparison>/patchnotes/<v4.4>.md
+// (shared across that version line's snapshots; seeded with a skeleton if absent).
 //
 // Preflight: BOTH source repos (extractor + planner) must have clean working trees,
 // so the SHAs encoded in the directory name truly describe what produced the output.
@@ -29,7 +30,7 @@ import {
 	existsSync,
 	readdirSync
 } from 'node:fs';
-import { join } from 'node:path';
+import { join, dirname } from 'node:path';
 import Database from 'better-sqlite3';
 import prettier from 'prettier';
 
@@ -161,11 +162,18 @@ writeFileSync(
 	) + '\n'
 );
 
-const patchnotes = join(outDir, 'patchnotes.md');
-if (!existsSync(patchnotes)) writeFileSync(patchnotes, patchnotesTemplate(rawVer));
+// Patch-note capture checklist lives at the repo root, keyed by the minor version line
+// (v4.4.1 → v4.4) — it spans every snapshot of that line and is ticked over time, so it
+// must NOT be duplicated per snapshot dir. Seeded with a skeleton only if absent.
+const minorVer = rawVer.match(/^v?\d+\.\d+/)?.[0] ?? rawVer;
+const patchnotes = join(COMPARISON, 'patchnotes', `${minorVer}.md`);
+if (!existsSync(patchnotes)) {
+	mkdirSync(dirname(patchnotes), { recursive: true });
+	writeFileSync(patchnotes, patchnotesTemplate(minorVer));
+}
 
 // ── 4. Stage (and optionally commit) in the comparison repo ────────────────────
-git(COMPARISON, 'add', '-A', join('versions', dirName));
+git(COMPARISON, 'add', '-A', join('versions', dirName), patchnotes);
 const msg = `${rawVer} | extract ${extShort} | planner ${plnShort}`;
 if (DO_COMMIT) {
 	execFileSync('git', ['-C', COMPARISON, 'commit', '-m', msg], { stdio: 'inherit' });
