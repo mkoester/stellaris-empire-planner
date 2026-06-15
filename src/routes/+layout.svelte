@@ -13,6 +13,7 @@
 	const NAV = [
 		{ href: '/empire', label: 'Empire' },
 		{ href: '/', label: 'Species Builder' },
+		{ href: '/portraits', label: 'Portraits' },
 		{ href: '/ethics', label: 'Ethics' },
 		{ href: '/government', label: 'Government' },
 		{ href: '/civics', label: 'Civics' },

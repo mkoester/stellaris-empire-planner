@@ -101,6 +101,84 @@ export function loadSpeciesClasses(): SpeciesClass[] {
 	}));
 }
 
+// ── Portraits ────────────────────────────────────────────────────────────────
+// Each portrait belongs to one or more species classes (via common/portrait_sets);
+// the class is what gates the phenotype-specific traits you may pick. We surface the
+// portraits selectable at empire creation and, per portrait, the playable classes it
+// belongs to plus the traits each of those classes unlocks. Most portraits map to one
+// class; the Machine + Robot synth portraits are the notable multi-class case.
+export interface PortraitClassInfo {
+	key: string;
+	label: string;
+	traitKeys: string[]; // traits gated to this class (trait_species_class)
+}
+export interface PortraitInfo {
+	id: string;
+	classes: PortraitClassInfo[]; // playable classes it belongs to (sorted by label)
+	bonusTraitKeys: string[]; // cross-phenotype traits this specific portrait may also pick
+	// (the trait's `portrait_override`), beyond what its class already grants
+	requiredDlc: string[];
+}
+
+export function loadPortraits(): PortraitInfo[] {
+	const d = db();
+	// Playable classes → label + class-gated traits.
+	const classInfo = new Map<string, PortraitClassInfo>();
+	for (const r of d
+		.prepare(`SELECT key, COALESCE(label, key) AS label FROM species_class WHERE playable = 1`)
+		.all() as Array<{ key: string; label: string }>) {
+		classInfo.set(r.key, { key: r.key, label: r.label, traitKeys: [] });
+	}
+	for (const r of d
+		.prepare(`SELECT species_class_key, trait_key FROM trait_species_class ORDER BY trait_key`)
+		.all() as Array<{ species_class_key: string; trait_key: string }>) {
+		classInfo.get(r.species_class_key)?.traitKeys.push(r.trait_key);
+	}
+	// portrait_id → traits that explicitly list it in `portrait_override` (cross-class access).
+	const overrideByPortrait = new Map<string, string[]>();
+	for (const r of d
+		.prepare(`SELECT portrait_id, trait_key FROM trait_portrait_override ORDER BY trait_key`)
+		.all() as Array<{ portrait_id: string; trait_key: string }>) {
+		(
+			overrideByPortrait.get(r.portrait_id) ??
+			overrideByPortrait.set(r.portrait_id, []).get(r.portrait_id)!
+		).push(r.trait_key);
+	}
+	// Portraits selectable at empire creation: a selectable row in a playable class.
+	const byPortrait = new Map<string, { classes: Set<string>; dlc: Set<string> }>();
+	for (const r of d
+		.prepare(
+			`SELECT ps.portrait_id, ps.species_class_key, ps.required_dlc
+			 FROM portrait_set ps
+			 JOIN species_class sc ON sc.key = ps.species_class_key
+			 WHERE ps.selectable = 1 AND sc.playable = 1`
+		)
+		.all() as Array<{
+		portrait_id: string;
+		species_class_key: string;
+		required_dlc: string | null;
+	}>) {
+		let e = byPortrait.get(r.portrait_id);
+		if (!e) {
+			e = { classes: new Set(), dlc: new Set() };
+			byPortrait.set(r.portrait_id, e);
+		}
+		e.classes.add(r.species_class_key);
+		if (r.required_dlc) e.dlc.add(r.required_dlc);
+	}
+	const out: PortraitInfo[] = [];
+	for (const [id, e] of byPortrait) {
+		const classes = [...e.classes]
+			.map((k) => classInfo.get(k)!)
+			.sort((a, b) => a.label.localeCompare(b.label));
+		// Bonus = override traits this portrait's own class(es) don't already grant.
+		const classTraits = new Set(classes.flatMap((c) => c.traitKeys));
+		const bonusTraitKeys = (overrideByPortrait.get(id) ?? []).filter((t) => !classTraits.has(t));
+		out.push({ id, classes, bonusTraitKeys, requiredDlc: [...e.dlc].sort() });
+	}
+	return out.sort((a, b) => a.id.localeCompare(b.id));
+}
+
 export function loadTraitsForKeys(keys: string[]): Trait[] {
 	if (keys.length === 0) return [];
 	const ph = keys.map(() => '?').join(',');
