@@ -32,7 +32,8 @@
 		{ href: '/precursors', label: 'Precursors' },
 		{ href: '/jobs', label: 'Jobs' },
 		{ href: '/buildings', label: 'Buildings' },
-		{ href: '/tech', label: 'Repeatable Techs' }
+		{ href: '/tech', label: 'Repeatable Techs' },
+		{ href: '/fallen-empire-tech', label: 'Fallen Empire Techs' }
 	] as const;
 
 	let infoOpen = $state(false);
