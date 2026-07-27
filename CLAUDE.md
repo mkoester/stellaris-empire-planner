@@ -12,7 +12,7 @@ Two repos that work together:
 - **`stellaris-empire-planner`** — SvelteKit 2 / Svelte 5 / SkeletonUI v4 / Tailwind v4 / `pnpm` / TypeScript. The web app.
 - **`stellaris-data-extraction`** — Python extraction pipeline. Parses Stellaris game files → SQLite DB.
 
-DB path: `STELLARIS_DB=/home/mk/Projects/stellaris-data-extraction/sqlite/stellaris.sqlite` (from `.env`).
+DB path: `STELLARIS_DB` in the gitignored `.env`, pointing at the sibling checkout's `../stellaris-data-extraction/sqlite/stellaris.sqlite` (absolute path).
 
 **Game version:** `meta` table (`game_version` / `game_version_raw`, from the game's
 `launcher-settings.json`). `loadGameVersion()` → `+layout.server.ts` → shown fixed
@@ -21,7 +21,7 @@ top-right by `+layout.svelte` ("Stellaris v4.3.7", full version as the `title`).
 After changing the extraction script, regenerate the DB:
 ```
 cd stellaris-data-extraction
-python3 stellaris-extract.py /home/mk/.local/share/Steam/steamapps/common/Stellaris --sqlite sqlite/stellaris.sqlite
+python3 stellaris-extract.py ~/.local/share/Steam/steamapps/common/Stellaris --sqlite sqlite/stellaris.sqlite
 ```
 
 ---
@@ -81,7 +81,21 @@ All precursor/deposit tables are DROP+CREATE each extraction run.
 
 ---
 
-## `src/lib/server/db.ts`
+## `src/lib/server/db/` (package)
+
+Formerly one 2100-line `db.ts`; now domain modules behind an `index.ts` that
+re-exports everything, so `import { … } from '$lib/server/db'` is unchanged:
+
+```
+client.ts      db() — the shared read-only better-sqlite3 handle — + loadGameVersion
+types.ts       shared Modifier / ScalingModifier shapes
+species.ts     species classes, archetypes, portraits, traits (loadTraits*, scalingModifiersByTrait)
+government.ts  ethics, civics, authorities, origins
+empires.ts     planet classes, prescripted empires, initializers, rooms, flag assets/colors
+jobs.ts        jobs, job swaps, reference buildings
+labels.ts      loadEntityNames, loadModifierIndex, loadOverviewTooltips
+precursors.ts  the whole precursor graph (loadPrecursors)
+```
 
 Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `ActiveModifier`, `RelicResource`, `RelicPassiveText`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
 
@@ -102,7 +116,17 @@ Key functions:
 
 ## Routes
 
-### `/` — Species Builder (`src/routes/+page.svelte`)
+### `/` — Landing page (`src/routes/+page.svelte`)
+
+Project intro + status: what the planner does, links into the sections. No data
+loading beyond the layout's.
+
+Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder ·
+Portraits · Ethics · Government · Civics · Origins · Planets · Ships · Names ·
+Flag · Room) plus an **Information dropdown** (`INFO`: Precursors · Jobs ·
+Buildings) for reference tables that aren't part of empire creation.
+
+### `/species` — Species Builder (`src/routes/species/+page.svelte`)
 
 **Page data:** `{ traits, archetypes, traitCategories, speciesClasses, baseTraits, debugDisableSelection }`
 
@@ -211,8 +235,7 @@ when an empire is loaded, without feedback loops. Note: the store is module-leve
 **Planned next:** edit + export the draft back to a Stellaris-importable
 `user_empire_designs.txt` (needs valid flag/ruler/portrait defaults).
 
-Global nav (single sticky nav in `+layout.svelte`): Empire · Species Builder · Ethics
-· Civics · Origins · Planets · Ships · Precursors.
+Global nav: see the `/` section above (NAV + Information dropdown in `+layout.svelte`).
 
 ### `/precursors` — Precursors (`src/routes/precursors/+page.svelte`)
 
@@ -324,6 +347,50 @@ component keeps only reactive state/derived (`enabled`, `empireFilter`,
 `activeType`, `groups`) and the `planetRow` snippet. Types are imported
 type-only from `$lib/server/db` (erased at runtime, so the file is client-safe).
 
+### `/portraits` — Portraits reference (`src/routes/portraits/+page.svelte`)
+
+**Page data:** `{ portraits, traitInfo }` — `loadPortraits()` (portrait →
+species class(es) → set/DLC) plus a `TraitInfo` tooltip map (effect lines +
+flavour, `negative` flag → rose) built in the page server from
+`loadTraitsForKeys`. Reference page: which portraits exist, which classes use
+them, and each class's base trait as a hover tooltip. Multi-class portraits are
+Machine + Mechanical synths only.
+
+### `/government` — Authorities (`src/routes/government/+page.svelte`)
+
+**Page data:** `{ authorities }` from `loadAuthorities()`. Cards with modifiers +
+requirements; **single-select toggle** → `empire.setAuthority` (click again to
+clear), highlighted from `empire.draft.authority`.
+
+### `/names` — Names (`src/routes/names/+page.svelte`)
+
+Text inputs for the empire/species name fields (grouped Empire / Species / …),
+bound to the draft via `empire.setName(field, value)` /
+`empire.setSecondaryName(...)`. No server load.
+
+### `/flag` — Flag (`src/routes/flag/+page.svelte`)
+
+**Page data:** `{ flagAssets, flagColors }` (`loadFlagAssets`/`loadFlagColors`).
+Pick flag background/icon + colors into the draft (the .dds assets can't be
+rendered — pickers work on names/colors).
+
+### `/room` — Room (`src/routes/room/+page.svelte`)
+
+**Page data:** `{ rooms }` from `loadRooms()`. Single-select diplomacy room →
+`empire.setRoom` (`default_room` = empty value).
+
+### `/jobs` + `/buildings` — Information reference tables
+
+`{ jobs }` from `loadJobs()` / `{ buildings }` from `loadBuildings()`, grouped by
+category. Base produces/upkeep and (buildings) provided jobs; job **swaps** are
+deliberately *not* here — swap tooltips live on the **civics/origins cards**
+([SwapTables.svelte](src/lib/SwapTables.svelte), data from
+`loadJobSwapsBySource()` in those pages' servers).
+
+Tooltips across the app use the Skeleton/Zag tooltip via
+[Tip.svelte](src/lib/Tip.svelte) — no native `title=` attributes left on
+interactive elements.
+
 ---
 
 ## Testing
@@ -362,7 +429,9 @@ rendering, no DB. Add cases here when extending `precursors.ts`.
 
 - Modifier sign color for Overtuned traits (positive-cost but mixed +/– effects).
 - Phase 2 modifiers: triggered/conditional modifiers, `custom_tooltip`, `inline_script`.
-- Portrait picker (data already in DB).
+- Portrait picker *in the builder* (data in DB; `/portraits` is a reference page,
+  the draft has no portrait selection yet — needed for the planned
+  `user_empire_designs.txt` export).
 - Species name generation (`common/species_names/`).
 
 ---
@@ -370,6 +439,6 @@ rendering, no DB. Add cases here when extending `precursors.ts`.
 ## Companion repo: Stellaris Modding Insights
 
 A sibling repo collects hard-won, poorly-documented Stellaris findings — engine quirks, parser/format gotchas, things only obvious in hindsight:
-`../stellaris-modding-insights` (`/home/mk/Projects/stellaris-modding-insights`, https://github.com/mkoester/stellaris-modding-insights). It's community-facing notes organised as `docs/NN-topic.md` with a TL;DR index in `README.md`. Especially relevant here: how vanilla game scripts (traits, ethics, species classes, `localisation/`) are structured, since this planner consumes that extracted data.
+`../stellaris-modding-insights` (sibling checkout, https://github.com/mkoester/stellaris-modding-insights). It's community-facing notes organised as `docs/NN-topic.md` with a TL;DR index in `README.md`. Especially relevant here: how vanilla game scripts (traits, ethics, species classes, `localisation/`) are structured, since this planner consumes that extracted data.
 
 **When you discover something noteworthy** — a surprising bit of how the game data is modelled, an undocumented localisation/format detail, a non-obvious gotcha, or anything that cost real time to figure out — proactively suggest recording it in the insights repo. Don't write there silently: propose what to add (which `docs/` file, a one-line TL;DR) and let the user confirm, since it's a separate, published repo. Keep planner/app-specific notes in this file; route generally-useful Stellaris modding knowledge to the insights repo.
