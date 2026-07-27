@@ -14,6 +14,28 @@ Two repos that work together:
 
 DB path: `STELLARIS_DB` in the gitignored `.env`, pointing at the sibling checkout's `../stellaris-data-extraction/sqlite/stellaris.sqlite` (absolute path).
 
+### Running the dev server from a Claude Code session (sandbox)
+
+`.env` is an explicit `denyRead` target, which the sandbox implements as a
+`/dev/null` mount — so a sandboxed `pnpm dev` reads it as **empty** and dies with
+`STELLARIS_DB is not set`. Pass the path explicitly instead:
+
+```
+STELLARIS_DB=<abs path>/stellaris-data-extraction/sqlite/stellaris.sqlite pnpm dev --port 5201
+```
+
+Further effects when driving the app this way (verified 2026-07-27):
+
+- **Start the server and make the requests in one Bash command** — a server left
+  running by an earlier call is unreachable from a later one, and `curl` returns
+  `000` while the server logs look healthy. This is general sandbox behaviour, not
+  a planner quirk; the OKF vault's `practices/claude-code-sandbox.md` gotcha #13 has
+  the details, including waiting via `curl --retry-connrefused` (foreground `sleep`
+  is blocked).
+- Vite logs a `.env changed, restarting server...` loop against the stub. Harmless.
+- Prettier reports `EACCES` on `.mcp.json` (another stub), so `pnpm lint` exits
+  non-zero for a reason unrelated to the code. Check the file list it prints.
+
 **Game version:** `meta` table (`game_version` / `game_version_raw`, from the game's
 `launcher-settings.json`). `loadGameVersion()` → `+layout.server.ts` → shown fixed
 top-right by `+layout.svelte` ("Stellaris v4.3.7", full version as the `title`).
