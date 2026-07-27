@@ -7,3 +7,4 @@ export * from './empires';
 export * from './jobs';
 export * from './labels';
 export * from './precursors';
+export * from './tech';
