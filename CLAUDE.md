@@ -75,6 +75,9 @@ precursor_planet        — id "<init>#<idx>", precursor_key, initializer, name,
 precursor_planet_deposit — planet_id, deposit_key (FK→deposit), sort_order
 precursor_planet_modifier — planet_id, static_modifier, modifier_key, modifier_value
 precursor_megastructure — precursor_key, initializer, type, type_label, count (e.g. 4 ruined ring sections)
+tech_repeatable         — key, label, description, area, area_label, category, category_label, levels (-1 = unlimited), sort_order
+tech_repeatable_modifier — tech_key, modifier_key, modifier_value, sort_order
+tech_fallen_empire      — key, label, description, area, area_label, category, category_label, building_key (FK→building), sort_order
 ```
 
 All precursor/deposit tables are DROP+CREATE each extraction run.
@@ -95,6 +98,7 @@ empires.ts     planet classes, prescripted empires, initializers, rooms, flag as
 jobs.ts        jobs, job swaps, reference buildings
 labels.ts      loadEntityNames, loadModifierIndex, loadOverviewTooltips
 precursors.ts  the whole precursor graph (loadPrecursors)
+tech.ts        repeatable + fallen-empire techs (loadRepeatableTechs, loadFallenEmpireTechs)
 ```
 
 Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `ActiveModifier`, `RelicResource`, `RelicPassiveText`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
@@ -378,6 +382,14 @@ rendered — pickers work on names/colors).
 
 **Page data:** `{ rooms }` from `loadRooms()`. Single-select diplomacy room →
 `empire.setRoom` (`default_room` = empty value).
+
+### `/tech` + `/fallen-empire-tech` — Technology reference tables
+
+`{ techs }` from `loadRepeatableTechs()` / `loadFallenEmpireTechs()`. Repeatable
+techs group by research area (Physics/Society/Engineering) and category, showing
+their modifiers and level cap (`levels = -1` = unlimited). Fallen-empire techs
+show the building each unlocks (`building` — name, description, resources, jobs —
+pre-joined via `building_key`; null for the ship-component techs).
 
 ### `/jobs` + `/buildings` — Information reference tables
 
