@@ -9,7 +9,7 @@ To set up a fresh machine for development, install a Node.js version manager and
 ### Recommended: fnm (Arch/CachyOS package)
 
 ```sh
-sudo pacman -S fnm
+paru -S fnm
 ```
 
 Add to your shell rc (`~/.zshrc` / `~/.bashrc`), then restart your shell:
@@ -27,7 +27,7 @@ fnm default lts-latest
 
 ### Alternative: nvm
 
-Arch also packages nvm (`sudo pacman -S nvm`), but it installs to `/usr/share/nvm/`, which isn't user-writable - set `export NVM_DIR="$HOME/.nvm"` *before* sourcing `/usr/share/nvm/init-nvm.sh` in your shell rc, otherwise `nvm install` fails trying to write into `/usr/share/nvm`.
+Arch also packages nvm (`paru -S nvm`), but it installs to `/usr/share/nvm/`, which isn't user-writable - set `export NVM_DIR="$HOME/.nvm"` *before* sourcing `/usr/share/nvm/init-nvm.sh` in your shell rc, otherwise `nvm install` fails trying to write into `/usr/share/nvm`.
 
 Or install nvm directly from upstream:
 
