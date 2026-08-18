@@ -59,10 +59,7 @@ pnpm install
 
 ## Container Build environment on a Fedora server
 
-To build the deployable image on a headless Fedora box you don't need Node/pnpm —
-`pnpm build` runs *inside* the image. The host just needs `podman` to build, `git`
-to fetch the repos, and `sqlite` to generate the bundled DB from the committed dump
-(the server has no Stellaris install to run the full extraction):
+To build the deployable image on a headless Fedora box you don't need Node/pnpm — `pnpm build` runs *inside* the image. The host just needs `podman` to build, `git` to fetch the repos, and `sqlite` to generate the bundled DB from the committed dump (the server has no Stellaris install to run the full extraction):
 
 ```sh
 sudo dnf install -y podman git sqlite
@@ -83,8 +80,7 @@ cd stellaris-empire-planner
 ./scripts/build-container.sh --db ../stellaris-data-extraction/sqlite/stellaris.sqlite
 ```
 
-To refresh later: `git pull` in both repos, re-run `build-sqlite.sh`, then rebuild.
-See [DEPLOY.md](DEPLOY.md) for running the image as a rootless Quadlet.
+To refresh later: `git pull` in both repos, re-run `build-sqlite.sh`, then rebuild. See [DEPLOY.md](DEPLOY.md) for running the image as a rootless Quadlet.
 
 ## Creating a project
 

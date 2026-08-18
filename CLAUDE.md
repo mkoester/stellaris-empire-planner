@@ -16,9 +16,7 @@ DB path: `STELLARIS_DB` in the gitignored `.env`, pointing at the sibling checko
 
 ### Running the dev server from a Claude Code session (sandbox)
 
-`.env` is an explicit `denyRead` target, which the sandbox implements as a
-`/dev/null` mount — so a sandboxed `pnpm dev` reads it as **empty** and dies with
-`STELLARIS_DB is not set`. Pass the path explicitly instead:
+`.env` is an explicit `denyRead` target, which the sandbox implements as a `/dev/null` mount — so a sandboxed `pnpm dev` reads it as **empty** and dies with `STELLARIS_DB is not set`. Pass the path explicitly instead:
 
 ```
 STELLARIS_DB=<abs path>/stellaris-data-extraction/sqlite/stellaris.sqlite pnpm dev --port 5201
@@ -26,19 +24,11 @@ STELLARIS_DB=<abs path>/stellaris-data-extraction/sqlite/stellaris.sqlite pnpm d
 
 Further effects when driving the app this way (verified 2026-07-27):
 
-- **Start the server and make the requests in one Bash command** — a server left
-  running by an earlier call is unreachable from a later one, and `curl` returns
-  `000` while the server logs look healthy. This is general sandbox behaviour, not
-  a planner quirk; the OKF vault's `practices/claude-code-sandbox.md` gotcha #13 has
-  the details, including waiting via `curl --retry-connrefused` (foreground `sleep`
-  is blocked).
+- **Start the server and make the requests in one Bash command** — a server left running by an earlier call is unreachable from a later one, and `curl` returns `000` while the server logs look healthy. This is general sandbox behaviour, not a planner quirk; the OKF vault's `practices/claude-code-sandbox.md` gotcha #13 has the details, including waiting via `curl --retry-connrefused` (foreground `sleep` is blocked).
 - Vite logs a `.env changed, restarting server...` loop against the stub. Harmless.
-- Prettier reports `EACCES` on `.mcp.json` (another stub), so `pnpm lint` exits
-  non-zero for a reason unrelated to the code. Check the file list it prints.
+- Prettier reports `EACCES` on `.mcp.json` (another stub), so `pnpm lint` exits non-zero for a reason unrelated to the code. Check the file list it prints.
 
-**Game version:** `meta` table (`game_version` / `game_version_raw`, from the game's
-`launcher-settings.json`). `loadGameVersion()` → `+layout.server.ts` → shown fixed
-top-right by `+layout.svelte` ("Stellaris v4.3.7", full version as the `title`).
+**Game version:** `meta` table (`game_version` / `game_version_raw`, from the game's `launcher-settings.json`). `loadGameVersion()` → `+layout.server.ts` → shown fixed top-right by `+layout.svelte` ("Stellaris v4.3.7", full version as the `title`).
 
 After changing the extraction script, regenerate the DB:
 ```
@@ -108,8 +98,7 @@ All precursor/deposit tables are DROP+CREATE each extraction run.
 
 ## `src/lib/server/db/` (package)
 
-Formerly one 2100-line `db.ts`; now domain modules behind an `index.ts` that
-re-exports everything, so `import { … } from '$lib/server/db'` is unchanged:
+Formerly one 2100-line `db.ts`; now domain modules behind an `index.ts` that re-exports everything, so `import { … } from '$lib/server/db'` is unchanged:
 
 ```
 client.ts      db() — the shared read-only better-sqlite3 handle — + loadGameVersion
@@ -144,13 +133,9 @@ Key functions:
 
 ### `/` — Landing page (`src/routes/+page.svelte`)
 
-Project intro + status: what the planner does, links into the sections. No data
-loading beyond the layout's.
+Project intro + status: what the planner does, links into the sections. No data loading beyond the layout's.
 
-Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder ·
-Portraits · Ethics · Government · Civics · Origins · Planets · Ships · Names ·
-Flag · Room) plus an **Information dropdown** (`INFO`: Precursors · Jobs ·
-Buildings) for reference tables that aren't part of empire creation.
+Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder · Portraits · Ethics · Government · Civics · Origins · Planets · Ships · Names · Flag · Room) plus an **Information dropdown** (`INFO`: Precursors · Jobs · Buildings) for reference tables that aren't part of empire creation.
 
 ### `/species` — Species Builder (`src/routes/species/+page.svelte`)
 
@@ -211,55 +196,27 @@ Buildings) for reference tables that aren't part of empire creation.
 
 ### `/civics` — Civics reference (`src/routes/civics/+page.svelte`)
 
-**Page data:** `{ civics }` — selectable `Civic[]` from `loadCivics()`. Grouped by type
-(Regular / Gestalt / Corporate / Special) via `groupCivicsByType`; a free-text filter
-over name+description; each card shows needs/excludes chips (`civicRequirementLines`),
-numeric modifiers, and the cleaned effects description. **Cards are selectable**
-(multi-toggle → `empire.toggleCivic`, highlighted from `empire.draft.civics`).
+**Page data:** `{ civics }` — selectable `Civic[]` from `loadCivics()`. Grouped by type (Regular / Gestalt / Corporate / Special) via `groupCivicsByType`; a free-text filter over name+description; each card shows needs/excludes chips (`civicRequirementLines`), numeric modifiers, and the cleaned effects description. **Cards are selectable** (multi-toggle → `empire.toggleCivic`, highlighted from `empire.draft.civics`).
 
 ### `/origins` — Origins (`src/routes/origins/+page.svelte`)
 
-**Page data:** `{ origins }` from `loadOrigins()`. Grouped by DLC (base game first),
-free-text filter; each card shows needs/excludes chips + modifiers + cleaned
-description. **Single-select** (`empire.setOrigin`, highlighted from
-`empire.draft.origin`).
+**Page data:** `{ origins }` from `loadOrigins()`. Grouped by DLC (base game first), free-text filter; each card shows needs/excludes chips + modifiers + cleaned description. **Single-select** (`empire.setOrigin`, highlighted from `empire.draft.origin`).
 
 ### `/planets` — Planets (`src/routes/planets/+page.svelte`)
 
-**Page data:** `{ planetClasses }` from `loadPlanetClasses()`, grouped by
-`groupPlanetClasses` (wet/dry/cold standard climates, special & engineered colonizable
-worlds, uninhabitable bodies). **Colonizable worlds are selectable as the homeworld**
-(`empire.setPlanetClass`); uninhabitable bodies are shown dimmed/non-selectable.
+**Page data:** `{ planetClasses }` from `loadPlanetClasses()`, grouped by `groupPlanetClasses` (wet/dry/cold standard climates, special & engineered colonizable worlds, uninhabitable bodies). **Colonizable worlds are selectable as the homeworld** (`empire.setPlanetClass`); uninhabitable bodies are shown dimmed/non-selectable.
 
 ### `/ships` — Ships (`src/routes/ships/+page.svelte`)
 
-**Page data:** `{ origins, civics }`. A regular-vs-organic (bio-ship) explainer, a
-**Regular/Organic picker** (`empire.setShipType` → a representative `graphical_culture`),
-plus lists of origins/civics that **force** or **exclude** organic ships (from their
-`ship_type` requirements).
+**Page data:** `{ origins, civics }`. A regular-vs-organic (bio-ship) explainer, a **Regular/Organic picker** (`empire.setShipType` → a representative `graphical_culture`), plus lists of origins/civics that **force** or **exclude** organic ships (from their `ship_type` requirements).
 
 ### `/empire` — Empire (`src/routes/empire/+page.svelte`)
 
-The central empire hub. A shared runes store
-[`src/lib/empire.svelte.ts`](src/lib/empire.svelte.ts) holds the single empire
-`draft` (species/traits/ethics/civics/origin/planet/ship). **All builder pages bind to
-it** — Species Builder traits (`empire.setTraits`), Ethics (`empire.setEthics`), Civics
-(`empire.toggleCivic`), Origins (`empire.setOrigin`), Planets/homeworld
-(`empire.setPlanetClass`), Ships (`empire.setShipType`). Each page's selected state
-is `$derived` from `empire.draft`, so a load populates every page and edits flow back. Import a predefined empire (from
-`loadPrescriptedEmpires()`) or upload a `user_empire_designs.txt` (parsed client-side
-by [`src/lib/empireFile.ts`](src/lib/empireFile.ts) `parseEmpireFile`).
+The central empire hub. A shared runes store [`src/lib/empire.svelte.ts`](src/lib/empire.svelte.ts) holds the single empire `draft` (species/traits/ethics/civics/origin/planet/ship). **All builder pages bind to it** — Species Builder traits (`empire.setTraits`), Ethics (`empire.setEthics`), Civics (`empire.toggleCivic`), Origins (`empire.setOrigin`), Planets/homeworld (`empire.setPlanetClass`), Ships (`empire.setShipType`). Each page's selected state is `$derived` from `empire.draft`, so a load populates every page and edits flow back. Import a predefined empire (from `loadPrescriptedEmpires()`) or upload a `user_empire_designs.txt` (parsed client-side by [`src/lib/empireFile.ts`](src/lib/empireFile.ts) `parseEmpireFile`).
 
-**Conflict resolution:** the store defines composable **sections** (species/traits/
-ethics/civics/origin/homeworld/ship). `empire.apply(e, 'all' | 'partial')` overrides
-everything, or fills only the currently-unset sections; loading prompts (override
-everything / only fill empty / cancel) **only when `empire.anySet()`**. A `generation`
-counter (bumped on load, not on edits) lets the Species Builder re-sync its archetype
-when an empire is loaded, without feedback loops. Note: the store is module-level
-`$state` → shared on the server, fine for this single-user local tool.
+**Conflict resolution:** the store defines composable **sections** (species/traits/ ethics/civics/origin/homeworld/ship). `empire.apply(e, 'all' | 'partial')` overrides everything, or fills only the currently-unset sections; loading prompts (override everything / only fill empty / cancel) **only when `empire.anySet()`**. A `generation` counter (bumped on load, not on edits) lets the Species Builder re-sync its archetype when an empire is loaded, without feedback loops. Note: the store is module-level `$state` → shared on the server, fine for this single-user local tool.
 
-**Planned next:** edit + export the draft back to a Stellaris-importable
-`user_empire_designs.txt` (needs valid flag/ruler/portrait defaults).
+**Planned next:** edit + export the draft back to a Stellaris-importable `user_empire_designs.txt` (needs valid flag/ruler/portrait defaults).
 
 Global nav: see the `/` section above (NAV + Information dropdown in `+layout.svelte`).
 
@@ -267,180 +224,71 @@ Global nav: see the `/` section above (NAV + Information dropdown in `+layout.sv
 
 **Page data:** `{ precursors }` — `Precursor[]` from `loadPrecursors()`, fully pre-loaded.
 
-A reference/"wiki-in-one" page: not really empire *planning*, but the in-game
-galaxy setup lets you pick which precursors are available — so the page's one
-piece of state is an **availability toggle** per precursor.
+A reference/"wiki-in-one" page: not really empire *planning*, but the in-game galaxy setup lets you pick which precursors are available — so the page's one piece of state is an **availability toggle** per precursor.
 
-**State:** `enabled: Set<string>` — default all on. `Enable all` / `Disable all`;
-disabled cards dim (`opacity-45`). (Initial set is read from `data` once →
-needs a `// svelte-ignore state_referenced_locally` since it's an intentional
-one-shot default.)
+**State:** `enabled: Set<string>` — default all on. `Enable all` / `Disable all`; disabled cards dim (`opacity-45`). (Initial set is read from `data` once → needs a `// svelte-ignore state_referenced_locally` since it's an intentional one-shot default.)
 
-**Layout:** cards grouped by DLC (`Base game` / `Ancient Relics Story Pack` /
-`Cosmic Storms`) in a `lg:grid-cols-2` via `groupByDlc()` — base game first, then
-DLCs in first-appearance order, **precursors sorted alphabetically by name within
-each group** (deterministic; covered by tests). Each card shows, always-visible:
-Permanent effect, Relic, Building(s), and the **Home system(s)**.
+**Layout:** cards grouped by DLC (`Base game` / `Ancient Relics Story Pack` / `Cosmic Storms`) in a `lg:grid-cols-2` via `groupByDlc()` — base game first, then DLCs in first-appearance order, **precursors sorted alphabetically by name within each group** (deterministic; covered by tests). Each card shows, always-visible: Permanent effect, Relic, Building(s), and the **Home system(s)**.
 
-**Relic block** shows the full picture: the **passive** (numeric modifiers +
-`passiveTexts` for non-numeric ones like the Cybrex Warform armies — both carry a
-`condition`, shown as a `(wilderness)` note and dimmed/highlighted by the empire
-filter, e.g. the Cryo Core's wilderness-only district passive) and a **Triumph
-(active)** sub-block (below).
+**Relic block** shows the full picture: the **passive** (numeric modifiers + `passiveTexts` for non-numeric ones like the Cybrex Warform armies — both carry a `condition`, shown as a `(wilderness)` note and dimmed/highlighted by the empire filter, e.g. the Cryo Core's wilderness-only district passive) and a **Triumph (active)** sub-block (below).
 
-**Passive merging (planner-only).** Numeric passives are run through
-`mergeRelicPassives()` before display: rows with the **same modifier+value** across
-condition branches collapse into one whose `types` is the union of the branches'
-empire types (`typesLabel(types)` → the `(…)` note, null when the union spans all
-four types = effectively unconditional). E.g. the Baol grants +10% pop growth via a
-non-machine branch *and* a machine/wilderness branch → shown once with no qualifier,
-while its +10% society research stays `(machine / wilderness)`. The extraction keeps
-both raw branches; this collapse is display-only.
+**Passive merging (planner-only).** Numeric passives are run through `mergeRelicPassives()` before display: rows with the **same modifier+value** across condition branches collapse into one whose `types` is the union of the branches' empire types (`typesLabel(types)` → the `(…)` note, null when the union spans all four types = effectively unconditional). E.g. the Baol grants +10% pop growth via a non-machine branch *and* a machine/wilderness branch → shown once with no qualifier, while its +10% society research stays `(machine / wilderness)`. The extraction keeps both raw branches; this collapse is display-only.
 
-The **Triumph (active)** sub-block — `activeEffect` text,
-`activeModifiers` (temporary modifiers the active grants) + `activeDetail` (how —
-e.g. "One at random for 2–5 years, or all of them for 1 year"). For `activeMode`
-`'choice'` the modifiers are rendered grouped under their `groupLabel` via
-`groupActiveModifiers()` (e.g. the Zro Crystal's "Martial Guidance" /
-"Statecraft Guidance" options); `'direct'`/`'random'` render flat. Plus `produces`
-(resources gained), activation `costs`, and cooldown. `relicResourceLabel(list)`
-formats both `costs` and `produces` (e.g. "3000 Unity, 2000 Minerals (grows with
-each use)", "1000 Alloys (grows with each use)"); `cooldownLabel(days)` →
-Stellaris years. The produced amount comes from the script (`add_resource`), **not**
-the loc tooltip, which can be stale (the War Forge loc wrongly says 5000 alloys;
-the real payout is 1000, +1000/use). Relics with only a numeric passive (Cybrex)
-used to look empty — now they don't.
+The **Triumph (active)** sub-block — `activeEffect` text, `activeModifiers` (temporary modifiers the active grants) + `activeDetail` (how — e.g. "One at random for 2–5 years, or all of them for 1 year"). For `activeMode` `'choice'` the modifiers are rendered grouped under their `groupLabel` via `groupActiveModifiers()` (e.g. the Zro Crystal's "Martial Guidance" / "Statecraft Guidance" options); `'direct'`/`'random'` render flat. Plus `produces` (resources gained), activation `costs`, and cooldown. `relicResourceLabel(list)` formats both `costs` and `produces` (e.g. "3000 Unity, 2000 Minerals (grows with each use)", "1000 Alloys (grows with each use)"); `cooldownLabel(days)` → Stellaris years. The produced amount comes from the script (`add_resource`), **not** the loc tooltip, which can be stale (the War Forge loc wrongly says 5000 alloys; the real payout is 1000, +1000/use). Relics with only a numeric passive (Cybrex) used to look empty — now they don't.
 
-**Empire-type filter.** A toolbar highlights the effects that apply to a chosen
-empire type. `empireFilter: 'planner' | EmpireType`; `'planner'` is the default
-**placeholder** (no highlighting — will later read the empire from the Species
-Builder). `activeType` (derived) is null for `'planner'`. When a type is picked:
-non-applicable reward variants / relic passives dim (`opacity-40`/`30`),
-applicable ones get a `text-primary-400` accent (+ ✓ on the variant).
-- `variantApplies(variant, type)` — reward variants (controlled vocab):
-  `suppressed`/`public` → regular/wilderness, `machine`→machine, `hive`→hive,
-  `hive_machine`→hive/machine, `default`→all.
-- `conditionApplies(condition, type)` — parses the relic-passive condition string
-  (AND = comma; OR = parenthesised `(a OR b)`) against `EMPIRE_FLAGS`
-  (`is_machine_empire`/`is_wilderness_empire`; hive reads same as regular).
-  `conditionLabel` is now derived from `applicableTypes()` ("regular / hive",
-  "non-wilderness"), replacing the old hardcoded string map. **Depends on the
-  extraction emitting parseable OR conditions** (see extraction CLAUDE.md).
+**Empire-type filter.** A toolbar highlights the effects that apply to a chosen empire type. `empireFilter: 'planner' | EmpireType`; `'planner'` is the default **placeholder** (no highlighting — will later read the empire from the Species Builder). `activeType` (derived) is null for `'planner'`. When a type is picked: non-applicable reward variants / relic passives dim (`opacity-40`/`30`), applicable ones get a `text-primary-400` accent (+ ✓ on the variant).
+- `variantApplies(variant, type)` — reward variants (controlled vocab): `suppressed`/`public` → regular/wilderness, `machine`→machine, `hive`→hive, `hive_machine`→hive/machine, `default`→all.
+- `conditionApplies(condition, type)` — parses the relic-passive condition string (AND = comma; OR = parenthesised `(a OR b)`) against `EMPIRE_FLAGS` (`is_machine_empire`/`is_wilderness_empire`; hive reads same as regular). `conditionLabel` is now derived from `applicableTypes()` ("regular / hive", "non-wilderness"), replacing the old hardcoded string map. **Depends on the extraction emitting parseable OR conditions** (see extraction CLAUDE.md).
 
-**Reward merging (permanent effect).** `mergeRewardModifiers(rewards)` collapses
-the per-variant reward modifiers into one flat list (like `mergeRelicPassives`):
-same modifier+value → one row whose `types` is the union of the granting variants'
-empire types, plus a `choiceNote` when, for those types, only some (choice) variants
-grant it. `rewardQualifier(m)` → the `(…)` note (type note + choice note; null when
-it applies to everyone). So Vultaum reads: Research Speed (Computing) — no note
-(all); Amenities — `(regular / wilderness)` (both regular choices); All-Tech /
-Happiness — `(regular / wilderness, research made public)` (the "made public"
-choice only); Pop Assembly — `(machine)`. (`VARIANT_LABELS`/`variantLabel` and the
-old per-variant "Only one applies" rendering are gone.)
+**Reward merging (permanent effect).** `mergeRewardModifiers(rewards)` collapses the per-variant reward modifiers into one flat list (like `mergeRelicPassives`): same modifier+value → one row whose `types` is the union of the granting variants' empire types, plus a `choiceNote` when, for those types, only some (choice) variants grant it. `rewardQualifier(m)` → the `(…)` note (type note + choice note; null when it applies to everyone). So Vultaum reads: Research Speed (Computing) — no note (all); Amenities — `(regular / wilderness)` (both regular choices); All-Tech / Happiness — `(regular / wilderness, research made public)` (the "made public" choice only); Pop Assembly — `(machine)`. (`VARIANT_LABELS`/`variantLabel` and the old per-variant "Only one applies" rendering are gone.)
 
-**Home system — relevant-first.** `isRelevant(planet)` = homeworld OR has a
-resource (non-blocker) deposit OR has a modifier OR class ∈ `RELEVANT_CLASSES`
-(habitable/colonizable, the special precursor worlds, ringworld sections) OR ∈
-`TERRAFORM_CANDIDATE` (`pc_toxic`). Relevant bodies render by default; the rest
-(barren/asteroids/gas giants w/o deposits) sit behind a "N more bodies"
-`<details>`. The `planetRow` snippet renders each: type/size, a `terraformable`
-tag, deposit chips via `depositChips()` (resource yields green & individual;
-blockers collapsed by name with `×count`; homeworld ★) + `precursor_planet_modifier`
-rows. Megastructures are violet chips on the system header via `megaLabel()`,
-which appends `×N` when `count > 1` (e.g. Cybrex Alpha's "Ruined Ring Section ×4").
-The empty-state note ("No habitable worlds…") is suppressed when a megastructure
-is present (e.g. Cybrex Alpha's ruined ring world).
+**Home system — relevant-first.** `isRelevant(planet)` = homeworld OR has a resource (non-blocker) deposit OR has a modifier OR class ∈ `RELEVANT_CLASSES` (habitable/colonizable, the special precursor worlds, ringworld sections) OR ∈ `TERRAFORM_CANDIDATE` (`pc_toxic`). Relevant bodies render by default; the rest (barren/asteroids/gas giants w/o deposits) sit behind a "N more bodies" `<details>`. The `planetRow` snippet renders each: type/size, a `terraformable` tag, deposit chips via `depositChips()` (resource yields green & individual; blockers collapsed by name with `×count`; homeworld ★) + `precursor_planet_modifier` rows. Megastructures are violet chips on the system header via `megaLabel()`, which appends `×N` when `count > 1` (e.g. Cybrex Alpha's "Ruined Ring Section ×4"). The empty-state note ("No habitable worlds…") is suppressed when a megastructure is present (e.g. Cybrex Alpha's ruined ring world).
 
-These planet-class sets are **hardcoded** in the component (like the home page's
-phenotype-tag sets) — not data-driven. Extend if a precursor world isn't shown.
+These planet-class sets are **hardcoded** in the component (like the home page's phenotype-tag sets) — not data-driven. Extend if a precursor world isn't shown.
 
-**Formatting helpers** mirror the ethics page: `formatValue` (sign; `_add` →
-integer, else `×100%`; except `PERCENT_ADD_MODIFIERS` like
-`country_storm_repulsion_influence_add` — a fractional `_add` shown as % so the
-Tempest Invocator's 1.0 reads "+100%"), `valueColor` (`positiveIsGood`), `modLabel`
-(strips `[...]` tags). Plus `resourceLabel` (deposit yields), `conditionLabel`
-(relic `potential` → short note), `variantLabel` (reward variant display name).
+**Formatting helpers** mirror the ethics page: `formatValue` (sign; `_add` → integer, else `×100%`; except `PERCENT_ADD_MODIFIERS` like `country_storm_repulsion_influence_add` — a fractional `_add` shown as % so the Tempest Invocator's 1.0 reads "+100%"), `valueColor` (`positiveIsGood`), `modLabel` (strips `[...]` tags). Plus `resourceLabel` (deposit yields), `conditionLabel` (relic `potential` → short note), `variantLabel` (reward variant display name).
 
 **Nav chain:** Species Builder → Ethics → Precursors (footer/header links).
 
-**Pure helpers live in [`src/lib/precursors.ts`](src/lib/precursors.ts)** (not the
-component): the empire-type applies-logic (`variantApplies`, `conditionApplies`,
-`clauseMatches`, `applicableTypes`, `conditionLabel`), modifier formatting
-(`formatValue`, `valueColor`, `modLabel`), `variantLabel`, `resourceLabel`, and
-the planet/deposit helpers (`shownPlanets`, `isRelevant`, `isTerraformable`,
-`depositChips`, `RELEVANT_CLASSES`, `TERRAFORM_CANDIDATE`), plus `dlcBadge`. The
-component keeps only reactive state/derived (`enabled`, `empireFilter`,
-`activeType`, `groups`) and the `planetRow` snippet. Types are imported
-type-only from `$lib/server/db` (erased at runtime, so the file is client-safe).
+**Pure helpers live in [`src/lib/precursors.ts`](src/lib/precursors.ts)** (not the component): the empire-type applies-logic (`variantApplies`, `conditionApplies`, `clauseMatches`, `applicableTypes`, `conditionLabel`), modifier formatting (`formatValue`, `valueColor`, `modLabel`), `variantLabel`, `resourceLabel`, and the planet/deposit helpers (`shownPlanets`, `isRelevant`, `isTerraformable`, `depositChips`, `RELEVANT_CLASSES`, `TERRAFORM_CANDIDATE`), plus `dlcBadge`. The component keeps only reactive state/derived (`enabled`, `empireFilter`, `activeType`, `groups`) and the `planetRow` snippet. Types are imported type-only from `$lib/server/db` (erased at runtime, so the file is client-safe).
 
 ### `/portraits` — Portraits reference (`src/routes/portraits/+page.svelte`)
 
-**Page data:** `{ portraits, traitInfo }` — `loadPortraits()` (portrait →
-species class(es) → set/DLC) plus a `TraitInfo` tooltip map (effect lines +
-flavour, `negative` flag → rose) built in the page server from
-`loadTraitsForKeys`. Reference page: which portraits exist, which classes use
-them, and each class's base trait as a hover tooltip. Multi-class portraits are
-Machine + Mechanical synths only.
+**Page data:** `{ portraits, traitInfo }` — `loadPortraits()` (portrait → species class(es) → set/DLC) plus a `TraitInfo` tooltip map (effect lines + flavour, `negative` flag → rose) built in the page server from `loadTraitsForKeys`. Reference page: which portraits exist, which classes use them, and each class's base trait as a hover tooltip. Multi-class portraits are Machine + Mechanical synths only.
 
 ### `/government` — Authorities (`src/routes/government/+page.svelte`)
 
-**Page data:** `{ authorities }` from `loadAuthorities()`. Cards with modifiers +
-requirements; **single-select toggle** → `empire.setAuthority` (click again to
-clear), highlighted from `empire.draft.authority`.
+**Page data:** `{ authorities }` from `loadAuthorities()`. Cards with modifiers + requirements; **single-select toggle** → `empire.setAuthority` (click again to clear), highlighted from `empire.draft.authority`.
 
 ### `/names` — Names (`src/routes/names/+page.svelte`)
 
-Text inputs for the empire/species name fields (grouped Empire / Species / …),
-bound to the draft via `empire.setName(field, value)` /
-`empire.setSecondaryName(...)`. No server load.
+Text inputs for the empire/species name fields (grouped Empire / Species / …), bound to the draft via `empire.setName(field, value)` / `empire.setSecondaryName(...)`. No server load.
 
 ### `/flag` — Flag (`src/routes/flag/+page.svelte`)
 
-**Page data:** `{ flagAssets, flagColors }` (`loadFlagAssets`/`loadFlagColors`).
-Pick flag background/icon + colors into the draft (the .dds assets can't be
-rendered — pickers work on names/colors).
+**Page data:** `{ flagAssets, flagColors }` (`loadFlagAssets`/`loadFlagColors`). Pick flag background/icon + colors into the draft (the .dds assets can't be rendered — pickers work on names/colors).
 
 ### `/room` — Room (`src/routes/room/+page.svelte`)
 
-**Page data:** `{ rooms }` from `loadRooms()`. Single-select diplomacy room →
-`empire.setRoom` (`default_room` = empty value).
+**Page data:** `{ rooms }` from `loadRooms()`. Single-select diplomacy room → `empire.setRoom` (`default_room` = empty value).
 
 ### `/tech` + `/fallen-empire-tech` — Technology reference tables
 
-`{ techs }` from `loadRepeatableTechs()` / `loadFallenEmpireTechs()`. Repeatable
-techs group by research area (Physics/Society/Engineering) and category, showing
-their modifiers and level cap (`levels = -1` = unlimited). Fallen-empire techs
-show the building each unlocks (`building` — name, description, resources, jobs —
-pre-joined via `building_key`; null for the ship-component techs).
+`{ techs }` from `loadRepeatableTechs()` / `loadFallenEmpireTechs()`. Repeatable techs group by research area (Physics/Society/Engineering) and category, showing their modifiers and level cap (`levels = -1` = unlimited). Fallen-empire techs show the building each unlocks (`building` — name, description, resources, jobs — pre-joined via `building_key`; null for the ship-component techs).
 
 ### `/jobs` + `/buildings` — Information reference tables
 
-`{ jobs }` from `loadJobs()` / `{ buildings }` from `loadBuildings()`, grouped by
-category. Base produces/upkeep and (buildings) provided jobs; job **swaps** are
-deliberately *not* here — swap tooltips live on the **civics/origins cards**
-([SwapTables.svelte](src/lib/SwapTables.svelte), data from
-`loadJobSwapsBySource()` in those pages' servers).
+`{ jobs }` from `loadJobs()` / `{ buildings }` from `loadBuildings()`, grouped by category. Base produces/upkeep and (buildings) provided jobs; job **swaps** are deliberately *not* here — swap tooltips live on the **civics/origins cards** ([SwapTables.svelte](src/lib/SwapTables.svelte), data from `loadJobSwapsBySource()` in those pages' servers).
 
-Tooltips across the app use the Skeleton/Zag tooltip via
-[Tip.svelte](src/lib/Tip.svelte) — no native `title=` attributes left on
-interactive elements.
+Tooltips across the app use the Skeleton/Zag tooltip via [Tip.svelte](src/lib/Tip.svelte) — no native `title=` attributes left on interactive elements.
 
 ---
 
 ## Testing
 
-**Vitest** (`pnpm test`, `pnpm test:watch`). Config: `test` block in
-[vite.config.ts](vite.config.ts) (`defineConfig` from `vitest/config`); specs are
-`src/**/*.{test,spec}.ts`.
+**Vitest** (`pnpm test`, `pnpm test:watch`). Config: `test` block in [vite.config.ts](vite.config.ts) (`defineConfig` from `vitest/config`); specs are `src/**/*.{test,spec}.ts`.
 
-[`src/lib/precursors.test.ts`](src/lib/precursors.test.ts) covers the pure
-helpers — the empire-type truth table is the high-value part (e.g. Baol's
-AND/OR `potential` branches → which empire types each relic passive applies to;
-Vultaum/Inetian reward variants; plus formatting helpers like `relicCostLabel`,
-`cooldownLabel`, `groupByDlc`, `megaLabel`). Tests import the module **relatively**
-(`./precursors`) and build fixtures from the `$lib/server/db` types, so they need
-no `$lib` alias or DB at runtime. Pure presentation logic only — no component
-rendering, no DB. Add cases here when extending `precursors.ts`.
+[`src/lib/precursors.test.ts`](src/lib/precursors.test.ts) covers the pure helpers — the empire-type truth table is the high-value part (e.g. Baol's AND/OR `potential` branches → which empire types each relic passive applies to; Vultaum/Inetian reward variants; plus formatting helpers like `relicCostLabel`, `cooldownLabel`, `groupByDlc`, `megaLabel`). Tests import the module **relatively** (`./precursors`) and build fixtures from the `$lib/server/db` types, so they need no `$lib` alias or DB at runtime. Pure presentation logic only — no component rendering, no DB. Add cases here when extending `precursors.ts`.
 
 ---
 
@@ -463,16 +311,13 @@ rendering, no DB. Add cases here when extending `precursors.ts`.
 
 - Modifier sign color for Overtuned traits (positive-cost but mixed +/– effects).
 - Phase 2 modifiers: triggered/conditional modifiers, `custom_tooltip`, `inline_script`.
-- Portrait picker *in the builder* (data in DB; `/portraits` is a reference page,
-  the draft has no portrait selection yet — needed for the planned
-  `user_empire_designs.txt` export).
+- Portrait picker *in the builder* (data in DB; `/portraits` is a reference page, the draft has no portrait selection yet — needed for the planned `user_empire_designs.txt` export).
 - Species name generation (`common/species_names/`).
 
 ---
 
 ## Companion repo: Stellaris Modding Insights
 
-A sibling repo collects hard-won, poorly-documented Stellaris findings — engine quirks, parser/format gotchas, things only obvious in hindsight:
-`../stellaris-modding-insights` (sibling checkout, https://github.com/mkoester/stellaris-modding-insights). It's community-facing notes organised as `docs/NN-topic.md` with a TL;DR index in `README.md`. Especially relevant here: how vanilla game scripts (traits, ethics, species classes, `localisation/`) are structured, since this planner consumes that extracted data.
+A sibling repo collects hard-won, poorly-documented Stellaris findings — engine quirks, parser/format gotchas, things only obvious in hindsight: `../stellaris-modding-insights` (sibling checkout, https://github.com/mkoester/stellaris-modding-insights). It's community-facing notes organised as `docs/NN-topic.md` with a TL;DR index in `README.md`. Especially relevant here: how vanilla game scripts (traits, ethics, species classes, `localisation/`) are structured, since this planner consumes that extracted data.
 
 **When you discover something noteworthy** — a surprising bit of how the game data is modelled, an undocumented localisation/format detail, a non-obvious gotcha, or anything that cost real time to figure out — proactively suggest recording it in the insights repo. Don't write there silently: propose what to add (which `docs/` file, a one-line TL;DR) and let the user confirm, since it's a separate, published repo. Keep planner/app-specific notes in this file; route generally-useful Stellaris modding knowledge to the insights repo.
