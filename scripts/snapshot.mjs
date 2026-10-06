@@ -31,14 +31,15 @@ import {
 	readdirSync
 } from 'node:fs';
 import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import Database from 'better-sqlite3';
 import prettier from 'prettier';
 
-const HOME = process.env.HOME;
-const PROJECTS = join(HOME, 'Projects');
-const PLANNER = join(PROJECTS, 'stellaris-empire-planner');
-const EXTRACTOR = join(PROJECTS, 'stellaris-data-extraction');
-const COMPARISON = process.env.COMPARISON_DIR || join(PROJECTS, 'stellaris-data-comparison');
+// Self-locating: this script lives in <planner>/scripts/, its siblings next to <planner>.
+const PLANNER = dirname(dirname(fileURLToPath(import.meta.url)));
+const WORKSPACE = dirname(PLANNER);
+const EXTRACTOR = join(WORKSPACE, 'stellaris-data-extraction');
+const COMPARISON = process.env.COMPARISON_DIR || join(WORKSPACE, 'stellaris-data-comparison');
 const PORT = Number(process.env.SNAPSHOT_PORT || 4319);
 const DO_COMMIT = process.argv.includes('--commit');
 
