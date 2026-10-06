@@ -2,9 +2,8 @@
 #
 # Multi-stage build for the Stellaris Empire Planner (SvelteKit + adapter-node).
 #
-# Debian-based images are used deliberately: better-sqlite3 is a native module and
-# its prebuilt binaries / source build target glibc. Alpine (musl) would force an
-# awkward from-source rebuild, so we stay on node:24-slim throughout.
+# better-sqlite3 (13+) ships Node-API binaries for glibc and musl inside its npm
+# package, so no toolchain is needed in any stage; we stay on node:24-slim throughout.
 
 FROM node:24-slim AS base
 ENV PNPM_HOME=/pnpm \
@@ -14,18 +13,15 @@ RUN corepack enable
 # ── Build stage: full install (incl. dev deps) + production build ──────────────
 FROM base AS build
 WORKDIR /app
-# Toolchain so better-sqlite3 can compile if no prebuilt binary matches this platform.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends python3 make g++ \
-    && rm -rf /var/lib/apt/lists/*
-# pnpm-workspace.yaml carries `allowBuilds` (pnpm 11 gates build scripts); it must be
-# present for better-sqlite3's native build to run during install.
+# pnpm-workspace.yaml carries `allowBuilds` (pnpm 11+ gates build scripts): it enables
+# the esbuild/oxide installs and disables better-sqlite3's implicit node-gyp rebuild,
+# which would otherwise replace its bundled binary with a from-source compile.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
-# Drop dev dependencies; the already-compiled better-sqlite3 binding is kept.
+# Drop dev dependencies; better-sqlite3 and its bundled binary are a prod dependency.
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm prune --prod
 

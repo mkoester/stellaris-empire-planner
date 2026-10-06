@@ -9,14 +9,7 @@
 	import type { Snippet } from 'svelte';
 
 	type Placement =
-		| 'bottom'
-		| 'top'
-		| 'left'
-		| 'right'
-		| 'bottom-start'
-		| 'bottom-end'
-		| 'top-start'
-		| 'top-end';
+		'bottom' | 'top' | 'left' | 'right' | 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end';
 
 	let {
 		text,
