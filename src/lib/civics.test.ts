@@ -175,6 +175,18 @@ describe('civicRequirementLines', () => {
 			{ kind: 'ship_type', type: 'require', text: 'Organic ships' }
 		]);
 	});
+	it('renders the nomadic gate as gameplay, after every other kind', () => {
+		const lines = civicRequirementLines([
+			req('gameplay', 'require', 'nomadic'),
+			req('ship_type', 'forbid', 'organic')
+		]);
+		expect(lines.find((l) => l.kind === 'gameplay')).toEqual({
+			kind: 'gameplay',
+			type: 'require',
+			text: 'Nomadic gameplay'
+		});
+		expect(lines.map((l) => l.kind)).toEqual(['ship_type', 'gameplay']);
+	});
 });
 
 describe('requirementChipClass', () => {

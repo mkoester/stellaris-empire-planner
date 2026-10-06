@@ -74,7 +74,7 @@ civic_modifier          — civic_key, modifier_key, modifier_value, sort_order
 civic_requirement       — civic_key, kind (authority/ethic/civic/origin), operator (require/forbid/require_any), value, group_id (ties require_any OR sets)
 origin                  — key, name, description, required_dlc, selectable, icon, sort_order
 origin_modifier         — origin_key, modifier_key, modifier_value, sort_order
-origin_requirement      — origin_key, kind, operator, value, group_id  (same shape as civic_requirement; kind includes 'ship_type' value 'organic')
+origin_requirement      — origin_key, kind, operator, value, group_id  (same shape as civic_requirement; kind includes 'ship_type' value 'organic' and 'gameplay' value 'nomadic')
 planet_class            — key, name, climate (wet/dry/cold/null), colonizable, is_standard (default startable climate)
 prescripted_empire      — key, name, species_class, species_portrait, authority, government, origin, planet_class, graphical_culture, sort_order  (the ~52 predefined empires)
 prescripted_empire_item — empire_key, kind (trait/civic/ethic), value, sort_order
@@ -129,7 +129,7 @@ Key functions:
 - `loadSpeciesClasses()` — returns `{ key, label, archetype }`, filtered to BIOLOGICAL/LITHOID/MACHINE.
 - `loadEthics()` — returns ethics with `modifiers[]`, `implications[]`, `policyRestrictions[]`.
 - `loadCivics()` — player-selectable `Civic[]` (`selectable = 1`), each with `modifiers[]` and `requirements[]` (`{ kind, operator, value, groupId }`). Pure display helpers in [`src/lib/civics.ts`](src/lib/civics.ts) (`groupCivicsByType`, `prettyKey`, `civicRequirementLines`, `formatModifierValue`).
-- `loadOrigins()` — player-selectable `Origin[]`; same `requirements`/`modifiers` shape as civics (reuses `CivicRequirement` + the civics.ts helpers). Effects are mostly the `description`. Requirements include `ship_type` gates (forbid/require organic ships).
+- `loadOrigins()` — player-selectable `Origin[]`; same `requirements`/`modifiers` shape as civics (reuses `CivicRequirement` + the civics.ts helpers). Effects are mostly the `description`. Requirements include `ship_type` gates (forbid/require organic ships) and `gameplay` gates (require = nomads only, forbid = settled only, none = both; display-only like every requirement chip).
 - `loadPlanetClasses()` — `PlanetClass[]`; grouped for display by `src/lib/planets.ts` (`groupPlanetClasses`: wet/dry/cold standard climates, special/engineered worlds, uninhabitable bodies).
 - `loadPrescriptedEmpires()` — the ~52 predefined `Empire[]` (species/traits/ethics/civics/origin/authority/planet/ship). `loadEntityNames()` — a `{key:name}` map (species_class/ethic/civic/origin/planet_class) for resolving an empire's raw keys. The shared `Empire` type is the shape for both predefined and parsed user empires.
 - `loadPrecursors()` — fully-stitched `Precursor[]`: each with `relic` (+passives w/ `condition`), `rewards[]` (grouped by variant — Vultaum has 4), `buildings[]`, and `systems[]` → `planets[]` → `deposits[]` (resolved against the `deposit` dictionary) + planet `modifiers[]` + system `megastructures[]`. Several queries stitched in JS by `precursor_key`/`relic_key`/`initializer`/`planet_id`.

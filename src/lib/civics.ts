@@ -124,14 +124,16 @@ export function modifierLabel(mod: Modifier): string {
 // Collapse a civic's requirements into 'requires' / 'excludes' display lines. An
 // OR set (require_any, same groupId) becomes a single "A or B" requires line.
 export interface CivicRequirementLine {
-	kind: string; // what's gated: ethic / civic / origin / authority / ship_type
+	kind: string; // what's gated: ethic / civic / origin / authority / ship_type / gameplay
 	type: 'require' | 'exclude';
 	text: string;
 }
 // The display text for one gated value: ship-type gates read "Organic ships",
-// species-archetype gates ("MACHINE") read "Machine", everything else via prettyKey.
+// gameplay gates read "Nomadic gameplay", species-archetype gates ("MACHINE") read
+// "Machine", everything else via prettyKey.
 function requirementValueText(kind: string, value: string): string {
 	if (kind === 'ship_type') return `${prettyKey(value)} ships`;
+	if (kind === 'gameplay') return `${prettyKey(value)} gameplay`;
 	if (kind === 'archetype') return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
 	return prettyKey(value);
 }
@@ -165,7 +167,7 @@ export function civicRequirementLines(reqs: CivicRequirement[]): CivicRequiremen
 // Display order for requirement chips: grouped by kind (legend order), alphabetical
 // within — except ethics, which read Gestalt first, then each axis with the regular
 // variant before its Fanatic one ("Egalitarian" before "Fanatic Egalitarian").
-const KIND_ORDER = ['ethic', 'civic', 'origin', 'authority', 'archetype', 'ship_type'];
+const KIND_ORDER = ['ethic', 'civic', 'origin', 'authority', 'archetype', 'ship_type', 'gameplay'];
 function ethicSortKey(text: string): [number, string, number] {
 	if (/^gestalt/i.test(text)) return [0, '', 0]; // Gestalt Consciousness first
 	const fanatic = /^fanatic /i.test(text);
@@ -209,7 +211,14 @@ const REQ_KIND_CLASS: Record<string, { require: string; exclude: string }> = {
 		require: 'bg-lime-500/10 text-lime-300/70',
 		exclude: 'bg-lime-500/25 text-lime-200'
 	},
-	ship_type: { require: 'bg-teal-500/10 text-teal-300/70', exclude: 'bg-teal-500/25 text-teal-200' }
+	ship_type: {
+		require: 'bg-teal-500/10 text-teal-300/70',
+		exclude: 'bg-teal-500/25 text-teal-200'
+	},
+	gameplay: {
+		require: 'bg-indigo-500/10 text-indigo-300/70',
+		exclude: 'bg-indigo-500/25 text-indigo-200'
+	}
 };
 const REQ_FALLBACK = {
 	require: 'bg-slate-500/10 text-slate-300/70',
@@ -225,7 +234,8 @@ export const REQUIREMENT_KINDS: { kind: string; label: string }[] = [
 	{ kind: 'civic', label: 'Civics' },
 	{ kind: 'origin', label: 'Origin' },
 	{ kind: 'authority', label: 'Government' },
-	{ kind: 'ship_type', label: 'Ship type' }
+	{ kind: 'ship_type', label: 'Ship type' },
+	{ kind: 'gameplay', label: 'Gameplay' }
 ];
 
 // The kinds authorities gate on — for the Government page's legend (ethics + the
