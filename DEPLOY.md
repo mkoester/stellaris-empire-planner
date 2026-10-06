@@ -82,3 +82,14 @@ curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/   # -> 200
 ```
 
 Then point your reverse proxy at `http://127.0.0.1:3000` for the host in `ORIGIN`.
+
+## Updating a running deployment
+
+After pushing new commits to **both** repos (a game patch regenerates the extraction repo's `sql/stellaris.sql`), run on the server:
+
+```sh
+sudo -u stellaris-empire-planner git -C ~stellaris-empire-planner/stellaris-empire-planner pull --ff-only
+sudo ~stellaris-empire-planner/stellaris-empire-planner/scripts/update-deployment.sh
+```
+
+The first line only matters when the script itself changed. The script pulls both repos (cloning the extraction repo next to the planner on first run), rebuilds the DB from the committed dump, builds the image in the service user's podman storage, restarts the service, and fails unless `http://127.0.0.1:3000/` answers 200 **and** reports the dump's game version. It needs `podman git sqlite curl` on the host.
