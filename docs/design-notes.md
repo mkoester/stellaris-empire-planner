@@ -2,7 +2,7 @@
 
 **Archive, not instruction. Nothing here is loaded into a session.** The full former CLAUDE.md, verbatim: the DB schema, per-route state machines and dated fixes.
 
-The rules an agent must have in context are in `../AGENTS.md`. Read this for *why*; put
+The rules an agent must have in context are in `../AGENTS.md`. Read this for _why_; put
 new rules there and new evidence here.
 
 ---
@@ -18,6 +18,7 @@ new rules there and new evidence here.
 ## Project Overview
 
 Two repos that work together:
+
 - **`stellaris-empire-planner`** — SvelteKit 2 / Svelte 5 / SkeletonUI v4 / Tailwind v4 / `pnpm` / TypeScript. The web app.
 - **`stellaris-data-extraction`** — Python extraction pipeline. Parses Stellaris game files → SQLite DB.
 
@@ -40,6 +41,7 @@ Further effects when driving the app this way (verified 2026-07-27):
 **Game version:** `meta` table (`game_version` / `game_version_raw`, from the game's `launcher-settings.json`). `loadGameVersion()` → `+layout.server.ts` → shown fixed top-right by `+layout.svelte` ("Stellaris v4.3.7", full version as the `title`).
 
 After changing the extraction script, regenerate the DB:
+
 ```
 cd stellaris-data-extraction
 python3 stellaris-extract.py ~/.local/share/Steam/steamapps/common/Stellaris --sqlite sqlite/stellaris.sqlite
@@ -124,6 +126,7 @@ tech.ts        repeatable + fallen-empire techs (loadRepeatableTechs, loadFallen
 Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `ActiveModifier`, `RelicResource`, `RelicPassiveText`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
 
 Key functions:
+
 - `loadTraits()` — main trait query + separate modifier query, merged by key. Filters `initial=1 AND hidden=0`.
 - `loadTraitsForKeys(keys)` — loads specific trait keys (used for base traits: organic, lithoid, machine_unit).
 - `loadSpeciesClasses()` — returns `{ key, label, archetype }`, filtered to BIOLOGICAL/LITHOID/MACHINE.
@@ -151,6 +154,7 @@ Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder �
 **Page data:** `{ traits, archetypes, traitCategories, speciesClasses, baseTraits, debugDisableSelection }`
 
 **State:**
+
 - `archetypeGroup: 'BIOLOGICAL' | 'MACHINE'` — top-level group (Lithoid is NOT a top-level choice)
 - `selectedClassKey: string | null` — specific species class within the group
 - `archetype` (derived) — actual trait filter archetype: `selectedClass?.archetype ?? archetypeGroup`
@@ -160,11 +164,13 @@ Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder �
 **Budget:** `effectiveBudget = maxPoints + |negativeBonus|` (expands with negative-cost traits).
 
 **Trait card snippet:** `traitCard(trait, borderColor, isBase = false)`
+
 - `isBase=true` → renders as `<div>`, "Base" badge (amber), no interaction. Base trait shown first in summary grid.
 - States: selected (primary), conflicted (red ring, opacity-50), blocked (opacity-35), normal (card-hover).
 - Bottom: modifier list → species class badges → tag badges (filtered by `HIDDEN_CARD_TAGS`).
 
 **Tag filter (below sticky header):**
+
 - Groups: Tags / Species / Polarity
 - `HIDDEN_CARD_TAGS` — tags not shown on cards (polarity/archetype classification)
 - `SPECIES_PHENOTYPE_TAGS` — aquatic, arthropoid, avian, fungoid, humanoid, lithoid, mammalian, molluscoid, necroid, organic, plantoid, reptilian, species, toxoid
@@ -173,6 +179,7 @@ Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder �
 - Polarity row: positive before negative (explicit order, not alphabetical)
 
 **Species picker (below archetype group buttons, above tags):**
+
 - Shows all classes for current `archetypeGroup` (including Lithoid under Biological)
 - Selecting a class filters phenotype traits to that class only; "By phenotype" toggle hidden
 - Changing `archetypeGroup` clears `selectedClassKey` and `activeTags`
@@ -181,19 +188,23 @@ Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder �
 
 ### `/ethics` — Ethics Picker (`src/routes/ethics/+page.svelte`)
 
-**Page data:** `{ ethics }`  — `Ethic[]` with modifiers, implications, policyRestrictions pre-loaded.
+**Page data:** `{ ethics }` — `Ethic[]` with modifiers, implications, policyRestrictions pre-loaded.
 
 **State:** `selected: Set<string>` — selected ethic keys. Budget: 3 pts.
 
 **AXES** (defines picker layout and table column order):
+
 ```js
-[['ethic_authoritarian', 'ethic_egalitarian'],
- ['ethic_xenophobe',     'ethic_xenophile'],
- ['ethic_militarist',    'ethic_pacifist'],
- ['ethic_spiritualist',  'ethic_materialist']]
+[
+	['ethic_authoritarian', 'ethic_egalitarian'],
+	['ethic_xenophobe', 'ethic_xenophile'],
+	['ethic_militarist', 'ethic_pacifist'],
+	['ethic_spiritualist', 'ethic_materialist']
+];
 ```
 
 **Sections:**
+
 1. Budget indicator (3 dots)
 2. Ethics picker — 4 axis rows + Gestalt below separator. Buttons show modifiers in `title` tooltip.
 3. Selected effects — flat modifier list (`max-w-sm`) + "Gameplay Implications" (tags + policy restrictions), both with source annotation.
@@ -233,7 +244,7 @@ Global nav: see the `/` section above (NAV + Information dropdown in `+layout.sv
 
 **Page data:** `{ precursors }` — `Precursor[]` from `loadPrecursors()`, fully pre-loaded.
 
-A reference/"wiki-in-one" page: not really empire *planning*, but the in-game galaxy setup lets you pick which precursors are available — so the page's one piece of state is an **availability toggle** per precursor.
+A reference/"wiki-in-one" page: not really empire _planning_, but the in-game galaxy setup lets you pick which precursors are available — so the page's one piece of state is an **availability toggle** per precursor.
 
 **State:** `enabled: Set<string>` — default all on. `Enable all` / `Disable all`; disabled cards dim (`opacity-45`). (Initial set is read from `data` once → needs a `// svelte-ignore state_referenced_locally` since it's an intentional one-shot default.)
 
@@ -241,11 +252,12 @@ A reference/"wiki-in-one" page: not really empire *planning*, but the in-game ga
 
 **Relic block** shows the full picture: the **passive** (numeric modifiers + `passiveTexts` for non-numeric ones like the Cybrex Warform armies — both carry a `condition`, shown as a `(wilderness)` note and dimmed/highlighted by the empire filter, e.g. the Cryo Core's wilderness-only district passive) and a **Triumph (active)** sub-block (below).
 
-**Passive merging (planner-only).** Numeric passives are run through `mergeRelicPassives()` before display: rows with the **same modifier+value** across condition branches collapse into one whose `types` is the union of the branches' empire types (`typesLabel(types)` → the `(…)` note, null when the union spans all four types = effectively unconditional). E.g. the Baol grants +10% pop growth via a non-machine branch *and* a machine/wilderness branch → shown once with no qualifier, while its +10% society research stays `(machine / wilderness)`. The extraction keeps both raw branches; this collapse is display-only.
+**Passive merging (planner-only).** Numeric passives are run through `mergeRelicPassives()` before display: rows with the **same modifier+value** across condition branches collapse into one whose `types` is the union of the branches' empire types (`typesLabel(types)` → the `(…)` note, null when the union spans all four types = effectively unconditional). E.g. the Baol grants +10% pop growth via a non-machine branch _and_ a machine/wilderness branch → shown once with no qualifier, while its +10% society research stays `(machine / wilderness)`. The extraction keeps both raw branches; this collapse is display-only.
 
 The **Triumph (active)** sub-block — `activeEffect` text, `activeModifiers` (temporary modifiers the active grants) + `activeDetail` (how — e.g. "One at random for 2–5 years, or all of them for 1 year"). For `activeMode` `'choice'` the modifiers are rendered grouped under their `groupLabel` via `groupActiveModifiers()` (e.g. the Zro Crystal's "Martial Guidance" / "Statecraft Guidance" options); `'direct'`/`'random'` render flat. Plus `produces` (resources gained), activation `costs`, and cooldown. `relicResourceLabel(list)` formats both `costs` and `produces` (e.g. "3000 Unity, 2000 Minerals (grows with each use)", "1000 Alloys (grows with each use)"); `cooldownLabel(days)` → Stellaris years. The produced amount comes from the script (`add_resource`), **not** the loc tooltip, which can be stale (the War Forge loc wrongly says 5000 alloys; the real payout is 1000, +1000/use). Relics with only a numeric passive (Cybrex) used to look empty — now they don't.
 
 **Empire-type filter.** A toolbar highlights the effects that apply to a chosen empire type. `empireFilter: 'planner' | EmpireType`; `'planner'` is the default **placeholder** (no highlighting — will later read the empire from the Species Builder). `activeType` (derived) is null for `'planner'`. When a type is picked: non-applicable reward variants / relic passives dim (`opacity-40`/`30`), applicable ones get a `text-primary-400` accent (+ ✓ on the variant).
+
 - `variantApplies(variant, type)` — reward variants (controlled vocab): `suppressed`/`public` → regular/wilderness, `machine`→machine, `hive`→hive, `hive_machine`→hive/machine, `default`→all.
 - `conditionApplies(condition, type)` — parses the relic-passive condition string (AND = comma; OR = parenthesised `(a OR b)`) against `EMPIRE_FLAGS` (`is_machine_empire`/`is_wilderness_empire`; hive reads same as regular). `conditionLabel` is now derived from `applicableTypes()` ("regular / hive", "non-wilderness"), replacing the old hardcoded string map. **Depends on the extraction emitting parseable OR conditions** (see extraction CLAUDE.md).
 
@@ -287,7 +299,7 @@ Text inputs for the empire/species name fields (grouped Empire / Species / …),
 
 ### `/jobs` + `/buildings` — Information reference tables
 
-`{ jobs }` from `loadJobs()` / `{ buildings }` from `loadBuildings()`, grouped by category. Base produces/upkeep and (buildings) provided jobs; job **swaps** are deliberately *not* here — swap tooltips live on the **civics/origins cards** ([SwapTables.svelte](src/lib/SwapTables.svelte), data from `loadJobSwapsBySource()` in those pages' servers).
+`{ jobs }` from `loadJobs()` / `{ buildings }` from `loadBuildings()`, grouped by category. Base produces/upkeep and (buildings) provided jobs; job **swaps** are deliberately _not_ here — swap tooltips live on the **civics/origins cards** ([SwapTables.svelte](src/lib/SwapTables.svelte), data from `loadJobSwapsBySource()` in those pages' servers).
 
 Tooltips across the app use the Skeleton/Zag tooltip via [Tip.svelte](src/lib/Tip.svelte) — no native `title=` attributes left on interactive elements.
 
@@ -303,16 +315,16 @@ Tooltips across the app use the Skeleton/Zag tooltip via [Tip.svelte](src/lib/Ti
 
 ## Trait Category Colors
 
-| category  | label            | hex      |
-|-----------|------------------|----------|
-| normal    | Species Traits   | #30dfb9  |
-| phenotype | Phenotype Traits | #2cec45  |
-| robotic   | Synthetic Traits | #00d2c6  |
-| psionic   | Psionic Traits   | #8b30f0  |
-| overtuned | Overtuned Traits | #d58800  |
-| cyborg    | Cybernetic Traits| #009dd4  |
-| malleable | Malleable Traits | #ceb108  |
-| mutation  | Mutation Traits  | #d82d39  |
+| category  | label             | hex     |
+| --------- | ----------------- | ------- |
+| normal    | Species Traits    | #30dfb9 |
+| phenotype | Phenotype Traits  | #2cec45 |
+| robotic   | Synthetic Traits  | #00d2c6 |
+| psionic   | Psionic Traits    | #8b30f0 |
+| overtuned | Overtuned Traits  | #d58800 |
+| cyborg    | Cybernetic Traits | #009dd4 |
+| malleable | Malleable Traits  | #ceb108 |
+| mutation  | Mutation Traits   | #d82d39 |
 
 ---
 
@@ -320,7 +332,7 @@ Tooltips across the app use the Skeleton/Zag tooltip via [Tip.svelte](src/lib/Ti
 
 - Modifier sign color for Overtuned traits (positive-cost but mixed +/– effects).
 - Phase 2 modifiers: triggered/conditional modifiers, `custom_tooltip`, `inline_script`.
-- Portrait picker *in the builder* (data in DB; `/portraits` is a reference page, the draft has no portrait selection yet — needed for the planned `user_empire_designs.txt` export).
+- Portrait picker _in the builder_ (data in DB; `/portraits` is a reference page, the draft has no portrait selection yet — needed for the planned `user_empire_designs.txt` export).
 - Species name generation (`common/species_names/`).
 
 ---

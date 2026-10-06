@@ -1,6 +1,5 @@
 // Empire-setup assets: planet classes, prescripted empires, initializers, rooms, flags.
 import { db } from './client';
-import { loadEntityNames } from './labels';
 
 // A world type. `climate` (wet/dry/cold) groups habitability for the colonizable
 // standard climates; special/engineered worlds and uninhabitable bodies have none.

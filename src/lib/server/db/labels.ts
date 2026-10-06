@@ -2,7 +2,7 @@
 import { formatModifierValue, formatScalingModifier, modifierLabel } from '$lib/civics';
 import { db } from './client';
 import { loadAuthorities, loadCivics, loadEthics, loadOrigins } from './government';
-import { loadTraits, loadTraitsForKeys, scalingModifiersByTrait } from './species';
+import { loadTraitsForKeys, scalingModifiersByTrait } from './species';
 import type { Modifier, ScalingModifier } from './types';
 
 // Key → display name across the entity tables that have stored names, so an empire's

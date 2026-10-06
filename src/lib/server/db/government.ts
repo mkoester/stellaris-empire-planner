@@ -1,6 +1,5 @@
 // Ethics, civics, authorities, origins.
 import { db } from './client';
-import type { Empire } from './empires';
 import type { Modifier } from './types';
 
 export interface EthicImplication {
