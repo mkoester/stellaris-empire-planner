@@ -4,6 +4,8 @@
 	import EmpireProfileBar from '$lib/EmpireProfileBar.svelte';
 	import RequirementChips from '$lib/RequirementChips.svelte';
 	import EffectList from '$lib/EffectList.svelte';
+	import BackToTop from '$lib/BackToTop.svelte';
+	import JumpLinks from '$lib/JumpLinks.svelte';
 	import Tip from '$lib/Tip.svelte';
 	import { settings } from '$lib/settings.svelte';
 	import { dlcBadge } from '$lib/precursors';
@@ -16,7 +18,7 @@
 		triggerText,
 		type RequirementLine
 	} from '$lib/triggers';
-	import { effective, matches, searchText, treeLinks } from '$lib/traditions';
+	import { effective, matches, searchText, treeLinks, unlocksFor } from '$lib/traditions';
 
 	let { data }: { data: PageData } = $props();
 
@@ -79,6 +81,12 @@
 			})
 	);
 
+	const slug = (label: string) =>
+		label
+			.toLowerCase()
+			.replace(/ —.*/, '')
+			.replace(/[^a-z0-9]+/g, '-');
+
 	const TIER_LABEL = [
 		'Tier 0 — from the start',
 		'Tier 1 — after 1 perk',
@@ -118,6 +126,10 @@
 		</p>
 	</div>
 
+	<JumpLinks
+		links={groups.map((g) => ({ id: slug(g.label), label: g.label.split(' — ')[0], strong: true }))}
+	/>
+
 	<EmpireProfileBar
 		bind:query
 		archetypeOf={data.archetypeOf}
@@ -125,7 +137,7 @@
 	/>
 
 	{#each groups as group (group.label)}
-		<section class="space-y-3">
+		<section id={slug(group.label)} class="scroll-mt-16 space-y-3">
 			<div>
 				<h2 class="text-lg font-semibold">
 					{group.label} <span class="text-sm font-normal opacity-50">({group.items.length})</span>
@@ -158,7 +170,11 @@
 							{/if}
 						</header>
 
-						<EffectList effect={e} {names} />
+						<EffectList
+							{names}
+							effect={e}
+							unlocks={unlocksFor(p, data.edicts, data.agendas, profile)}
+						/>
 
 						{#if unlocksTrees[p.key]?.length}
 							<p class="text-[11px] text-violet-300">
@@ -199,3 +215,5 @@
 		<p class="text-sm opacity-60">No perk matches.</p>
 	{/if}
 </main>
+
+<BackToTop />

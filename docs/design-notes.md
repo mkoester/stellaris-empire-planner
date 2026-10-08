@@ -109,6 +109,8 @@ tradition_prereq        — tradition_key, requires_key (tree edges)
 tradition_swap          — id "<owner>#<n>", owner_key (tradition or perk), name, description, trigger_json, inherit_effects, weight, tooltip
 tradition_modifier      — owner_key (tradition/perk/swap id), modifier_key, modifier_value, potential_json (triggered_modifier)
 ascension_perk          — key, name, description, is_path, potential_json, possible_json, required_dlc, tooltip
+edict                   — key, name, description, category, length (-1 = until cancelled), cost_json, potential_json, allow_json, unlocked_by_json, tooltip
+council_agenda          — key, name, description, cost, finish_days, potential_json, allow_json, unlocked_by_json, effect_tooltip (modifiers: owner key / "<key>#finish")
 ```
 
 `*_json` columns hold normalised trigger trees (`{"op":"and|or|not","args":[…]}` | `{"leaf":k,"value":v,"cmp"?}`) — see the extraction's design notes.
@@ -320,6 +322,8 @@ Both evaluate the stored trigger trees against an **`EmpireProfile`** ([`src/lib
 - Tree layout: `treeColumns` builds branch columns from `tradition_prereq` edges. Trees split into standard / ascension by `isAscensionTree` (potential tests a `has_*_ascension`). `treeLinks`: "via <perk>" (adopt `possible` needs the perk) and "Unlocks ascension perk" (perks needing the finisher).
 - Perk tiers are per profile: `perkTier` = fewest perks for which `possible` isn't false, with unknown origins/civics assumed absent.
 - Cost calculator: `traditionCost` from the `game_define` values (formula matches the wiki).
+- **Edict/agenda tooltips**: `loadUnlockables()` + `unlocksFor(item, …)` link by tradition/perk key **and** swap loc keys, filtered by the profile; same-named variants merge into one tooltip (`edictTip`/`agendaTip`). `EffectList` makes their names in the game's tooltip text hoverable (`linkify`), and adds an "Unlocks …" line for those the text doesn't name.
+- Navigation: `JumpLinks` (sections + every tree) at the top, `BackToTop` floating button (left of the xl EmpireOverview panel); anchors use `scroll-mt-16` for the sticky nav.
 
 ### `/jobs` + `/buildings` — Information reference tables
 

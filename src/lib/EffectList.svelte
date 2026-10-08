@@ -1,14 +1,38 @@
 <script lang="ts">
 	// The effects of a tradition/perk as the profile sees it (see effective()): modifiers,
-	// with a "?" on those that only apply under a condition the profile can't settle,
-	// then the custom tooltip text.
+	// with "(if …)" on those that only apply under a condition the profile can't settle,
+	// then the custom tooltip text. Edicts/agendas it unlocks get a hover tooltip: where the
+	// text names them, on the name itself; otherwise on an extra "Unlocks …" line.
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
 	import Tip from '$lib/Tip.svelte';
-	import type { Effective } from '$lib/traditions';
+	import { linkify, type Effective, type Unlock } from '$lib/traditions';
 	import { triggerText } from '$lib/triggers';
 
-	let { effect, names }: { effect: Effective; names: Record<string, string> } = $props();
+	let {
+		effect,
+		names,
+		unlocks = []
+	}: { effect: Effective; names: Record<string, string>; unlocks?: Unlock[] } = $props();
+
+	const parts = $derived(
+		effect.tooltip
+			? linkify(
+					effect.tooltip,
+					unlocks.map((u) => u.name)
+				)
+			: []
+	);
+	const unmentioned = $derived(unlocks.filter((u, i) => !parts.some((p) => p.index === i)));
 </script>
+
+{#snippet unlockName(u: Unlock, text: string)}
+	<Tip
+		text={u.tip}
+		class="underline decoration-dotted underline-offset-2 {u.kind === 'edict'
+			? 'text-sky-300'
+			: 'text-amber-300'}">{text}</Tip
+	>
+{/snippet}
 
 {#if effect.modifiers.length}
 	<ul class="space-y-0.5 text-xs">
@@ -26,5 +50,16 @@
 	</ul>
 {/if}
 {#if effect.tooltip}
-	<p class="text-xs leading-relaxed whitespace-pre-line opacity-75">{effect.tooltip}</p>
+	<p class="text-xs leading-relaxed whitespace-pre-line opacity-75">
+		{#each parts as part, i (i)}{#if part.index === null}{part.text}{:else}{@render unlockName(
+					unlocks[part.index],
+					part.text
+				)}{/if}{/each}
+	</p>
+{/if}
+{#if unmentioned.length}
+	<p class="text-xs opacity-75">
+		{#each unmentioned as u, i (u.key)}{i > 0 ? ', ' : ''}Unlocks {u.kind}:
+			{@render unlockName(u, u.name)}{/each}
+	</p>
 {/if}

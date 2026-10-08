@@ -14,6 +14,7 @@ export interface ConditionalModifier extends Modifier {
 // A variant replacing a tradition/perk when its trigger holds.
 export interface Swap {
 	id: string;
+	locKey: string | null; // the swap's `name`; game triggers refer to the swapped tradition by it
 	name: string | null;
 	description: string | null; // null = the owner's
 	trigger: Trigger | null;
@@ -30,7 +31,7 @@ export interface Tradition {
 	description: string | null;
 	possible: Trigger | null;
 	requires: string[]; // tradition keys of the same tree (tree edges)
-	unlocksAgenda: string | null;
+	unlocksAgenda: string | null; // council_agenda key the game's tooltip names
 	tooltip: string | null;
 	modifiers: ConditionalModifier[];
 	swaps: Swap[];
@@ -96,11 +97,13 @@ function loadModifiers(): Map<string, ConditionalModifier[]> {
 function loadSwaps(mods: Map<string, ConditionalModifier[]>): Map<string, Swap[]> {
 	const rows = db()
 		.prepare(
-			`SELECT id, owner_key, name, description, trigger_json, inherit_effects, weight, tooltip
+			`SELECT id, owner_key, loc_key, name, description, trigger_json, inherit_effects, weight,
+			        tooltip
 			 FROM tradition_swap ORDER BY owner_key, sort_order`
 		)
 		.all() as Array<{
 		id: string;
+		loc_key: string | null;
 		owner_key: string;
 		name: string | null;
 		description: string | null;
@@ -114,6 +117,7 @@ function loadSwaps(mods: Map<string, ConditionalModifier[]>): Map<string, Swap[]
 		if (!by.has(r.owner_key)) by.set(r.owner_key, []);
 		by.get(r.owner_key)!.push({
 			id: r.id,
+			locKey: r.loc_key,
 			name: r.name,
 			description: r.description,
 			trigger: parse(r.trigger_json),
@@ -278,5 +282,104 @@ export function loadProfileInputs(): {
 	return {
 		archetypeOf: Object.fromEntries(classes.map((c) => [c.key, c.archetype])),
 		nomadicOrigins: nomadic.map((r) => r.origin_key)
+	};
+}
+
+// Edicts and council agendas that a tradition or perk unlocks (unlockedBy non-empty).
+export interface Edict {
+	key: string;
+	name: string | null;
+	description: string | null;
+	length: number | null; // days; -1 = until cancelled
+	cost: Record<string, Record<string, number>> | null; // {cost: {unity: 10}, upkeep: {…}}
+	potential: Trigger | null;
+	unlockedBy: string[]; // tradition / swap / perk keys
+	tooltip: string | null;
+	modifiers: ConditionalModifier[];
+}
+
+export interface Agenda {
+	key: string;
+	name: string | null;
+	description: string | null;
+	cost: number | null; // agenda progress to launch
+	finishDays: number | null;
+	potential: Trigger | null;
+	unlockedBy: string[];
+	effectTooltip: string | null; // on launch
+	modifiers: ConditionalModifier[]; // while being enacted
+	finishModifiers: ConditionalModifier[]; // after launch, for finishDays
+}
+
+export function loadUnlockables(): { edicts: Edict[]; agendas: Agenda[] } {
+	const mods = loadModifiers();
+	const edictRows = db()
+		.prepare(
+			`SELECT key, name, description, length, cost_json, potential_json, unlocked_by_json, tooltip
+			 FROM edict WHERE unlocked_by_json IS NOT NULL ORDER BY sort_order`
+		)
+		.all() as Array<{
+		key: string;
+		name: string | null;
+		description: string | null;
+		length: number | null;
+		cost_json: string | null;
+		potential_json: string | null;
+		unlocked_by_json: string;
+		tooltip: string | null;
+	}>;
+	// Agendas: those unlocked by a tradition/perk, plus the ones a tradition's own
+	// unlocks_agenda names (Logistics names Open Markets, which actually gates on Commerce).
+	const agendaRows = db()
+		.prepare(
+			`SELECT key, name, description, cost, finish_days, potential_json, unlocked_by_json,
+			        effect_tooltip
+			 FROM council_agenda
+			 WHERE unlocked_by_json IS NOT NULL
+			    OR key IN (SELECT unlocks_agenda FROM tradition WHERE unlocks_agenda IS NOT NULL)
+			 ORDER BY sort_order`
+		)
+		.all() as Array<{
+		key: string;
+		name: string | null;
+		description: string | null;
+		cost: number | null;
+		finish_days: number | null;
+		potential_json: string | null;
+		unlocked_by_json: string | null;
+		effect_tooltip: string | null;
+	}>;
+	const hinted = db()
+		.prepare(`SELECT key, unlocks_agenda FROM tradition WHERE unlocks_agenda IS NOT NULL`)
+		.all() as Array<{ key: string; unlocks_agenda: string }>;
+	return {
+		edicts: edictRows.map((r) => ({
+			key: r.key,
+			name: r.name,
+			description: r.description,
+			length: r.length,
+			cost: r.cost_json ? JSON.parse(r.cost_json) : null,
+			potential: parse(r.potential_json),
+			unlockedBy: JSON.parse(r.unlocked_by_json),
+			tooltip: r.tooltip,
+			modifiers: mods.get(r.key) ?? []
+		})),
+		agendas: agendaRows.map((r) => ({
+			key: r.key,
+			name: r.name,
+			description: r.description,
+			cost: r.cost,
+			finishDays: r.finish_days,
+			potential: parse(r.potential_json),
+			unlockedBy: [
+				...new Set([
+					...(r.unlocked_by_json ? (JSON.parse(r.unlocked_by_json) as string[]) : []),
+					...hinted.filter((h) => h.unlocks_agenda === r.key).map((h) => h.key)
+				])
+			],
+			effectTooltip: r.effect_tooltip,
+			modifiers: mods.get(r.key) ?? [],
+			finishModifiers: mods.get(`${r.key}#finish`) ?? []
+		}))
 	};
 }

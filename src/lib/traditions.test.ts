@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import type {
+	Agenda,
 	AscensionPerk,
 	ConditionalModifier,
+	Edict,
 	Swap,
 	Tradition,
 	TraditionTree,
@@ -16,7 +18,12 @@ import {
 	traditionCost,
 	treeColumns,
 	treeDescription,
-	treeLinks
+	treeLinks,
+	unlocksFor,
+	edictTip,
+	agendaTip,
+	durationText,
+	linkify
 } from '$lib/traditions';
 import { ANY_PROFILE, type EmpireProfile } from '$lib/triggers';
 
@@ -34,6 +41,7 @@ const mod = (
 });
 const swap = (id: string, trigger: Trigger, extra: Partial<Swap> = {}): Swap => ({
 	id,
+	locKey: null,
 	name: id,
 	description: null,
 	trigger,
@@ -214,5 +222,75 @@ describe('search', () => {
 		expect(matches(text, 'arkship')).toBe(true);
 		expect(matches(text, 'pop growth')).toBe(true);
 		expect(matches(text, 'pop alloys')).toBe(false);
+	});
+});
+
+describe('edicts & agendas', () => {
+	const edict = (key: string, unlockedBy: string[], potential: Trigger | null = null): Edict => ({
+		key,
+		name: key,
+		description: 'flavour',
+		length: -1,
+		cost: { cost: { unity: 10 }, upkeep: { sr_zro: 0.5 } },
+		potential,
+		unlockedBy,
+		tooltip: null,
+		modifiers: [mod('survey_speed_mult', 0.25)]
+	});
+	const agenda: Agenda = {
+		key: 'agenda_x',
+		name: 'Agenda X',
+		description: null,
+		cost: 7000,
+		finishDays: 3600,
+		potential: null,
+		unlockedBy: ['tr_a'],
+		effectTooltip: null,
+		modifiers: [mod('speed_mult', 0.25)],
+		finishModifiers: [mod('speed_mult', 0.5)]
+	};
+
+	it('links by tradition key or swap name, filtered by the profile', () => {
+		const t = trad('tr_a', [], {
+			swaps: [swap('tr_a#0', L('is_hive_empire'), { locKey: 'tr_a_hive' })]
+		});
+		const edicts = [
+			edict('e_regular', ['tr_a'], L('is_gestalt', 'no')),
+			edict('e_hive', ['tr_a_hive'], L('is_hive_empire')),
+			edict('e_other', ['tr_b'])
+		];
+		expect(unlocksFor(t, edicts, [agenda], ANY_PROFILE).map((u) => u.key)).toEqual([
+			'e_regular',
+			'e_hive',
+			'agenda_x'
+		]);
+		expect(unlocksFor(t, edicts, [], hive).map((u) => u.key)).toEqual(['e_hive']);
+		const twins = [
+			{ ...edict('e1', ['tr_a']), name: 'Subsidies' },
+			{ ...edict('e2', ['tr_a']), name: 'Subsidies' }
+		];
+		const merged = unlocksFor(t, twins, [], ANY_PROFILE);
+		expect(merged.map((u) => u.key)).toEqual(['e1']);
+		expect(merged[0].tip).toContain('— or, depending on empire type —');
+	});
+
+	it('builds tooltip text', () => {
+		expect(edictTip(edict('Map', []))).toBe(
+			'Edict: Map\nCost 10 Unity · upkeep 0.5 Zro/month · lasts until cancelled\n+25% survey_speed_mult\n\nflavour'
+		);
+		expect(agendaTip(agenda)).toBe(
+			'Council agenda: Agenda X\nLaunch at 7,000 agenda progress\nWhile preparing:\n  +25% speed_mult\nAfter launch (10 years):\n  +50% speed_mult'
+		);
+		expect(durationText(720)).toBe('2 years');
+		expect(durationText(30)).toBe('30 days');
+	});
+
+	it('linkify marks mentions, longest name first', () => {
+		expect(linkify('Unlocks Edict: Map the Stars.', ['Map', 'Map the Stars'])).toEqual([
+			{ text: 'Unlocks Edict: ', index: null },
+			{ text: 'Map the Stars', index: 1 },
+			{ text: '.', index: null }
+		]);
+		expect(linkify('none', [])).toEqual([{ text: 'none', index: null }]);
 	});
 });

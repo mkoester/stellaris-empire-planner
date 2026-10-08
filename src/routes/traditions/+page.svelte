@@ -5,6 +5,8 @@
 	import ProfileChips from '$lib/ProfileChips.svelte';
 	import RequirementChips from '$lib/RequirementChips.svelte';
 	import EffectList from '$lib/EffectList.svelte';
+	import BackToTop from '$lib/BackToTop.svelte';
+	import JumpLinks from '$lib/JumpLinks.svelte';
 	import Tip from '$lib/Tip.svelte';
 	import { settings } from '$lib/settings.svelte';
 	import { formatModifierValue, modifierLabel } from '$lib/civics';
@@ -27,6 +29,7 @@
 		treeColumns,
 		treeDescription,
 		treeLinks,
+		unlocksFor,
 		type Effective
 	} from '$lib/traditions';
 
@@ -84,9 +87,28 @@
 			})
 	);
 	const groups = $derived([
-		{ label: 'Tradition trees', items: view.filter((v) => v.visible && !isAscensionTree(v.tree)) },
-		{ label: 'Ascension trees', items: view.filter((v) => v.visible && isAscensionTree(v.tree)) }
+		{
+			id: 'tradition-trees',
+			label: 'Tradition trees',
+			items: view.filter((v) => v.visible && !isAscensionTree(v.tree))
+		},
+		{
+			id: 'ascension-trees',
+			label: 'Ascension trees',
+			items: view.filter((v) => v.visible && isAscensionTree(v.tree))
+		}
 	]);
+	// Section links first, then every shown tree.
+	const jumpLinks = $derived(
+		groups.flatMap((g) =>
+			g.items.length
+				? [
+						{ id: g.id, label: g.label, strong: true },
+						...g.items.map((v) => ({ id: v.tree.key, label: v.tree.name ?? v.tree.key }))
+					]
+				: []
+		)
+	);
 
 	function tipText(e: Effective): string {
 		const lines = e.modifiers.map(
@@ -120,6 +142,8 @@
 			> marks a variant, ⇄ the number of variants other empire types get.
 		</p>
 	</div>
+
+	<JumpLinks links={jumpLinks} />
 
 	<EmpireProfileBar
 		bind:query
@@ -194,7 +218,7 @@
 
 	{#each groups as group (group.label)}
 		{#if group.items.length}
-			<section class="space-y-3">
+			<section id={group.id} class="scroll-mt-16 space-y-3">
 				<h2 class="text-lg font-semibold">
 					{group.label} <span class="text-sm font-normal opacity-50">({group.items.length})</span>
 				</h2>
@@ -204,7 +228,8 @@
 						{@const desc = treeDescription(tree, v.profile)}
 						{@const sel = allTraditions(tree).find((x) => x.key === selected[tree.key])}
 						<article
-							class="border-surface-400-500/30 flex flex-col gap-2 rounded-lg border p-3 {filtering &&
+							id={tree.key}
+							class="border-surface-400-500/30 flex scroll-mt-16 flex-col gap-2 rounded-lg border p-3 {filtering &&
 							v.avail === false
 								? 'opacity-40'
 								: ''}"
@@ -286,6 +311,8 @@
 	{/if}
 </main>
 
+<BackToTop />
+
 {#snippet node(tree: TraditionTree, t: Tradition, profile: EmpireProfile, hits: Set<string> | null)}
 	{@const e = effective(t, profile)}
 	{@const isSel = selected[tree.key] === t.key}
@@ -328,10 +355,7 @@
 				<span class="text-[11px] text-primary-400">{e.swap.name}</span>
 			{/if}
 		</div>
-		<EffectList effect={e} {names} />
-		{#if t.unlocksAgenda}
-			<p class="mt-1 text-[11px] opacity-70">Unlocks agenda: {t.unlocksAgenda}</p>
-		{/if}
+		<EffectList effect={e} {names} unlocks={unlocksFor(t, data.edicts, data.agendas, profile)} />
 		{#if t.role === 'finish' && links.unlocksPerks[tree.key]?.length}
 			<p class="mt-1 text-[11px] text-violet-300">
 				Unlocks ascension perk: {perkList(links.unlocksPerks[tree.key])}
@@ -377,7 +401,7 @@
 				>
 			{/if}
 		</div>
-		<EffectList effect={e} {names} />
+		<EffectList effect={e} {names} unlocks={unlocksFor(t, data.edicts, data.agendas, profile)} />
 		{#if closable && t.requires.length}
 			<p class="text-[11px] opacity-70">
 				Requires: {t.requires.map((r) => names[r] ?? r).join(' or ')}

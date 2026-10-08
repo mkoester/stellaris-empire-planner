@@ -1,13 +1,15 @@
 // Pure helpers for the Tradition Trees and Ascension Perks pages.
 import type {
+	Agenda,
 	AscensionPerk,
+	Edict,
 	ConditionalModifier,
 	Swap,
 	Tradition,
 	TraditionTree,
 	Trigger
 } from '$lib/server/db';
-import { modifierLabel } from '$lib/civics';
+import { formatModifierValue, modifierLabel, prettyKey } from '$lib/civics';
 import {
 	AUTHORITIES,
 	FLAGS,
@@ -187,4 +189,106 @@ export function searchText(item: Swappable): string {
 export function matches(text: string, query: string): boolean {
 	const words = query.toLowerCase().split(/\s+/).filter(Boolean);
 	return words.every((w) => text.includes(w));
+}
+
+// ── Edicts & agendas ─────────────────────────────────────────────────────────
+export interface Unlock {
+	kind: 'edict' | 'agenda';
+	key: string;
+	name: string;
+	tip: string; // full tooltip text
+	state: Tri; // can the profile get it?
+}
+
+// The edicts and agendas a tradition/perk unlocks for the profile. Game triggers name a
+// swapped tradition by its swap name (has_tradition = tr_domination_drone_network), so
+// the swaps' names count as the item too; the unlockable's potential picks the variant.
+export function unlocksFor(
+	item: { key: string; swaps: Swap[] },
+	edicts: Edict[],
+	agendas: Agenda[],
+	p: EmpireProfile
+): Unlock[] {
+	const keys = new Set([item.key, ...item.swaps.flatMap((s) => (s.locKey ? [s.locKey] : []))]);
+	const out: Unlock[] = [];
+	const add = (kind: Unlock['kind'], x: Edict | Agenda, tip: string) => {
+		if (!x.unlockedBy.some((k) => keys.has(k))) return;
+		const state = evaluate(x.potential, p);
+		if (state === false) return;
+		const name = x.name ?? x.key;
+		// Same-named variants (Research Subsidies + its wilderness twin) share one entry.
+		const same = out.find((u) => u.kind === kind && u.name === name);
+		if (same) {
+			same.tip += `\n\n— or, depending on empire type —\n${tip}`;
+			if (same.state !== state) same.state = null;
+		} else out.push({ kind, key: x.key, name, tip, state });
+	};
+	for (const e of edicts) add('edict', e, edictTip(e));
+	for (const a of agendas) add('agenda', a, agendaTip(a));
+	return out;
+}
+
+const modLine = (m: ConditionalModifier) => `${formatModifierValue(m)} ${modifierLabel(m)}`;
+
+export function resourceName(key: string): string {
+	return prettyKey(key.replace(/^sr_/, ''));
+}
+
+export function durationText(days: number): string {
+	if (days < 0) return 'until cancelled';
+	return days % 360 === 0 ? `${days / 360} year${days === 360 ? '' : 's'}` : `${days} days`;
+}
+
+export function edictTip(e: Edict): string {
+	const lines = [`Edict: ${e.name ?? e.key}`];
+	const amounts = (r: Record<string, number> | undefined) =>
+		Object.entries(r ?? {})
+			.map(([res, n]) => `${n} ${resourceName(res)}`)
+			.join(', ');
+	const cost = [
+		e.cost?.cost && `Cost ${amounts(e.cost.cost)}`,
+		e.cost?.upkeep && `upkeep ${amounts(e.cost.upkeep)}/month`,
+		e.length !== null && `lasts ${durationText(e.length)}`
+	].filter(Boolean);
+	if (cost.length) lines.push(cost.join(' · '));
+	lines.push(...e.modifiers.map(modLine));
+	if (e.tooltip) lines.push(e.tooltip);
+	if (e.description) lines.push('', e.description);
+	return lines.join('\n');
+}
+
+export function agendaTip(a: Agenda): string {
+	const lines = [`Council agenda: ${a.name ?? a.key}`];
+	if (a.cost !== null) lines.push(`Launch at ${a.cost.toLocaleString('en')} agenda progress`);
+	if (a.modifiers.length)
+		lines.push('While preparing:', ...a.modifiers.map((m) => `  ${modLine(m)}`));
+	if (a.effectTooltip) lines.push('On launch:', a.effectTooltip);
+	if (a.finishModifiers.length)
+		lines.push(
+			`After launch${a.finishDays ? ` (${durationText(a.finishDays)})` : ''}:`,
+			...a.finishModifiers.map((m) => `  ${modLine(m)}`)
+		);
+	if (a.description) lines.push('', a.description);
+	return lines.join('\n');
+}
+
+// Split text into plain parts and mentions of the given names (longest name first), so
+// "Unlocks Edict: Map the Stars" can render the name with its tooltip.
+export function linkify(text: string, names: string[]): { text: string; index: number | null }[] {
+	const order = names
+		.map((n, i) => ({ n, i }))
+		.filter((x) => x.n)
+		.sort((a, b) => b.n.length - a.n.length);
+	if (!order.length) return [{ text, index: null }];
+	const esc = (x: string) => x.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+	const re = new RegExp(order.map((x) => esc(x.n)).join('|'), 'g');
+	const out: { text: string; index: number | null }[] = [];
+	let last = 0;
+	for (const m of text.matchAll(re)) {
+		if (m.index > last) out.push({ text: text.slice(last, m.index), index: null });
+		out.push({ text: m[0], index: order.find((x) => x.n === m[0])!.i });
+		last = m.index + m[0].length;
+	}
+	if (last < text.length) out.push({ text: text.slice(last), index: null });
+	return out;
 }
