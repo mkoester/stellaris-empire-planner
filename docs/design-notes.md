@@ -101,7 +101,17 @@ precursor_megastructure — precursor_key, initializer, type, type_label, count 
 tech_repeatable         — key, label, description, area, area_label, category, category_label, levels (-1 = unlimited), sort_order
 tech_repeatable_modifier — tech_key, modifier_key, modifier_value, sort_order
 tech_fallen_empire      — key, label, description, area, area_label, category, category_label, building_key (FK→building), sort_order
+game_define             — key, value (tradition cost formula + slot limits)
+tradition_category      — key, name, potential_json, required_dlc, adopt_key, finish_key, sort_order
+tradition_category_desc — category_key, trigger_json, description (per-empire-type variants, first match)
+tradition               — key, category_key, role (adopt/finish/normal), name, description, possible_json, unlocks_agenda, tooltip
+tradition_prereq        — tradition_key, requires_key (tree edges)
+tradition_swap          — id "<owner>#<n>", owner_key (tradition or perk), name, description, trigger_json, inherit_effects, weight, tooltip
+tradition_modifier      — owner_key (tradition/perk/swap id), modifier_key, modifier_value, potential_json (triggered_modifier)
+ascension_perk          — key, name, description, is_path, potential_json, possible_json, required_dlc, tooltip
 ```
+
+`*_json` columns hold normalised trigger trees (`{"op":"and|or|not","args":[…]}` | `{"leaf":k,"value":v,"cmp"?}`) — see the extraction's design notes.
 
 All precursor/deposit tables are DROP+CREATE each extraction run.
 
@@ -121,6 +131,8 @@ jobs.ts        jobs, job swaps, reference buildings
 labels.ts      loadEntityNames, loadModifierIndex, loadOverviewTooltips
 precursors.ts  the whole precursor graph (loadPrecursors)
 tech.ts        repeatable + fallen-empire techs (loadRepeatableTechs, loadFallenEmpireTechs)
+traditions.ts  tradition trees, ascension perks, defines, profile inputs (loadTraditionTrees,
+               loadAscensionPerks, loadGameDefines, loadProfileInputs) + the Trigger type
 ```
 
 Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `ActiveModifier`, `RelicResource`, `RelicPassiveText`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
@@ -297,6 +309,17 @@ Text inputs for the empire/species name fields (grouped Empire / Species / …),
 
 `{ techs }` from `loadRepeatableTechs()` / `loadFallenEmpireTechs()`. Repeatable techs group by research area (Physics/Society/Engineering) and category, showing their modifiers and level cap (`levels = -1` = unlimited). Fallen-empire techs show the building each unlocks (`building` — name, description, resources, jobs — pre-joined via `building_key`; null for the ship-component techs).
 
+### `/traditions` + `/ascension-perks` — Tradition Trees, Ascension Perks
+
+Both evaluate the stored trigger trees against an **`EmpireProfile`** ([`src/lib/triggers.ts`](src/lib/triggers.ts)): authority (Regular/Hive/Machine) + flags (Nomadic, Wilderness, Void Dweller, Individual Machine, Megacorp, Homicidal), plus ethics/civics/origin when built by `profileFromDraft` ("From planned empire"). Evaluation is **three-valued** (`null` = can't tell: flags, techs, traditions taken…); an item is only hidden when definitely false. `host_has_dlc` is always true — **all DLC assumed** (no ownership setting); items an all-DLC game replaces (Genetics, old Psionics, DLC-split perk copies) never show.
+
+- **Global filter** (`EmpireProfileBar`, state in `settings.empireProfile`, shared by both pages) starts empty ("Any"): nothing hidden, variants listed. Once set, unavailable trees/perks hide (or grey with "show unavailable").
+- **Per-tree switcher** (`ProfileChips`): only while no global filter is set, each tree card offers chips for just the axes it branches on (`profileAxes`).
+- Variants: `effective()` picks the definitely-true swap with the highest weight; `inheritEffects` keeps the owner's modifiers. Triggered modifiers that may apply show "(if …)".
+- Tree layout: `treeColumns` builds branch columns from `tradition_prereq` edges. Trees split into standard / ascension by `isAscensionTree` (potential tests a `has_*_ascension`). `treeLinks`: "via <perk>" (adopt `possible` needs the perk) and "Unlocks ascension perk" (perks needing the finisher).
+- Perk tiers are per profile: `perkTier` = fewest perks for which `possible` isn't false, with unknown origins/civics assumed absent.
+- Cost calculator: `traditionCost` from the `game_define` values (formula matches the wiki).
+
 ### `/jobs` + `/buildings` — Information reference tables
 
 `{ jobs }` from `loadJobs()` / `{ buildings }` from `loadBuildings()`, grouped by category. Base produces/upkeep and (buildings) provided jobs; job **swaps** are deliberately _not_ here — swap tooltips live on the **civics/origins cards** ([SwapTables.svelte](src/lib/SwapTables.svelte), data from `loadJobSwapsBySource()` in those pages' servers).
@@ -332,6 +355,8 @@ Tooltips across the app use the Skeleton/Zag tooltip via [Tip.svelte](src/lib/Ti
 
 - Modifier sign color for Overtuned traits (positive-cost but mixed +/– effects).
 - Phase 2 modifiers: triggered/conditional modifiers, `custom_tooltip`, `inline_script`.
+- Traditions/perks assume all DLC; a DLC-ownership setting would let `host_has_dlc` evaluate for real.
+- `/traditions` ships the whole tree + perk graph to the client (~850 KB HTML incl. layout data); trim if it ever matters.
 - Portrait picker _in the builder_ (data in DB; `/portraits` is a reference page, the draft has no portrait selection yet — needed for the planned `user_empire_designs.txt` export).
 - Species name generation (`common/species_names/`).
 

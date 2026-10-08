@@ -30,6 +30,8 @@
 	// grouped under an "Information" dropdown.
 	const INFO = [
 		{ href: '/precursors', label: 'Precursors' },
+		{ href: '/traditions', label: 'Tradition Trees' },
+		{ href: '/ascension-perks', label: 'Ascension Perks' },
 		{ href: '/jobs', label: 'Jobs' },
 		{ href: '/buildings', label: 'Buildings' },
 		{ href: '/tech', label: 'Repeatable Techs' },
