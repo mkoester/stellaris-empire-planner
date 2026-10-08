@@ -316,6 +316,7 @@ Both evaluate the stored trigger trees against an **`EmpireProfile`** ([`src/lib
 - **Global filter** (`EmpireProfileBar`, state in `settings.empireProfile`, shared by both pages) starts empty ("Any"): nothing hidden, variants listed. Once set, unavailable trees/perks hide (or grey with "show unavailable").
 - **Per-tree switcher** (`ProfileChips`): only while no global filter is set, each tree card offers chips for just the axes it branches on (`profileAxes`).
 - Variants: `effective()` picks the definitely-true swap with the highest weight; `inheritEffects` keeps the owner's modifiers. Triggered modifiers that may apply show "(if …)".
+- Layout toggle (`settings.traditionView`): **Full trees** (default — one tree per row, every tradition as a full box: variant name, effects, requirements, other variants, flavour) or **Compact** (names only, hover tooltip, click opens a detail box).
 - Tree layout: `treeColumns` builds branch columns from `tradition_prereq` edges. Trees split into standard / ascension by `isAscensionTree` (potential tests a `has_*_ascension`). `treeLinks`: "via <perk>" (adopt `possible` needs the perk) and "Unlocks ascension perk" (perks needing the finisher).
 - Perk tiers are per profile: `perkTier` = fewest perks for which `possible` isn't false, with unknown origins/civics assumed absent.
 - Cost calculator: `traditionCost` from the `game_define` values (formula matches the wiki).

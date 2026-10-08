@@ -15,6 +15,8 @@ let showExclusions = $state(false);
 // (ANY_PROFILE = no filter), and whether items it rules out stay visible (greyed).
 let empireProfile = $state<EmpireProfile>(ANY_PROFILE);
 let showUnavailable = $state(false);
+// Tradition Trees layout: every tradition's details inline ('full'), or names only ('compact').
+let traditionView = $state<'full' | 'compact'>('full');
 
 export const settings = {
 	get ruleLayout() {
@@ -40,5 +42,11 @@ export const settings = {
 	},
 	toggleShowUnavailable() {
 		showUnavailable = !showUnavailable;
+	},
+	get traditionView() {
+		return traditionView;
+	},
+	toggleTraditionView() {
+		traditionView = traditionView === 'full' ? 'compact' : 'full';
 	}
 };

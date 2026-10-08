@@ -50,6 +50,7 @@
 		new Map(data.trees.flatMap((t) => allTraditions(t).map((x) => [x.key, searchText(x)])))
 	);
 
+	const full = $derived(settings.traditionView === 'full');
 	const global = $derived(settings.empireProfile);
 	const filtering = $derived(isActive(global));
 
@@ -114,7 +115,7 @@
 			Every tree with its adoption bonus, the traditions in their branches (arrows show
 			prerequisites), and the finisher. Names and effects switch to the variant your empire type
 			gets — pick one globally below, or per tree. Assumes all DLC: trees a DLC replaces aren't
-			shown, and DLC trees carry a badge. Click a tradition for its details; <span
+			shown, and DLC trees carry a badge. In the compact layout, click a tradition for its details; <span
 				class="text-primary-400">•</span
 			> marks a variant, ⇄ the number of variants other empire types get.
 		</p>
@@ -126,6 +127,21 @@
 		nomadicOrigins={data.nomadicOrigins}
 		anyHint="No filter — each tree offers its own variant switch."
 	/>
+
+	<div class="flex items-center gap-2 text-xs">
+		<span class="opacity-60">Layout:</span>
+		{#each [['full', 'Full trees'], ['compact', 'Compact']] as [key, label] (key)}
+			<button
+				class="rounded px-2.5 py-1 {settings.traditionView === key
+					? 'preset-filled-primary-500'
+					: 'preset-tonal hover:preset-filled-surface-500'}"
+				aria-pressed={settings.traditionView === key}
+				onclick={() => settings.traditionView !== key && settings.toggleTraditionView()}
+			>
+				{label}
+			</button>
+		{/each}
+	</div>
 
 	<details class="border-surface-400-500/30 rounded-lg border p-3 text-sm">
 		<summary class="cursor-pointer font-semibold">Tradition cost calculator</summary>
@@ -182,7 +198,7 @@
 				<h2 class="text-lg font-semibold">
 					{group.label} <span class="text-sm font-normal opacity-50">({group.items.length})</span>
 				</h2>
-				<div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+				<div class="grid gap-4 {full ? '' : 'md:grid-cols-2 xl:grid-cols-3'}">
 					{#each group.items as v (v.tree.key)}
 						{@const tree = v.tree}
 						{@const desc = treeDescription(tree, v.profile)}
@@ -235,13 +251,17 @@
 								style="grid-template-columns: repeat({v.columns.length}, minmax(0, 1fr))"
 							>
 								{#each v.columns as rows, ci (ci)}
-									<div class="flex flex-col items-stretch gap-0.5">
+									<div class="flex flex-col items-stretch {full ? 'gap-1' : 'gap-0.5'}">
 										{#each rows as row, ri (ri)}
 											{#if ri > 0}<span class="text-center text-xs leading-none opacity-40">↓</span
 												>{/if}
-											<div class="flex gap-1">
+											<div class="flex {full ? 'items-stretch gap-2' : 'gap-1'}">
 												{#each row as t (t.key)}
-													{@render node(tree, t, v.profile, v.hits)}
+													{#if full}
+														{@render tradBox(t, v.profile, tree, v.hits, false)}
+													{:else}
+														{@render node(tree, t, v.profile, v.hits)}
+													{/if}
 												{/each}
 											</div>
 										{/each}
@@ -251,8 +271,8 @@
 
 							{@render bonus('Finisher', tree.finish, v.profile, tree)}
 
-							{#if sel && sel.role === 'normal'}
-								{@render details(sel, v.profile, tree)}
+							{#if !full && sel && sel.role === 'normal'}
+								{@render tradBox(sel, v.profile, tree, null, true)}
 							{/if}
 						</article>
 					{/each}
@@ -329,9 +349,19 @@
 	</div>
 {/snippet}
 
-{#snippet details(t: Tradition, profile: EmpireProfile, tree: TraditionTree)}
+{#snippet tradBox(
+	t: Tradition,
+	profile: EmpireProfile,
+	tree: TraditionTree,
+	hits: Set<string> | null,
+	closable: boolean
+)}
 	{@const e = effective(t, profile)}
-	<div class="space-y-1.5 rounded border border-primary-500/40 p-2">
+	<div
+		class="min-w-0 flex-1 space-y-1.5 rounded border p-2 {closable
+			? 'border-primary-500/40'
+			: 'border-surface-400-500/30'} {hits?.has(t.key) ? 'ring-1 ring-amber-400' : ''}"
+	>
 		<div class="flex items-start justify-between gap-2">
 			<div>
 				<span class="text-sm font-semibold">{e.name}</span>
@@ -339,14 +369,16 @@
 					<span class="text-[11px] opacity-50">· variant of {t.name}</span>
 				{/if}
 			</div>
-			<button
-				class="text-xs opacity-50 hover:opacity-100"
-				aria-label="Close"
-				onclick={() => (selected[tree.key] = null)}>✕</button
-			>
+			{#if closable}
+				<button
+					class="text-xs opacity-50 hover:opacity-100"
+					aria-label="Close"
+					onclick={() => (selected[tree.key] = null)}>✕</button
+				>
+			{/if}
 		</div>
 		<EffectList effect={e} {names} />
-		{#if t.requires.length}
+		{#if closable && t.requires.length}
 			<p class="text-[11px] opacity-70">
 				Requires: {t.requires.map((r) => names[r] ?? r).join(' or ')}
 			</p>
