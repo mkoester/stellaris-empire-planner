@@ -355,7 +355,11 @@
 				<span class="text-[11px] text-primary-400">{e.swap.name}</span>
 			{/if}
 		</div>
-		<EffectList effect={e} {names} unlocks={unlocksFor(t, data.edicts, data.agendas, profile)} />
+		<EffectList
+			effect={e}
+			{names}
+			unlocks={unlocksFor(t, data.edicts, data.agendas, profile, data.federationTypes)}
+		/>
 		{#if t.role === 'finish' && links.unlocksPerks[tree.key]?.length}
 			<p class="mt-1 text-[11px] text-violet-300">
 				Unlocks ascension perk: {perkList(links.unlocksPerks[tree.key])}
@@ -401,7 +405,11 @@
 				>
 			{/if}
 		</div>
-		<EffectList effect={e} {names} unlocks={unlocksFor(t, data.edicts, data.agendas, profile)} />
+		<EffectList
+			effect={e}
+			{names}
+			unlocks={unlocksFor(t, data.edicts, data.agendas, profile, data.federationTypes)}
+		/>
 		{#if closable && t.requires.length}
 			<p class="text-[11px] opacity-70">
 				Requires: {t.requires.map((r) => names[r] ?? r).join(' or ')}

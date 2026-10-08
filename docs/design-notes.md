@@ -111,6 +111,12 @@ tradition_modifier      — owner_key (tradition/perk/swap id), modifier_key, mo
 ascension_perk          — key, name, description, is_path, potential_json, possible_json, required_dlc, tooltip
 edict                   — key, name, description, category, length (-1 = until cancelled), cost_json, potential_json, allow_json, unlocked_by_json, tooltip
 council_agenda          — key, name, description, cost, finish_days, potential_json, allow_json, unlocked_by_json, effect_tooltip (modifiers: owner key / "<key>#finish")
+federation_type         — key, name, description, base_intel, potential_json, allow_json, unlocked_by_json (tradition swap / ethic / civic keys), excluded_by_json (civics under NOT)
+federation_type_perk    — type_key, level, experience (XP to next; NULL at top), perk_key
+federation_perk         — key, name, description, effect
+federation_perk_modifier — perk_key, scope (members/federation/leader/envoy), modifier_key, modifier_value, potential_json
+federation_law_category — key, name, description, potential_json
+federation_law          — key, category_key, name, description, potential_json, allow_json, types_json (only for these types), required_centralization, cohesion_growth
 ```
 
 `*_json` columns hold normalised trigger trees (`{"op":"and|or|not","args":[…]}` | `{"leaf":k,"value":v,"cmp"?}`) — see the extraction's design notes.
@@ -135,6 +141,7 @@ precursors.ts  the whole precursor graph (loadPrecursors)
 tech.ts        repeatable + fallen-empire techs (loadRepeatableTechs, loadFallenEmpireTechs)
 traditions.ts  tradition trees, ascension perks, defines, profile inputs (loadTraditionTrees,
                loadAscensionPerks, loadGameDefines, loadProfileInputs) + the Trigger type
+federations.ts federation types with their level perks, law categories + laws (loadFederations)
 ```
 
 Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `ActiveModifier`, `RelicResource`, `RelicPassiveText`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
@@ -161,7 +168,7 @@ Key functions:
 
 Project intro + status: what the planner does, links into the sections. No data loading beyond the layout's.
 
-Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder · Portraits · Ethics · Government · Civics · Origins · Planets · Ships · Names · Flag · Room) plus an **Information dropdown** (`INFO`: Precursors · Jobs · Buildings) for reference tables that aren't part of empire creation.
+Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder · Portraits · Ethics · Government · Civics · Origins · Planets · Ships · Names · Flag · Room) plus an **Information dropdown** (`INFO`: Precursors · Tradition Trees · Ascension Perks · Federations · Jobs · Buildings · Repeatable Techs · Fallen Empire Techs) for reference tables that aren't part of empire creation.
 
 ### `/species` — Species Builder (`src/routes/species/+page.svelte`)
 
@@ -324,6 +331,15 @@ Both evaluate the stored trigger trees against an **`EmpireProfile`** ([`src/lib
 - Cost calculator: `traditionCost` from the `game_define` values (formula matches the wiki).
 - **Edict/agenda tooltips**: `loadUnlockables()` + `unlocksFor(item, …)` link by tradition/perk key **and** swap loc keys, filtered by the profile; same-named variants merge into one tooltip (`edictTip`/`agendaTip`). `EffectList` makes their names in the game's tooltip text hoverable (`linkify`), and adds an "Unlocks …" line for those the text doesn't name.
 - Navigation: `JumpLinks` (sections + every tree) at the top, `BackToTop` floating button (left of the xl EmpireOverview panel); anchors use `scroll-mt-16` for the sticky nav.
+
+### `/federations` — Federations (Information)
+
+`loadFederations()` → `{ federationTypes, lawCategories }`; the server also maps every tradition finisher key **and its swap loc keys** (`tr_harmony_federations_finish`, which the game's `allow` names) to its tree (`finishers`), for requirement names and the "Also unlocked by finishing <tree>" links to `/traditions#<tree>`.
+
+- One card per type (`id=<key>`, JumpLinks + "Laws"): description, "Who can form it" chips from `allow` run through **`withAllDlc`** (triggers.ts — every `host_has_dlc` taken as true and the branches an all-DLC game never takes pruned, so Trade League reads "Megacorp or Merchant Guilds or Commerce finished"), levels 1–5 with each perk's scoped modifiers (`SCOPE_LABELS`: Members / Federation / President / Envoys), effect text, flavour on hover.
+- `EmpireProfileBar` like the tradition pages; a type whose `allow` is definitely false greys/hides. The scripted ethic leaves (`is_militarist` …) evaluate against the profile's ethics (plain or fanatic) in `evaluate`.
+- Laws: one table per category (law, description, centralization needed, cohesion/month, "only for" type links); event-only Imperial Loyalists laws are dropped at extraction.
+- **Linked from elsewhere** via [`FederationLink.svelte`](src/lib/FederationLink.svelte) (link to `/federations#<key>` + `federationTip` hover; stops click propagation so it works inside selectable cards): tradition/perk effect text through `unlocksFor(…, federationTypes)` (`Unlock.kind = 'federation'`, `linkify` finds "Grants access to the **Trade League** Federation type"), civic cards through [`FederationAccess.svelte`](src/lib/FederationAccess.svelte) (`federationsFor` → "Can form / Cannot form federation"), and the ethics page (a "Can form federation" row in the implications table + a line in the selected-ethics summary).
 
 ### `/jobs` + `/buildings` — Information reference tables
 

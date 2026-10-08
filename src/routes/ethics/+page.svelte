@@ -5,6 +5,8 @@
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
 	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
 	import Tip from '$lib/Tip.svelte';
+	import FederationLink from '$lib/FederationLink.svelte';
+	import { federationTip } from '$lib/federations';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -120,6 +122,18 @@
 	// Gestalt implications (shown separately since gestalt has no fanatic/regular split)
 	const gestaltImplications = $derived(
 		data.ethics.find((e: Ethic) => e.gestalt)?.implications ?? []
+	);
+
+	// Federation types the selected ethics let the empire form, with the ethics behind each
+	const selectedFederations = $derived(
+		data.federationTypes
+			.map((type) => ({
+				type,
+				sources: selectedEthics
+					.filter((e) => type.unlockedBy.includes(e.key))
+					.map((e) => ethicLabel(e))
+			}))
+			.filter((f) => f.sources.length)
 	);
 
 	// Policy restrictions for the current selection, deduplicated by option key
@@ -320,7 +334,7 @@
 				{/each}
 			</ul>
 
-			{#if combinedImplications.length > 0 || selectedPolicyRestrictions.length > 0}
+			{#if combinedImplications.length > 0 || selectedPolicyRestrictions.length > 0 || selectedFederations.length > 0}
 				<div>
 					<h3 class="mb-2 text-sm font-medium opacity-60">Gameplay Implications</h3>
 					<ul class="max-w-lg space-y-1">
@@ -333,6 +347,17 @@
 						{#each selectedPolicyRestrictions as { label, sources } (label)}
 							<li class="text-sm">
 								<span class="opacity-70">{label}</span>
+								<span class="text-xs opacity-40"> ({sources.join(', ')})</span>
+							</li>
+						{/each}
+						{#each selectedFederations as { type, sources } (type.key)}
+							<li class="text-sm">
+								<span class="opacity-70">Can form federation:</span>
+								<FederationLink
+									key={type.key}
+									name={type.name ?? type.key}
+									tip={federationTip(type)}
+								/>
 								<span class="text-xs opacity-40"> ({sources.join(', ')})</span>
 							</li>
 						{/each}
@@ -468,6 +493,24 @@
 								{/each}
 							</tr>
 						{/each}
+						<!-- Federation types the ethic (regular or fanatic) lets the empire form -->
+						<tr class="border-surface-400-500/20 border-b hover:bg-surface-500/10">
+							<td class="py-1.5 pr-4 leading-tight opacity-70">Can form federation</td>
+							{#each tableEthicPairs as { regular, fanatic } (regular.key)}
+								{@const forms = data.federationTypes.filter(
+									(t) =>
+										t.unlockedBy.includes(regular.key) ||
+										(!!fanatic && t.unlockedBy.includes(fanatic.key))
+								)}
+								<td class="px-2 py-1.5 text-center text-[11px]">
+									{#each forms as t (t.key)}<FederationLink
+											key={t.key}
+											name={t.name ?? t.key}
+											tip={federationTip(t)}
+										/>{:else}<span class="opacity-15">—</span>{/each}
+								</td>
+							{/each}
+						</tr>
 						<!-- Policy-based restrictions (extracted from valid{} blocks in common/policies/*.txt) -->
 						{#if allPolicyRestrictions.length > 0}
 							<tr class="border-surface-400-500/40 border-b">

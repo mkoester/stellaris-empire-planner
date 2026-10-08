@@ -59,6 +59,18 @@ export const FLAGS: {
 
 const AUTHORITY_LEAVES = ['is_gestalt', 'is_regular_empire', 'is_hive_empire', 'is_machine_empire'];
 
+// Scripted ethic checks (common/scripted_triggers is_militarist …): the plain or fanatic ethic.
+const ETHIC_LEAVES: Record<string, string> = {
+	is_militarist: 'militarist',
+	is_pacifist: 'pacifist',
+	is_materialist: 'materialist',
+	is_spiritualist: 'spiritualist',
+	is_authoritarian: 'authoritarian',
+	is_egalitarian: 'egalitarian',
+	is_xenophobe: 'xenophobe',
+	is_xenophile: 'xenophile'
+};
+
 export function isActive(p: EmpireProfile): boolean {
 	return p.authority !== null || p.flags.length > 0;
 }
@@ -184,6 +196,11 @@ function leafValue(
 	const known = (list: string[] | undefined): Tri =>
 		list ? list.includes(value) : o.assumeAbsent ? false : null;
 	if (leaf === 'has_ethic') return known(p.ethics);
+	const ethic = ETHIC_LEAVES[leaf];
+	if (ethic) {
+		if (!p.ethics) return o.assumeAbsent ? yes(false) : null;
+		return yes(p.ethics.some((e) => e === `ethic_${ethic}` || e === `ethic_fanatic_${ethic}`));
+	}
 	if (leaf === 'has_valid_civic' || leaf === 'has_civic') return known(p.civics);
 	if (leaf === 'has_origin')
 		return p.origin !== undefined ? p.origin === value : o.assumeAbsent ? false : null;
@@ -227,6 +244,21 @@ export function pickSwap<S extends { trigger: Trigger | null; weight: number }>(
 	return best;
 }
 
+// A trigger with every `host_has_dlc` taken as true (all DLC assumed), simplified: the
+// branches an all-DLC game never takes drop out. true/false = settled either way.
+export function withAllDlc(t: Trigger | null): Trigger | boolean {
+	if (t === null) return true;
+	if ('leaf' in t) return t.leaf === 'host_has_dlc' ? true : t;
+	const args = t.args.map(withAllDlc);
+	if (t.op === 'not')
+		return typeof args[0] === 'boolean' ? !args[0] : { op: 'not', args: [args[0]] };
+	const settles = t.op === 'or'; // the value that decides an or (true) / an and (false)
+	if (args.includes(settles)) return settles;
+	const rest = args.filter((a): a is Trigger => typeof a !== 'boolean');
+	if (!rest.length) return !settles;
+	return rest.length === 1 ? rest[0] : { op: t.op, args: rest };
+}
+
 // Every leaf with the given key outside a `not` (a requirement, not an exclusion).
 export function positiveLeaves(t: Trigger | null, leaf: string): string[] {
 	if (t === null) return [];
@@ -264,6 +296,10 @@ const LEAF_LABELS: Record<string, string> = {
 	has_purity_ascension: 'Purity ascension',
 	has_cloning_ascension: 'Cloning ascension',
 	has_mutation_ascension: 'Mutation ascension',
+	federation_check_for_subject_trigger: 'not a subject outside its overlord’s federation',
+	...Object.fromEntries(
+		Object.entries(ETHIC_LEAVES).map(([leaf, e]) => [leaf, e[0].toUpperCase() + e.slice(1)])
+	),
 	complex: '(complex condition)'
 };
 
@@ -275,6 +311,7 @@ const NAMED_LEAVES = new Set([
 	'has_origin',
 	'has_ascension_perk',
 	'has_tradition',
+	'has_active_tradition',
 	'has_trait'
 ]);
 
@@ -306,11 +343,15 @@ export function leafText(
 export function triggerText(t: Trigger, names: Record<string, string>): string {
 	if ('leaf' in t) return leafText(t, names);
 	if (t.op === 'not') return `not ${wrap(t.args[0], names)}`;
-	return t.args.map((a) => wrap(a, names)).join(t.op === 'and' ? ' and ' : ' or ');
+	// Variants that read the same (two Domination finisher swaps) show once.
+	return [...new Set(t.args.map((a) => wrap(a, names)))].join(t.op === 'and' ? ' and ' : ' or ');
 }
 
 function wrap(t: Trigger, names: Record<string, string>): string {
-	return 'leaf' in t || t.op === 'not' ? triggerText(t, names) : `(${triggerText(t, names)})`;
+	const text = triggerText(t, names);
+	if ('leaf' in t || t.op === 'not') return text;
+	// Alternatives that collapsed to one (triggerText dedupes) need no parentheses.
+	return new Set(t.args.map((a) => wrap(a, names))).size === 1 ? text : `(${text})`;
 }
 
 export interface RequirementLine {

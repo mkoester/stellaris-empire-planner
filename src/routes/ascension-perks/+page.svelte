@@ -173,7 +173,7 @@
 						<EffectList
 							{names}
 							effect={e}
-							unlocks={unlocksFor(p, data.edicts, data.agendas, profile)}
+							unlocks={unlocksFor(p, data.edicts, data.agendas, profile, data.federationTypes)}
 						/>
 
 						{#if unlocksTrees[p.key]?.length}

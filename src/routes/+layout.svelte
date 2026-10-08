@@ -32,6 +32,7 @@
 		{ href: '/precursors', label: 'Precursors' },
 		{ href: '/traditions', label: 'Tradition Trees' },
 		{ href: '/ascension-perks', label: 'Ascension Perks' },
+		{ href: '/federations', label: 'Federations' },
 		{ href: '/jobs', label: 'Jobs' },
 		{ href: '/buildings', label: 'Buildings' },
 		{ href: '/tech', label: 'Repeatable Techs' },

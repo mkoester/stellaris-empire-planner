@@ -4,12 +4,14 @@ import type {
 	AscensionPerk,
 	Edict,
 	ConditionalModifier,
+	FederationType,
 	Swap,
 	Tradition,
 	TraditionTree,
 	Trigger
 } from '$lib/server/db';
 import { formatModifierValue, modifierLabel, prettyKey } from '$lib/civics';
+import { federationTip } from '$lib/federations';
 import {
 	AUTHORITIES,
 	FLAGS,
@@ -191,27 +193,29 @@ export function matches(text: string, query: string): boolean {
 	return words.every((w) => text.includes(w));
 }
 
-// ── Edicts & agendas ─────────────────────────────────────────────────────────
+// ── Edicts, agendas & federation types ──────────────────────────────────────
 export interface Unlock {
-	kind: 'edict' | 'agenda';
+	kind: 'edict' | 'agenda' | 'federation'; // federation: links to /federations#<key>
 	key: string;
 	name: string;
 	tip: string; // full tooltip text
 	state: Tri; // can the profile get it?
 }
 
-// The edicts and agendas a tradition/perk unlocks for the profile. Game triggers name a
-// swapped tradition by its swap name (has_tradition = tr_domination_drone_network), so
-// the swaps' names count as the item too; the unlockable's potential picks the variant.
+// The edicts, agendas and federation types a tradition/perk unlocks for the profile. Game
+// triggers name a swapped tradition by its swap name (has_tradition =
+// tr_domination_drone_network), so the swaps' names count as the item too; the
+// unlockable's potential picks the variant.
 export function unlocksFor(
 	item: { key: string; swaps: Swap[] },
 	edicts: Edict[],
 	agendas: Agenda[],
-	p: EmpireProfile
+	p: EmpireProfile,
+	federations: FederationType[] = []
 ): Unlock[] {
 	const keys = new Set([item.key, ...item.swaps.flatMap((s) => (s.locKey ? [s.locKey] : []))]);
 	const out: Unlock[] = [];
-	const add = (kind: Unlock['kind'], x: Edict | Agenda, tip: string) => {
+	const add = (kind: Unlock['kind'], x: Edict | Agenda | FederationType, tip: string) => {
 		if (!x.unlockedBy.some((k) => keys.has(k))) return;
 		const state = evaluate(x.potential, p);
 		if (state === false) return;
@@ -225,6 +229,7 @@ export function unlocksFor(
 	};
 	for (const e of edicts) add('edict', e, edictTip(e));
 	for (const a of agendas) add('agenda', a, agendaTip(a));
+	for (const f of federations) add('federation', f, federationTip(f));
 	return out;
 }
 

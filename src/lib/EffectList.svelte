@@ -1,9 +1,11 @@
 <script lang="ts">
 	// The effects of a tradition/perk as the profile sees it (see effective()): modifiers,
 	// with "(if …)" on those that only apply under a condition the profile can't settle,
-	// then the custom tooltip text. Edicts/agendas it unlocks get a hover tooltip: where the
-	// text names them, on the name itself; otherwise on an extra "Unlocks …" line.
+	// then the custom tooltip text. Edicts/agendas it unlocks get a hover tooltip (federation
+	// types also link to their card): where the text names them, on the name itself;
+	// otherwise on an extra "Unlocks …" line.
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
+	import FederationLink from '$lib/FederationLink.svelte';
 	import Tip from '$lib/Tip.svelte';
 	import { linkify, type Effective, type Unlock } from '$lib/traditions';
 	import { triggerText } from '$lib/triggers';
@@ -26,12 +28,16 @@
 </script>
 
 {#snippet unlockName(u: Unlock, text: string)}
-	<Tip
-		text={u.tip}
-		class="underline decoration-dotted underline-offset-2 {u.kind === 'edict'
-			? 'text-sky-300'
-			: 'text-amber-300'}">{text}</Tip
-	>
+	{#if u.kind === 'federation'}
+		<FederationLink key={u.key} name={text} tip={u.tip} />
+	{:else}
+		<Tip
+			text={u.tip}
+			class="underline decoration-dotted underline-offset-2 {u.kind === 'edict'
+				? 'text-sky-300'
+				: 'text-amber-300'}">{text}</Tip
+		>
+	{/if}
 {/snippet}
 
 {#if effect.modifiers.length}

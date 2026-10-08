@@ -12,6 +12,7 @@
 		requirementChipClass
 	} from '$lib/civics';
 	import SwapTables from '$lib/SwapTables.svelte';
+	import FederationAccess from '$lib/FederationAccess.svelte';
 	import Tip from '$lib/Tip.svelte';
 	import BanIcon from '$lib/BanIcon.svelte';
 	import RuleText from '$lib/RuleText.svelte';
@@ -180,6 +181,8 @@
 								</ul>
 							{/if}
 						{/if}
+
+						<FederationAccess itemKey={civic.key} types={data.federationTypes} />
 
 						<!-- Effects description pinned to the bottom (divider above it if attunement shown).
 						     When the civic replaces jobs, hovering the description also opens the swap table. -->
