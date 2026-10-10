@@ -30,7 +30,7 @@ export function groupCivicsByType(
 // Only the leading category prefix is stripped — the corporate/machine/hive part of
 // a civic key is kept so distinct civics don't collapse to the same name (e.g.
 // civic_anglers → "Anglers", civic_corporate_anglers → "Corporate Anglers").
-const PREFIXES = ['ethic_fanatic_', 'ethic_', 'auth_', 'civic_', 'origin_'];
+const PREFIXES = ['ethic_fanatic_', 'ethic_', 'auth_', 'civic_', 'origin_', 'trait_', 'pc_'];
 export function prettyKey(value: string): string {
 	let s = value;
 	for (const p of PREFIXES) {
@@ -130,26 +130,32 @@ export interface CivicRequirementLine {
 }
 // The display text for one gated value: ship-type gates read "Organic ships",
 // gameplay gates read "Nomadic gameplay", species-archetype gates ("MACHINE") read
-// "Machine", everything else via prettyKey.
-function requirementValueText(kind: string, value: string): string {
+// "Machine", species-class / homeworld gates use their game names ("INF" → "Infernal
+// species", "pc_volcanic" → "Volcanic homeworld"), everything else via prettyKey.
+function requirementValueText(kind: string, value: string, names: Record<string, string>): string {
 	if (kind === 'ship_type') return `${prettyKey(value)} ships`;
 	if (kind === 'gameplay') return `${prettyKey(value)} gameplay`;
 	if (kind === 'archetype') return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
-	return prettyKey(value);
+	if (kind === 'species_class') return `${names[value] ?? prettyKey(value)} species`;
+	if (kind === 'planet_class') return `${names[value] ?? prettyKey(value)} homeworld`;
+	return names[value] ?? prettyKey(value);
 }
-export function civicRequirementLines(reqs: CivicRequirement[]): CivicRequirementLine[] {
+export function civicRequirementLines(
+	reqs: CivicRequirement[],
+	names: Record<string, string> = {}
+): CivicRequirementLine[] {
 	const lines: CivicRequirementLine[] = [];
 	const anyGroups = new Map<number, { kind: string; vals: string[] }>();
 	for (const r of reqs) {
 		if (r.operator === 'require_any') {
 			if (!anyGroups.has(r.groupId)) anyGroups.set(r.groupId, { kind: r.kind, vals: [] });
-			anyGroups.get(r.groupId)!.vals.push(requirementValueText(r.kind, r.value));
+			anyGroups.get(r.groupId)!.vals.push(requirementValueText(r.kind, r.value, names));
 		}
 	}
 	for (const g of anyGroups.values())
 		lines.push({ kind: g.kind, type: 'require', text: g.vals.join(' or ') });
 	for (const r of reqs) {
-		const text = requirementValueText(r.kind, r.value);
+		const text = requirementValueText(r.kind, r.value, names);
 		if (r.operator === 'require') lines.push({ kind: r.kind, type: 'require', text });
 		else if (r.operator === 'forbid') lines.push({ kind: r.kind, type: 'exclude', text });
 	}
@@ -167,7 +173,18 @@ export function civicRequirementLines(reqs: CivicRequirement[]): CivicRequiremen
 // Display order for requirement chips: grouped by kind (legend order), alphabetical
 // within — except ethics, which read Gestalt first, then each axis with the regular
 // variant before its Fanatic one ("Egalitarian" before "Fanatic Egalitarian").
-const KIND_ORDER = ['ethic', 'civic', 'origin', 'authority', 'archetype', 'ship_type', 'gameplay'];
+const KIND_ORDER = [
+	'ethic',
+	'civic',
+	'origin',
+	'authority',
+	'archetype',
+	'species_class',
+	'trait',
+	'planet_class',
+	'ship_type',
+	'gameplay'
+];
 function ethicSortKey(text: string): [number, string, number] {
 	if (/^gestalt/i.test(text)) return [0, '', 0]; // Gestalt Consciousness first
 	const fanatic = /^fanatic /i.test(text);
@@ -211,6 +228,18 @@ const REQ_KIND_CLASS: Record<string, { require: string; exclude: string }> = {
 		require: 'bg-lime-500/10 text-lime-300/70',
 		exclude: 'bg-lime-500/25 text-lime-200'
 	},
+	species_class: {
+		require: 'bg-lime-500/10 text-lime-300/70',
+		exclude: 'bg-lime-500/25 text-lime-200'
+	},
+	trait: {
+		require: 'bg-emerald-500/10 text-emerald-300/70',
+		exclude: 'bg-emerald-500/25 text-emerald-200'
+	},
+	planet_class: {
+		require: 'bg-orange-500/10 text-orange-300/70',
+		exclude: 'bg-orange-500/25 text-orange-200'
+	},
 	ship_type: {
 		require: 'bg-teal-500/10 text-teal-300/70',
 		exclude: 'bg-teal-500/25 text-teal-200'
@@ -234,6 +263,9 @@ export const REQUIREMENT_KINDS: { kind: string; label: string }[] = [
 	{ kind: 'civic', label: 'Civics' },
 	{ kind: 'origin', label: 'Origin' },
 	{ kind: 'authority', label: 'Government' },
+	{ kind: 'archetype', label: 'Species type' },
+	{ kind: 'trait', label: 'Trait' },
+	{ kind: 'planet_class', label: 'Homeworld' },
 	{ kind: 'ship_type', label: 'Ship type' },
 	{ kind: 'gameplay', label: 'Gameplay' }
 ];

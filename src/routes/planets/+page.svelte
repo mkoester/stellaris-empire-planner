@@ -4,6 +4,7 @@
 	import { groupPlanetClasses, climateBadge } from '$lib/planets';
 	import { empire } from '$lib/empire.svelte';
 	import Tip from '$lib/Tip.svelte';
+	import { compatChecker } from '$lib/compat';
 
 	let { data }: { data: PageData } = $props();
 	const groups = $derived(groupPlanetClasses(data.planetClasses as PlanetClass[]));
@@ -11,6 +12,8 @@
 	const draft = $derived(empire.draft);
 	// Debug: render selectable cards as plain elements so their text can be copied.
 	const debug = $derived(data.debugDisableSelection);
+	// Cross-section conflicts (warn only — see $lib/compat): civic/origin/trait homeworld gates.
+	const compat = $derived(compatChecker(empire.draft, data));
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
@@ -57,8 +60,13 @@
 			<div class="flex flex-wrap gap-2">
 				{#each group.items as pc (pc.key)}
 					{@const selected = empire.draft.planetClass === pc.key}
+					{@const warn = pc.colonizable ? compat.reasons('planet_class', pc.key) : []}
 					{#if pc.colonizable}
-						<Tip text={debug ? undefined : 'Set as homeworld'}>
+						<Tip
+							text={debug
+								? undefined
+								: [...warn.map((r) => `⚠ ${r}`), 'Set as homeworld'].join('\n')}
+						>
 							{#snippet trigger(a)}
 								<svelte:element
 									this={debug ? 'div' : 'button'}
@@ -70,9 +78,9 @@
 										: () => empire.setPlanetClass(selected ? null : pc.key)}
 									class="flex items-center gap-1.5 rounded border px-2 py-1 text-sm transition-colors {selected
 										? 'border-primary-500 bg-primary-500/10'
-										: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
-										? 'cursor-text select-text'
-										: ''}"
+										: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {warn.length
+										? 'ring-2 ring-red-500/70 ring-inset'
+										: ''} {debug ? 'cursor-text select-text' : ''}"
 								>
 									{pc.name ?? pc.key}
 									{#if pc.climate}

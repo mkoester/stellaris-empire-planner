@@ -10,3 +10,4 @@ export * from './precursors';
 export * from './tech';
 export * from './traditions';
 export * from './federations';
+export * from './compat';

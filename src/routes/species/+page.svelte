@@ -9,6 +9,7 @@
 		formatScalingModifier
 	} from '$lib/civics';
 	import Tip from '$lib/Tip.svelte';
+	import { compatChecker, grantedTraits } from '$lib/compat';
 
 	let { data }: { data: PageData } = $props();
 
@@ -326,6 +327,23 @@
 		return blocked;
 	});
 
+	// Cross-section conflicts (warn only — see $lib/compat): civic/origin gates on the species
+	// class, traits granted by civics/origins (Tankbound) and their opposites, trait gates on
+	// origin/ethics/homeworld. Checked for the founder species, which those rules apply to.
+	const compat = $derived(compatChecker(empire.draft, data));
+	const founderSlot = $derived(activeSlot === 'founder');
+	const classConflicts = (key: string) => (founderSlot ? compat.reasons('species_class', key) : []);
+	const traitConflicts = (key: string) => (founderSlot ? compat.reasons('trait', key) : []);
+	// Traits the picked civics/origin give the founder: fixed cards, outside points and picks.
+	const granted = $derived(
+		founderSlot
+			? grantedTraits(compat.picks, data.compat).flatMap((g) => {
+					const t = data.grantedTraitInfo[g.trait];
+					return t ? [{ trait: t, source: compat.name(g.source) }] : [];
+				})
+			: []
+	);
+
 	function canToggle(trait: Trait): boolean {
 		if (selected.has(trait.key)) return true;
 		if (traitCount >= maxTraits) return false;
@@ -383,10 +401,16 @@
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
-	{#snippet traitCard(trait: Trait, borderColor: string, isBase: boolean = false)}
+	{#snippet traitCard(
+		trait: Trait,
+		borderColor: string,
+		isBase: boolean = false,
+		grantedBy: string | null = null
+	)}
 		{@const isSelected = !isBase && selected.has(trait.key)}
 		{@const isConflicted = !isBase && !isSelected && blockedByOpposite.has(trait.key)}
 		{@const isBlockable = !isBase && !isSelected && !canToggle(trait)}
+		{@const warnings = isBase ? [] : traitConflicts(trait.key).map((r) => `⚠ ${r}`)}
 		{@const debug = isBase || data.debugDisableSelection}
 		{@const tooltip = isConflicted
 			? `Conflicts with ${formatKey(blockedByOpposite.get(trait.key)!)}`
@@ -395,7 +419,13 @@
 					? 'No trait picks remaining'
 					: 'Not enough points remaining'
 				: undefined}
-		<Tip text={isBase ? 'Always included — not counted toward picks or points' : tooltip}>
+		<Tip
+			text={grantedBy
+				? `Granted by ${grantedBy} — not counted toward picks or points`
+				: isBase
+					? 'Always included — not counted toward picks or points'
+					: [...warnings, ...(tooltip ? [tooltip] : [])].join('\n') || undefined}
+		>
 			{#snippet trigger(a)}
 				<svelte:element
 					this={debug ? 'div' : 'button'}
@@ -412,6 +442,7 @@
 									: debug
 										? 'cursor-text preset-filled select-text'
 										: 'cursor-pointer preset-filled card-hover'}
+				{warnings.length && !isConflicted ? 'ring-2 ring-red-500/70 ring-inset' : ''}
 				p-3"
 					style="border-top: 2px solid {borderColor}"
 					onclick={debug ? undefined : () => toggle(trait)}
@@ -421,7 +452,7 @@
 						<span
 							class="absolute top-1.5 left-1.5 font-mono text-[10px] leading-tight text-amber-400"
 						>
-							Base
+							{grantedBy ? `From ${grantedBy}` : 'Base'}
 						</span>
 					{:else}
 						<span
@@ -629,11 +660,14 @@
 				</div>
 			</div>
 
-			{#if baseTraitObj || traitCount > 0}
+			{#if baseTraitObj || granted.length || traitCount > 0}
 				<div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 					{#if baseTraitObj}
 						{@render traitCard(baseTraitObj, '#d97706', true)}
 					{/if}
+					{#each granted as g (g.trait.key)}
+						{@render traitCard(g.trait, '#d97706', true, g.source)}
+					{/each}
 					{#each selectedTraits as trait (trait.key)}
 						{@render traitCard(trait, categoryColorMap.get(trait.category) ?? '#888')}
 					{/each}
@@ -660,14 +694,20 @@
 		{#if displayedSpeciesClasses.length > 0}
 			<div class="flex flex-wrap gap-1.5">
 				{#each displayedSpeciesClasses as sc (sc.key)}
-					<button
-						class="btn text-sm {selectedClassKey === sc.key
-							? 'preset-filled-primary-500'
-							: 'preset-filled'}"
-						onclick={() => selectClass(sc.key)}
-					>
-						{sc.label}
-					</button>
+					{@const warn = classConflicts(sc.key)}
+					<Tip text={warn.map((r) => `⚠ ${r}`).join('\n')}>
+						{#snippet trigger(a)}
+							<button
+								{...a}
+								class="btn text-sm {selectedClassKey === sc.key
+									? 'preset-filled-primary-500'
+									: 'preset-filled'} {warn.length ? 'ring-2 ring-red-500/70 ring-inset' : ''}"
+								onclick={() => selectClass(sc.key)}
+							>
+								{sc.label}
+							</button>
+						{/snippet}
+					</Tip>
 				{/each}
 			</div>
 		{/if}

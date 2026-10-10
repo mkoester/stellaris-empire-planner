@@ -14,8 +14,12 @@
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import { empire } from '$lib/empire.svelte';
+	import ConflictBadge from '$lib/ConflictBadge.svelte';
+	import { compatChecker } from '$lib/compat';
 
 	let { data }: { data: PageData } = $props();
+	// Cross-section conflicts (warn only — see $lib/compat).
+	const compat = $derived(compatChecker(empire.draft, data));
 	const authorities = $derived(data.authorities as Authority[]);
 	// Debug: render selectable cards as plain elements so their text can be copied.
 	const debug = $derived(data.debugDisableSelection);
@@ -39,6 +43,7 @@
 		{#each authorities as authority (authority.key)}
 			{@const reqs = civicRequirementLines(authority.requirements)}
 			{@const selected = empire.draft.authority === authority.key}
+			{@const conflicts = compat.reasons('authority', authority.key)}
 			<!-- svelte-ignore a11y_no_static_element_interactions -->
 			<svelte:element
 				this={debug ? 'div' : 'button'}
@@ -47,12 +52,13 @@
 				onclick={debug ? undefined : () => toggle(authority.key)}
 				class="relative flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 					? 'border-primary-500 bg-primary-500/10'
-					: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
-					? 'cursor-text select-text'
-					: ''}"
+					: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflicts.length
+					? 'ring-2 ring-red-500/70 ring-inset'
+					: ''} {debug ? 'cursor-text select-text' : ''}"
 			>
 				<header class="flex flex-wrap items-baseline gap-2">
 					<h3 class="font-semibold">{authority.name ?? authority.key}</h3>
+					<ConflictBadge reasons={conflicts} />
 					{#if authority.requiredDlc}
 						<Tip
 							text={authority.requiredDlc}

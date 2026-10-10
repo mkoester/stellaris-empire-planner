@@ -18,6 +18,7 @@
 	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
 	import RuleText from '$lib/RuleText.svelte';
 	import LockIcon from '$lib/LockIcon.svelte';
+	import { compatChecker, grantedTraits } from '$lib/compat';
 
 	let { data }: { data: PageData } = $props();
 	const predefined = $derived(data.predefined as Empire[]);
@@ -169,6 +170,16 @@
 	}
 
 	const draft = $derived(empire.draft);
+	// Rules the draft breaks across sections (warn only — see $lib/compat), and the traits
+	// its civics/origin grant the founder species (shown with its traits and effects).
+	const compat = $derived(compatChecker(draft, data));
+	const conflicts = $derived(compat.all());
+	const founderTraits = $derived([
+		...grantedTraits(compat.picks, data.compat)
+			.map((g) => g.trait)
+			.filter((t) => !draft.traits.includes(t)),
+		...draft.traits
+	]);
 	const hasEmpire = $derived(empire.anySet());
 	const effectGroups = $derived(groupEffects(collectEffects(draft, modifierIndex, names)));
 
@@ -234,7 +245,7 @@
 					name:
 						draft.speciesName ||
 						(draft.speciesClass ? name(draft.speciesClass) : 'Founder species'),
-					traits: withBase(draft.speciesClass, draft.traits)
+					traits: withBase(draft.speciesClass, founderTraits)
 				},
 				...(draft.secondary
 					? [
@@ -467,7 +478,7 @@
 
 			{@render chips('Ethics', draft.ethics, 'bg-primary-500/15 text-primary-300/90')}
 			{@render chips('Civics', draft.civics, 'bg-sky-500/15 text-sky-300/90', lockedCivics)}
-			{@render traitChips('Traits', draft.speciesClass, draft.traits)}
+			{@render traitChips('Traits', draft.speciesClass, founderTraits)}
 			{#if draft.secondary}
 				{@render traitChips(
 					'Secondary species traits',
@@ -476,6 +487,19 @@
 				)}
 			{/if}
 		</section>
+
+		<!-- Rules the current picks break (warn only; the builder pages mark the same) -->
+		{#if conflicts.length}
+			<section class="space-y-2 rounded-lg border border-red-500/40 bg-red-500/5 p-4">
+				<h2 class="text-xl font-semibold">
+					Conflicts <span class="text-sm font-normal opacity-50">· {conflicts.length}</span>
+				</h2>
+				<p class="text-sm opacity-50">The game won't accept this combination as it stands.</p>
+				<ul class="list-inside list-disc space-y-0.5 text-sm text-red-300">
+					{#each conflicts as c, i (i)}<li>{c}</li>{/each}
+				</ul>
+			</section>
+		{/if}
 
 		<!-- Aggregated numeric effects of the current choices, grouped by theme -->
 		{#if effectGroups.length}

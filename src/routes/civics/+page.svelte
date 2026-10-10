@@ -18,10 +18,14 @@
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import LockIcon from '$lib/LockIcon.svelte';
+	import ConflictBadge from '$lib/ConflictBadge.svelte';
+	import { compatChecker } from '$lib/compat';
 	import { empire } from '$lib/empire.svelte';
 	import { settings } from '$lib/settings.svelte';
 
 	let { data }: { data: PageData } = $props();
+	// Cross-section conflicts (warn only — see $lib/compat).
+	const compat = $derived(compatChecker(empire.draft, data));
 	const civics = $derived(data.civics as Civic[]);
 	const jobSwaps = $derived((data.jobSwaps ?? {}) as Record<string, JobSwap[]>);
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -72,11 +76,12 @@
 
 			<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
 				{#each group.items as civic (civic.key)}
-					{@const reqs = civicRequirementLines(civic.requirements)}
+					{@const reqs = civicRequirementLines(civic.requirements, data.names)}
 					{@const needs = reqs.filter((r) => r.type === 'require')}
 					{@const excls = reqs.filter((r) => r.type === 'exclude')}
 					{@const showExcl = openExcl[civic.key] ?? settings.showExclusions}
 					{@const selected = empire.draft.civics.includes(civic.key)}
+					{@const conflicts = compat.reasons('civic', civic.key)}
 					{@const mods = sortModifiers(civic.modifiers)}
 					{@const swaps = jobSwaps[civic.key] ?? []}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -87,9 +92,9 @@
 						onclick={debug ? undefined : () => empire.toggleCivic(civic.key)}
 						class="relative flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
-							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
-							? 'cursor-text select-text'
-							: ''}"
+							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflicts.length
+							? 'ring-2 ring-red-500/70 ring-inset'
+							: ''} {debug ? 'cursor-text select-text' : ''}"
 					>
 						<header class="flex items-start justify-between gap-2">
 							<h3 class="font-semibold">{civic.name ?? civic.key}</h3>
@@ -106,6 +111,7 @@
 									>
 								{/if}
 								{#if civic.locked}<LockIcon />{/if}
+								<ConflictBadge reasons={conflicts} />
 							</div>
 						</header>
 

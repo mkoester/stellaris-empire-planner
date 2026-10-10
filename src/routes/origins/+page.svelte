@@ -18,9 +18,13 @@
 	import { keyName } from '$lib/empireFile';
 	import { empire } from '$lib/empire.svelte';
 	import { settings } from '$lib/settings.svelte';
+	import ConflictBadge from '$lib/ConflictBadge.svelte';
+	import { compatChecker } from '$lib/compat';
 	import type { JobSwap } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
+	// Cross-section conflicts (warn only — see $lib/compat).
+	const compat = $derived(compatChecker(empire.draft, data));
 	const origins = $derived(data.origins as Origin[]);
 	const names = $derived((data.names ?? {}) as Record<string, string>);
 	const jobSwaps = $derived((data.jobSwaps ?? {}) as Record<string, JobSwap[]>);
@@ -90,11 +94,12 @@
 
 			<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
 				{#each group.items as origin (origin.key)}
-					{@const reqs = civicRequirementLines(origin.requirements)}
+					{@const reqs = civicRequirementLines(origin.requirements, data.names)}
 					{@const needs = reqs.filter((r) => r.type === 'require')}
 					{@const excls = reqs.filter((r) => r.type === 'exclude')}
 					{@const showExcl = openExcl[origin.key] ?? settings.showExclusions}
 					{@const selected = empire.draft.origin === origin.key}
+					{@const conflicts = compat.reasons('origin', origin.key)}
 					{@const mods = sortModifiers(origin.modifiers)}
 					{@const swaps = jobSwaps[origin.key] ?? []}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
@@ -105,12 +110,13 @@
 						onclick={debug ? undefined : () => empire.setOrigin(selected ? null : origin.key)}
 						class="flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
-							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {debug
-							? 'cursor-text select-text'
-							: ''}"
+							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflicts.length
+							? 'ring-2 ring-red-500/70 ring-inset'
+							: ''} {debug ? 'cursor-text select-text' : ''}"
 					>
 						<div class="flex items-start justify-between gap-2">
 							<h3 class="font-semibold">{origin.name ?? origin.key}</h3>
+							<ConflictBadge reasons={conflicts} class="ml-auto" />
 							{#if swaps.length || origin.ascensionLock || origin.ascensionBlocks.length}
 								<div class="flex shrink-0 flex-wrap items-center justify-end gap-1">
 									{#if swaps.length}

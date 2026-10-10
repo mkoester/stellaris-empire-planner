@@ -7,6 +7,7 @@
 	import Tip from '$lib/Tip.svelte';
 	import FederationLink from '$lib/FederationLink.svelte';
 	import { federationTip } from '$lib/federations';
+	import { compatChecker } from '$lib/compat';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -192,9 +193,18 @@
 	}
 
 	function ethicTooltip(ethic: Ethic): string {
-		if (ethic.modifiers.length === 0) return ethicLabel(ethic);
-		return ethic.modifiers.map((mod) => `${formatValue(mod)}  ${modLabel(mod)}`).join('\n');
+		const conflicts = compat.reasons('ethic', ethic.key).map((r) => `⚠ ${r}`);
+		const mods = ethic.modifiers.length
+			? ethic.modifiers.map((mod) => `${formatValue(mod)}  ${modLabel(mod)}`)
+			: [ethicLabel(ethic)];
+		return [...conflicts, ...mods].join('\n');
 	}
+
+	// Cross-section conflicts (origin / civics / government rules) — warn only: a red ring
+	// plus the reasons atop the tooltip; the ethic stays pickable.
+	const compat = $derived(compatChecker(empire.draft, data));
+	const conflictRing = (key: string) =>
+		compat.reasons('ethic', key).length ? 'ring-2 ring-red-500/80 ring-inset' : '';
 </script>
 
 <main class="mx-auto max-w-7xl space-y-8 p-4">
@@ -245,7 +255,9 @@
 											? 'preset-filled-primary-500'
 											: blocked
 												? 'cursor-not-allowed preset-filled opacity-30'
-												: 'preset-filled card-hover'} {debug ? 'cursor-text select-text' : ''}"
+												: 'preset-filled card-hover'} {conflictRing(ethic!.key)} {debug
+											? 'cursor-text select-text'
+											: ''}"
 										onclick={debug ? undefined : () => toggle(ethic!.key)}
 										disabled={debug ? undefined : blocked && !sel}
 									>
@@ -275,7 +287,9 @@
 											? 'preset-filled-primary-500'
 											: blocked
 												? 'cursor-not-allowed preset-filled opacity-30'
-												: 'preset-filled card-hover'} {debug ? 'cursor-text select-text' : ''}"
+												: 'preset-filled card-hover'} {conflictRing(ethic!.key)} {debug
+											? 'cursor-text select-text'
+											: ''}"
 										onclick={debug ? undefined : () => toggle(ethic!.key)}
 										disabled={debug ? undefined : blocked && !sel}
 									>
@@ -302,9 +316,9 @@
 							this={debug ? 'div' : 'button'}
 							{...a}
 							class="btn flex-col gap-0.5 text-sm leading-tight
-						{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {debug
-								? 'cursor-text select-text'
-								: ''}"
+						{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {conflictRing(
+								gestaltEthic.key
+							)} {debug ? 'cursor-text select-text' : ''}"
 							onclick={debug ? undefined : selectGestalt}
 						>
 							<span>{ethicLabel(gestaltEthic)}</span>
