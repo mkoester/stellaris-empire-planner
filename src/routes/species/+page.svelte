@@ -12,6 +12,11 @@
 	import { compatChecker, grantedTraits } from '$lib/compat';
 	import { addedBy, traitLimits, withTrait } from '$lib/limits';
 	import { conflictClass } from '$lib/conflict';
+	import { betterVersions, traitRequirementLines } from '$lib/traits';
+	import { settings } from '$lib/settings.svelte';
+	import { tick } from 'svelte';
+	import InfoPopup from '$lib/InfoPopup.svelte';
+	import RequirementRow from '$lib/RequirementRow.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -39,6 +44,7 @@
 	let founderArch = $state<ArchetypeGroup>(deriveArchetype(empire.draft.traits));
 	let secondaryArch = $state<ArchetypeGroup>(deriveArchetype(empire.draft.secondary?.traits ?? []));
 	let activeTags = $state(new Set<string>());
+	let flashKey = $state<string | null>(null); // trait card just jumped to (brief highlight)
 
 	const archetypeGroup = $derived(activeSlot === 'founder' ? founderArch : secondaryArch);
 	function setArch(g: ArchetypeGroup) {
@@ -228,6 +234,24 @@
 		['positive', 'negative'].filter((t) => allTagsInView.includes(t))
 	);
 
+	// Better versions in other categories (larger effect and/or cheaper — see $lib/traits),
+	// among the traits this archetype can take; and each trait's needs / exclusions.
+	const better = (t: Trait) => betterVersions(t, visibleTraits, archetype);
+	const reqLines = (t: Trait) => traitRequirementLines(t, data.compat.rules, data.names);
+
+	// Scroll to a trait's card in the list below, clearing a tag filter that hides it.
+	async function jumpTo(key: string) {
+		if (!filteredVisibleTraits.some((t) => t.key === key)) activeTags = new Set();
+		flashKey = key;
+		await tick();
+		document
+			.getElementById(`trait-${key}`)
+			?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+		setTimeout(() => {
+			if (flashKey === key) flashKey = null;
+		}, 1600);
+	}
+
 	function toggleTag(tag: string) {
 		const next = new Set(activeTags);
 		if (next.has(tag)) next.delete(tag);
@@ -402,7 +426,8 @@
 		trait: Trait,
 		borderColor: string,
 		isBase: boolean = false,
-		grantedBy: string | null = null
+		grantedBy: string | null = null,
+		anchor: boolean = false
 	)}
 		{@const isSelected = !isBase && selected.has(trait.key)}
 		{@const reasons = isBase ? [] : traitReasons(trait.key)}
@@ -427,7 +452,9 @@
 								? 'cursor-text preset-filled select-text'
 								: 'cursor-pointer preset-filled card-hover'}
 				{debug ? '' : conflictClass(reasons, isSelected)}
+				{anchor && flashKey === trait.key ? 'ring-4 ring-primary-400' : ''}
 				p-3"
+					id={anchor ? `trait-${trait.key}` : undefined}
 					style="border-top: 2px solid {borderColor}"
 					onclick={debug ? undefined : () => toggle(trait)}
 				>
@@ -462,6 +489,48 @@
 								? 'text-red-400'
 								: ''}">{formatKey(trait.key)}</span
 						>
+						{#if !isBase}
+							{@const versions = better(trait)}
+							<RequirementRow lines={reqLines(trait)} />
+							{#if versions.length}
+								<div>
+									<InfoPopup
+										class="rounded bg-cyan-500/15 px-1.5 py-0.5 text-[10px] text-cyan-200/90"
+									>
+										↑ better: {formatKey(versions[0].key)}{versions.length > 1
+											? ` +${versions.length - 1}`
+											: ''}
+										{#snippet content()}
+											<div class="opacity-55">
+												Larger effect and/or cheaper — click to jump to it
+											</div>
+											{#each versions as v (v.key)}
+												<button
+													type="button"
+													class="block w-full rounded p-1.5 text-left hover:bg-surface-500/20"
+													onclick={() => jumpTo(v.key)}
+												>
+													<div class="flex items-baseline justify-between gap-2">
+														<span class="font-medium">{formatKey(v.key)}</span>
+														<span class="font-mono opacity-70"
+															>{costLabel(v.cost)} · {data.traitCategories.find(
+																(c) => c.key === v.category
+															)?.label ?? v.category}</span
+														>
+													</div>
+													{#each v.modifiers as m (m.key)}
+														<div class="flex justify-between gap-2 text-[10px]">
+															<span class="opacity-60">{modifierLabel(m)}</span>
+															<span class="font-mono {modifierColor(m)}">{formatModifier(m)}</span>
+														</div>
+													{/each}
+												</button>
+											{/each}
+										{/snippet}
+									</InfoPopup>
+								</div>
+							{/if}
+						{/if}
 						{#if trait.modifiers.length > 0}
 							<ul class="space-y-0.5">
 								{#each trait.modifiers as mod (mod.key)}
@@ -790,6 +859,12 @@
 	<!-- Category legend -->
 	{#if traitsByCategory.size > 0}
 		<div class="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs opacity-70">
+			<button
+				class="rounded px-2 py-1 text-[11px] hover:bg-surface-500/20 hover:opacity-100"
+				onclick={() => settings.toggleExclusions()}
+			>
+				{settings.showExclusions ? 'Hide exclusions' : 'Show exclusions'}
+			</button>
 			{#each data.traitCategories.filter((c) => traitsByCategory.has(c.key)) as cat (cat.key)}
 				<span class="flex items-center gap-1.5">
 					<span
@@ -835,7 +910,7 @@
 					{#if phenotypeGroups.unrestricted.length > 0}
 						<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 							{#each phenotypeGroups.unrestricted as trait (trait.key)}
-								{@render traitCard(trait, color)}
+								{@render traitCard(trait, color, false, null, true)}
 							{/each}
 						</div>
 					{/if}
@@ -849,7 +924,7 @@
 							</h3>
 							<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 								{#each group.traits as trait (trait.key)}
-									{@render traitCard(trait, color)}
+									{@render traitCard(trait, color, false, null, true)}
 								{/each}
 							</div>
 						</div>
@@ -857,7 +932,7 @@
 				{:else if cat.key === 'phenotype'}
 					<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 						{#each traitsByCategory.get(cat.key)! as trait (trait.key)}
-							{@render traitCard(trait, color)}
+							{@render traitCard(trait, color, false, null, true)}
 						{/each}
 					</div>
 				{:else}
@@ -865,7 +940,7 @@
 					{#if subGroups.unrestricted.length > 0}
 						<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 							{#each subGroups.unrestricted as trait (trait.key)}
-								{@render traitCard(trait, color)}
+								{@render traitCard(trait, color, false, null, true)}
 							{/each}
 						</div>
 					{/if}
@@ -879,7 +954,7 @@
 							</h3>
 							<div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
 								{#each group.traits as trait (trait.key)}
-									{@render traitCard(trait, color)}
+									{@render traitCard(trait, color, false, null, true)}
 								{/each}
 							</div>
 						</div>

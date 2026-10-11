@@ -7,12 +7,11 @@
 		modifierColor,
 		modifierLabel,
 		sortModifiers,
-		civicRequirementLines,
-		requirementChipClass
+		civicRequirementLines
 	} from '$lib/civics';
 	import SwapTables from '$lib/SwapTables.svelte';
 	import Tip from '$lib/Tip.svelte';
-	import BanIcon from '$lib/BanIcon.svelte';
+	import RequirementRow from '$lib/RequirementRow.svelte';
 	import RuleText from '$lib/RuleText.svelte';
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import { keyName } from '$lib/empireFile';
@@ -37,10 +36,6 @@
 	let query = $state('');
 
 	// Per-card override of the global "show exclusions" default, keyed by origin key.
-	let openExcl = $state<Record<string, boolean>>({});
-	function toggleExcl(key: string) {
-		openExcl = { ...openExcl, [key]: !(openExcl[key] ?? settings.showExclusions) };
-	}
 
 	// Filter, then group by DLC (base game first, DLCs in first-appearance order).
 	const groups = $derived.by(() => {
@@ -98,9 +93,6 @@
 			<div class="grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
 				{#each group.items as origin (origin.key)}
 					{@const reqs = civicRequirementLines(origin.requirements, data.names)}
-					{@const needs = reqs.filter((r) => r.type === 'require')}
-					{@const excls = reqs.filter((r) => r.type === 'exclude')}
-					{@const showExcl = openExcl[origin.key] ?? settings.showExclusions}
 					{@const selected = empire.draft.origin === origin.key}
 					{@const conflicts = compat.reasons('origin', origin.key)}
 					{@const mods = sortModifiers(origin.modifiers)}
@@ -131,53 +123,8 @@
 							{/if}
 						</div>
 
-						{#if needs.length || excls.length}
-							<div class="flex items-start gap-1">
-								<div class="flex grow flex-wrap items-center gap-1">
-									{#each needs as r, i (i)}
-										<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}"
-											>needs {r.text}</span
-										>
-									{/each}
-									{#if showExcl}
-										{#each excls as r, i (i)}
-											<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}"
-												>excl. {r.text}</span
-											>
-										{/each}
-									{/if}
-								</div>
-								{#if excls.length}
-									<Tip text={showExcl ? 'Hide exclusions' : 'Show exclusions'}>
-										{#snippet trigger(a)}
-											<span
-												{...a}
-												role="button"
-												tabindex="0"
-												aria-pressed={showExcl}
-												aria-label="{showExcl ? 'Hide' : 'Show'} exclusions"
-												onclick={(e) => {
-													e.stopPropagation();
-													toggleExcl(origin.key);
-												}}
-												onkeydown={(e) => {
-													if (e.key === 'Enter' || e.key === ' ') {
-														e.preventDefault();
-														e.stopPropagation();
-														toggleExcl(origin.key);
-													}
-												}}
-												class="inline-flex shrink-0 cursor-pointer items-center rounded px-0.5 py-0.5 transition-colors {showExcl
-													? 'text-red-400'
-													: 'text-red-400/40 hover:text-red-400/70'}"
-											>
-												<BanIcon />
-											</span>
-										{/snippet}
-									</Tip>
-								{/if}
-							</div>
-						{/if}
+						<!-- Requirements / exclusions (toggle per card, or all via the button above). -->
+						<RequirementRow lines={reqs} />
 
 						{#if origin.startingColony || origin.forcesHomeSystem}
 							<div class="flex flex-wrap gap-1">
