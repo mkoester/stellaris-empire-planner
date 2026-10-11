@@ -329,6 +329,68 @@ export function loadAuthorities(): Authority[] {
 	}));
 }
 
+// ── Council positions ────────────────────────────────────────────────────────
+
+// The extra council seat a civic opens. Modifier values are per level of the leader
+// assigned to it; `effect` is the custom tooltip some seats show instead of / beside them.
+export interface CouncilPosition {
+	key: string;
+	name: string | null;
+	description: string | null;
+	leaderClasses: string[]; // commander / official / scientist
+	effect: string | null;
+	modifiers: Modifier[];
+}
+
+// civic key → its council position.
+export function loadCouncilPositions(): Record<string, CouncilPosition> {
+	const d = db();
+	const mods = new Map<string, Modifier[]>();
+	for (const r of d
+		.prepare(
+			`SELECT cm.position_key, cm.modifier_key, cm.modifier_value, ml.label, ml.positive_is_good
+			 FROM council_position_modifier cm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = cm.modifier_key
+			 ORDER BY cm.position_key, cm.sort_order`
+		)
+		.all() as Array<{
+		position_key: string;
+		modifier_key: string;
+		modifier_value: number;
+		label: string | null;
+		positive_is_good: number | null;
+	}>)
+		(mods.get(r.position_key) ?? mods.set(r.position_key, []).get(r.position_key)!).push({
+			key: r.modifier_key,
+			value: r.modifier_value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0
+		});
+	const out: Record<string, CouncilPosition> = {};
+	for (const r of d
+		.prepare(
+			`SELECT key, civic_key, name, description, leader_classes, effect
+			 FROM council_position ORDER BY sort_order`
+		)
+		.all() as Array<{
+		key: string;
+		civic_key: string;
+		name: string | null;
+		description: string | null;
+		leader_classes: string | null;
+		effect: string | null;
+	}>)
+		out[r.civic_key] = {
+			key: r.key,
+			name: r.name,
+			description: r.description,
+			leaderClasses: r.leader_classes ? r.leader_classes.split(',') : [],
+			effect: r.effect,
+			modifiers: mods.get(r.key) ?? []
+		};
+	return out;
+}
+
 // ── Origins ──────────────────────────────────────────────────────────────────
 
 // The empire's starting scenario. Same requirement shape as civics (reuses

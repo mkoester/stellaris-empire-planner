@@ -73,6 +73,10 @@ ethic_tag               — ethic_key, tag, sort_order
 ethic_policy_restriction — policy_key, option_key, option_label, ethic_key
 civic                   — key, name, description, civic_type (normal/gestalt/corporate/special), required_dlc, selectable, locked, ascension_lock, ascension_blocks, icon, sort_order
 civic_modifier          — civic_key, modifier_key, modifier_value, sort_order
+council_position        — key, civic_key, name, description, leader_classes (comma list), effect (custom tooltip), sort_order  (the seat a civic opens)
+council_position_modifier — position_key, modifier_key, modifier_value (per leader level), sort_order
+building_modifier       — building_key, scope (planet/country/system/station), modifier_key, value, condition (null or a required AP key), sort_order
+building_unlock         — owner_key (civic/origin), building_key  (hard requirement only)
 civic_requirement       — civic_key, kind (authority/ethic/civic/origin), operator (require/forbid/require_any), value, group_id (ties require_any OR sets)
 origin                  — key, name, description, required_dlc, selectable, ascension_lock, ascension_blocks, starting_colony, forces_home_system, icon, sort_order
 origin_modifier         — origin_key, modifier_key, modifier_value, sort_order
@@ -135,7 +139,7 @@ types.ts       shared Modifier / ScalingModifier shapes
 species.ts     species classes, archetypes, portraits, traits (loadTraits*, scalingModifiersByTrait)
 government.ts  ethics, civics, authorities, origins
 empires.ts     planet classes, prescripted empires, initializers, rooms, flag assets/colors
-jobs.ts        jobs, job swaps, reference buildings
+jobs.ts        jobs, job swaps, reference buildings (+ modifiers, civic/origin unlocks)
 labels.ts      loadEntityNames, loadModifierIndex, loadOverviewTooltips
 precursors.ts  the whole precursor graph (loadPrecursors)
 tech.ts        repeatable + fallen-empire techs (loadRepeatableTechs, loadFallenEmpireTechs)

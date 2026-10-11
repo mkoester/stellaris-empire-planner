@@ -20,6 +20,7 @@
 	import { settings } from '$lib/settings.svelte';
 	import ConflictBadge from '$lib/ConflictBadge.svelte';
 	import AscensionChips from '$lib/AscensionChips.svelte';
+	import BuildingChips from '$lib/BuildingChips.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
 	import type { JobSwap } from '$lib/server/db';
@@ -200,6 +201,8 @@
 								{/if}
 							</div>
 						{/if}
+
+						<BuildingChips buildings={data.buildings[origin.key] ?? []} />
 
 						{#if mods.main.length || mods.attunement.length}
 							{#snippet modRow(mod: (typeof mods.main)[number], muted: boolean)}

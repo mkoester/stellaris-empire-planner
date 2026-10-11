@@ -199,6 +199,11 @@ export interface BuildingJobRow {
 	job: string; // display name, e.g. "metallurgist"
 	amount: number; // raw count (Stellaris 4.0 scales jobs ×100)
 }
+// A building effect other than jobs; `condition` = an ascension perk it needs (else null).
+export interface ReferenceBuildingModifier extends Modifier {
+	scope: 'planet' | 'country' | 'system' | 'station';
+	condition: string | null;
+}
 export interface ReferenceBuilding {
 	key: string;
 	name: string | null;
@@ -206,6 +211,8 @@ export interface ReferenceBuilding {
 	description: string | null;
 	resources: BuildingResourceRow[];
 	jobs: BuildingJobRow[];
+	modifiers: ReferenceBuildingModifier[];
+	unlockedBy: string[]; // the civics/origins it requires
 }
 
 export function loadBuildings(): ReferenceBuilding[] {
@@ -235,6 +242,40 @@ export function loadBuildings(): ReferenceBuilding[] {
 			amount: r.amount
 		});
 	}
+	const modRows = d
+		.prepare(
+			`SELECT bm.building_key, bm.scope, bm.modifier_key, bm.value, bm.condition,
+			        ml.label, ml.positive_is_good
+			 FROM building_modifier bm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = bm.modifier_key
+			 ORDER BY bm.building_key, bm.sort_order`
+		)
+		.all() as Array<{
+		building_key: string;
+		scope: ReferenceBuildingModifier['scope'];
+		modifier_key: string;
+		value: number;
+		condition: string | null;
+		label: string | null;
+		positive_is_good: number | null;
+	}>;
+	const modBy = new Map<string, ReferenceBuildingModifier[]>();
+	for (const r of modRows)
+		(modBy.get(r.building_key) ?? modBy.set(r.building_key, []).get(r.building_key)!).push({
+			key: r.modifier_key,
+			value: r.value,
+			label: r.label,
+			positiveIsGood: r.positive_is_good !== 0,
+			scope: r.scope,
+			condition: r.condition
+		});
+	const unlockBy = new Map<string, string[]>();
+	for (const r of d
+		.prepare('SELECT owner_key, building_key FROM building_unlock ORDER BY owner_key')
+		.all() as Array<{ owner_key: string; building_key: string }>)
+		(unlockBy.get(r.building_key) ?? unlockBy.set(r.building_key, []).get(r.building_key)!).push(
+			r.owner_key
+		);
 	const jobBy = new Map<string, BuildingJobRow[]>();
 	for (const r of jobRows) {
 		if (!jobBy.has(r.building_key)) jobBy.set(r.building_key, []);
@@ -243,6 +284,15 @@ export function loadBuildings(): ReferenceBuilding[] {
 	return rows.map((r) => ({
 		...r,
 		resources: resBy.get(r.key) ?? [],
-		jobs: jobBy.get(r.key) ?? []
+		jobs: jobBy.get(r.key) ?? [],
+		modifiers: modBy.get(r.key) ?? [],
+		unlockedBy: unlockBy.get(r.key) ?? []
 	}));
+}
+
+// civic/origin key → the buildings it unlocks (for the Civics / Origins cards).
+export function loadBuildingsByUnlock(): Record<string, ReferenceBuilding[]> {
+	const out: Record<string, ReferenceBuilding[]> = {};
+	for (const b of loadBuildings()) for (const owner of b.unlockedBy) (out[owner] ??= []).push(b);
+	return out;
 }

@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { PageData } from './$types';
 	import type { ReferenceBuilding } from '$lib/server/db';
-	import RuleText from '$lib/RuleText.svelte';
-	import Tip from '$lib/Tip.svelte';
+	import BuildingDetails from '$lib/BuildingDetails.svelte';
+	import { keyName } from '$lib/empireFile';
 
 	let { data }: { data: PageData } = $props();
 	const buildings = $derived(data.buildings as ReferenceBuilding[]);
@@ -10,7 +10,6 @@
 	let query = $state('');
 
 	const titleCase = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-	const num = (n: number) => (Number.isInteger(n) ? n : parseFloat(n.toFixed(2)));
 
 	const CAT_ORDER = [
 		'resource',
@@ -50,8 +49,9 @@
 	<div class="space-y-1">
 		<h1 class="text-2xl font-bold">Buildings</h1>
 		<p class="text-sm opacity-60">
-			Reference for every building — base build cost, upkeep and the jobs it provides. Job counts
-			use the Stellaris 4.0 ×100 scaling (200 = 2 jobs).
+			Reference for every building — base build cost, upkeep, the jobs it provides, its other
+			effects and the civic or origin it needs. Job counts use the Stellaris 4.0 ×100 scaling (200 =
+			2 jobs).
 		</p>
 	</div>
 
@@ -68,37 +68,16 @@
 					<div class="border-surface-400-500/30 flex h-full flex-col gap-2 rounded-lg border p-3">
 						<h3 class="font-semibold">{b.name ?? b.key}</h3>
 
-						{#if b.resources.length}
-							<div class="flex flex-wrap gap-1">
-								{#each b.resources as r (r.kind + r.resource)}
-									<Tip
-										text={r.kind}
-										class="rounded px-1.5 py-0.5 text-[11px] {r.kind === 'produces'
-											? 'bg-emerald-500/15 text-emerald-300/90'
-											: r.kind === 'upkeep'
-												? 'bg-red-500/15 text-red-300/90'
-												: 'bg-surface-500/20 opacity-80'}"
+						{#if b.unlockedBy.length}
+							<div class="flex flex-wrap gap-1 text-[10px]">
+								{#each b.unlockedBy as o (o)}
+									<span class="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-200/90"
+										>needs {keyName(o, data.names)}</span
 									>
-										{r.kind === 'produces' ? '+' : r.kind === 'upkeep' ? '−' : ''}{num(r.amount)}
-										{titleCase(r.resource)}
-									</Tip>
 								{/each}
 							</div>
 						{/if}
-
-						{#if b.jobs.length}
-							<div class="flex flex-wrap gap-1">
-								{#each b.jobs as j (j.job)}
-									<span class="rounded bg-sky-500/15 px-1.5 py-0.5 text-[11px] text-sky-300/90">
-										{titleCase(j.job)} ×{num(j.amount)}
-									</span>
-								{/each}
-							</div>
-						{/if}
-
-						{#if b.description}
-							<RuleText text={b.description} class="mt-auto text-xs opacity-55" />
-						{/if}
+						<BuildingDetails building={b} />
 					</div>
 				{/each}
 			</div>

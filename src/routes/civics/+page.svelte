@@ -20,6 +20,8 @@
 	import LockIcon from '$lib/LockIcon.svelte';
 	import ConflictBadge from '$lib/ConflictBadge.svelte';
 	import AscensionChips from '$lib/AscensionChips.svelte';
+	import BuildingChips from '$lib/BuildingChips.svelte';
+	import CouncilChip from '$lib/CouncilChip.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
 	import { empire } from '$lib/empire.svelte';
@@ -165,6 +167,14 @@
 										{/snippet}
 									</Tip>
 								{/if}
+							</div>
+						{/if}
+
+						<!-- What the civic adds beyond modifiers: a council seat, unlocked buildings. -->
+						{#if data.council[civic.key] || data.buildings[civic.key]}
+							<div class="flex flex-wrap items-center gap-1">
+								{#if data.council[civic.key]}<CouncilChip position={data.council[civic.key]} />{/if}
+								<BuildingChips buildings={data.buildings[civic.key] ?? []} />
 							</div>
 						{/if}
 
