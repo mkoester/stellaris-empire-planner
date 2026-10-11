@@ -10,7 +10,7 @@
 	} from '$lib/civics';
 	import Tip from '$lib/Tip.svelte';
 	import { compatChecker, grantedTraits } from '$lib/compat';
-	import { addedBy, traitLimits } from '$lib/limits';
+	import { addedBy, traitLimits, withTrait } from '$lib/limits';
 	import { conflictClass } from '$lib/conflict';
 
 	let { data }: { data: PageData } = $props();
@@ -325,8 +325,8 @@
 	const compat = $derived(compatChecker(empire.draft, data));
 	const founderSlot = $derived(activeSlot === 'founder');
 	const classConflicts = (key: string) => (founderSlot ? compat.reasons('species_class', key) : []);
-	// Any trait can be picked; picks, points and opposites are flagged, not enforced (see
-	// $lib/limits) — for whichever species is being edited.
+	// Any trait can be picked; picks and points are flagged, not enforced, and an opposite
+	// is replaced on click (see $lib/limits) — for whichever species is being edited.
 	const traitInfo = $derived({
 		costs: Object.fromEntries(data.traits.map((t) => [t.key, t.cost ?? 0])),
 		opposites: Object.fromEntries(data.traits.map((t) => [t.key, t.opposites])),
@@ -350,11 +350,13 @@
 			: []
 	);
 
+	// A trait replaces its picked opposites (Strong → Weak); picks and points are flagged.
 	function toggle(trait: Trait) {
-		const next = new Set(selected);
-		if (next.has(trait.key)) next.delete(trait.key);
-		else next.add(trait.key);
-		commitTraits([...next]);
+		commitTraits(
+			selected.has(trait.key)
+				? [...selected].filter((k) => k !== trait.key)
+				: withTrait([...selected], trait.key, traitInfo.opposites)
+		);
 	}
 
 	function formatKey(key: string): string {

@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { addedBy, ethicLimits, traitLimits, type EthicInfo, type TraitInfo } from './limits';
+import {
+	addedBy,
+	ethicLimits,
+	traitLimits,
+	withEthic,
+	withTrait,
+	type EthicInfo,
+	type TraitInfo
+} from './limits';
 
 const name = (k: string) => k;
 const ethic = (key: string, cost: number, regular: string | null = null): EthicInfo => ({
@@ -78,5 +86,50 @@ describe('trait limits', () => {
 			[]
 		);
 		expect(traitLimits(['trait_weak', 'trait_strong'], null, info, name)).toHaveLength(1);
+	});
+});
+
+describe('the last click wins', () => {
+	it('an ethic replaces the pick on its axis, both sides and both strengths', () => {
+		const picked = ['ethic_xenophile', 'ethic_militarist'];
+		expect(withEthic(picked, 'ethic_fanatic_xenophile', ethics)).toEqual([
+			'ethic_militarist',
+			'ethic_fanatic_xenophile'
+		]);
+		expect(withEthic(picked, 'ethic_xenophobe', ethics)).toEqual([
+			'ethic_militarist',
+			'ethic_xenophobe'
+		]);
+		expect(withEthic(picked, 'ethic_materialist', ethics)).toEqual([
+			...picked,
+			'ethic_materialist'
+		]);
+	});
+
+	it('an ethic off the axes (Gestalt) is just added', () => {
+		expect(withEthic(['ethic_xenophile'], 'ethic_gestalt', ethics)).toEqual([
+			'ethic_xenophile',
+			'ethic_gestalt'
+		]);
+	});
+
+	const opposites = {
+		trait_strong: ['trait_very_strong', 'trait_weak'],
+		trait_very_strong: ['trait_strong', 'trait_weak'],
+		trait_one_way: ['trait_smart']
+	};
+
+	it('a trait replaces its picked opposites and keeps the rest', () => {
+		const picked = ['trait_strong', 'trait_smart'];
+		expect(withTrait(picked, 'trait_very_strong', opposites)).toEqual([
+			'trait_smart',
+			'trait_very_strong'
+		]);
+		expect(withTrait(picked, 'trait_weak', opposites)).toEqual(['trait_smart', 'trait_weak']);
+	});
+
+	it('a one-way opposite replaces in either direction', () => {
+		expect(withTrait(['trait_smart'], 'trait_one_way', opposites)).toEqual(['trait_one_way']);
+		expect(withTrait(['trait_one_way'], 'trait_smart', opposites)).toEqual(['trait_smart']);
 	});
 });

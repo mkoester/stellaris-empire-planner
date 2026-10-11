@@ -11,6 +11,10 @@ export interface EthicInfo {
 	regular_variant: string | null;
 }
 
+// The axis an ethic sits on (fanatic forms share their regular's), or undefined (Gestalt).
+const axisOf = (key: string, byKey: Map<string, EthicInfo>) =>
+	ETHIC_AXES.find((axis) => axis.includes(byKey.get(key)?.regular_variant ?? key));
+
 export function ethicLimits(picked: string[], ethics: EthicInfo[], name: NameFn): Conflict[] {
 	const byKey = new Map(ethics.map((e) => [e.key, e]));
 	const out: Conflict[] = [];
@@ -21,7 +25,7 @@ export function ethicLimits(picked: string[], ethics: EthicInfo[], name: NameFn)
 			text: `Ethics cost ${used} of ${ETHIC_BUDGET} points`
 		});
 	for (const axis of ETHIC_AXES) {
-		const onAxis = picked.filter((k) => axis.includes(byKey.get(k)?.regular_variant ?? k));
+		const onAxis = picked.filter((k) => axisOf(k, byKey) === axis);
 		if (onAxis.length > 1)
 			out.push({
 				id: `ethics|axis|${[...onAxis].sort().join('|')}`,
@@ -29,6 +33,14 @@ export function ethicLimits(picked: string[], ethics: EthicInfo[], name: NameFn)
 			});
 	}
 	return out;
+}
+
+// Picking an ethic replaces whatever was picked on its axis (Xenophile → Fanatic
+// Xenophile or → Xenophobe): the last click wins. Off-axis ethics are just added.
+export function withEthic(picked: string[], key: string, ethics: EthicInfo[]): string[] {
+	const byKey = new Map(ethics.map((e) => [e.key, e]));
+	const axis = axisOf(key, byKey);
+	return [...picked.filter((k) => k !== key && (!axis || axisOf(k, byKey) !== axis)), key];
 }
 
 export interface TraitBudget {
@@ -64,17 +76,29 @@ export function traitLimits(
 				text: `Traits cost ${points} of ${budget.maxPoints} points`
 			});
 	}
-	const opp = (a: string, b: string) =>
-		(info.opposites[a] ?? []).includes(b) || (info.opposites[b] ?? []).includes(a);
 	picked.forEach((a, i) => {
 		for (const b of picked.slice(i + 1))
-			if (opp(a, b))
+			if (areOpposites(a, b, info.opposites))
 				out.push({
 					id: `traits|opposite|${[a, b].sort().join('|')}`,
 					text: `${name(a)} and ${name(b)} are opposites`
 				});
 	});
 	return out;
+}
+
+// Opposites are declared one way only for many traits, so check both directions.
+const areOpposites = (a: string, b: string, opposites: Record<string, string[]>) =>
+	(opposites[a] ?? []).includes(b) || (opposites[b] ?? []).includes(a);
+
+// Picking a trait replaces its picked opposites (Strong → Very Strong or → Weak): the
+// last click wins.
+export function withTrait(
+	picked: string[],
+	key: string,
+	opposites: Record<string, string[]>
+): string[] {
+	return [...picked.filter((k) => k !== key && !areOpposites(k, key, opposites)), key];
 }
 
 // What picking `key` adds to a section's conflicts (empty = fine). Works for options

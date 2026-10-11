@@ -14,7 +14,7 @@
 	import FederationLink from '$lib/FederationLink.svelte';
 	import { federationTip } from '$lib/federations';
 	import { compatChecker } from '$lib/compat';
-	import { addedBy, ethicLimits } from '$lib/limits';
+	import { addedBy, ethicLimits, withEthic } from '$lib/limits';
 	import { conflictClass } from '$lib/conflict';
 
 	let { data }: { data: PageData } = $props();
@@ -41,12 +41,14 @@
 	);
 	const pointsRemaining = $derived(ETHIC_BUDGET - pointsUsed);
 
-	// Any ethic can be picked; points and axes are flagged, not enforced (see $lib/limits).
+	// Any ethic can be picked: one on an axis that already has a pick replaces it, and
+	// going over the points is flagged, not enforced (see $lib/limits).
 	function toggle(ethicKey: string) {
-		const next = new Set(selected);
-		if (next.has(ethicKey)) next.delete(ethicKey);
-		else next.add(ethicKey);
-		empire.setEthics([...next]);
+		empire.setEthics(
+			selected.has(ethicKey)
+				? [...selected].filter((k) => k !== ethicKey)
+				: withEthic([...selected], ethicKey, data.ethics)
+		);
 	}
 
 	function selectGestalt() {
