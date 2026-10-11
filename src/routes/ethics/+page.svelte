@@ -15,7 +15,7 @@
 	import { federationTip } from '$lib/federations';
 	import { compatChecker } from '$lib/compat';
 	import { addedBy, ethicLimits, withEthic } from '$lib/limits';
-	import { conflictClass } from '$lib/conflict';
+	import { conflictClass, pickClass } from '$lib/conflict';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -218,18 +218,17 @@
 				<div class="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
 					<!-- Left side -->
 					<div class="flex justify-end gap-1.5">
-						{#each ([leftEthic, leftFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
+						{#each ([leftFanatic, leftEthic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
 							{@const sel = selected.has(ethic!.key)}
 							<Tip text={debug ? undefined : ethicTooltip(ethic!)}>
 								{#snippet trigger(a)}
 									<svelte:element
 										this={debug ? 'div' : 'button'}
 										{...a}
-										class="btn flex-col gap-0.5 text-sm leading-tight
-									{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {conflictClass(
-											reasons(ethic!.key),
-											sel
-										)} {debug ? 'cursor-text select-text' : ''}"
+										class="btn flex-col gap-0.5 border text-sm
+									leading-tight {pickClass(sel)} {conflictClass(reasons(ethic!.key), sel)} {debug
+											? 'cursor-text select-text'
+											: ''}"
 										onclick={debug ? undefined : () => toggle(ethic!.key)}
 									>
 										<span>{ethicLabel(ethic!)}</span>
@@ -252,11 +251,10 @@
 									<svelte:element
 										this={debug ? 'div' : 'button'}
 										{...a}
-										class="btn flex-col gap-0.5 text-sm leading-tight
-									{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {conflictClass(
-											reasons(ethic!.key),
-											sel
-										)} {debug ? 'cursor-text select-text' : ''}"
+										class="btn flex-col gap-0.5 border text-sm
+									leading-tight {pickClass(sel)} {conflictClass(reasons(ethic!.key), sel)} {debug
+											? 'cursor-text select-text'
+											: ''}"
 										onclick={debug ? undefined : () => toggle(ethic!.key)}
 									>
 										<span>{ethicLabel(ethic!)}</span>
@@ -281,11 +279,10 @@
 						<svelte:element
 							this={debug ? 'div' : 'button'}
 							{...a}
-							class="btn flex-col gap-0.5 text-sm leading-tight
-						{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {conflictClass(
-								reasons(gestaltEthic.key),
-								sel
-							)} {debug ? 'cursor-text select-text' : ''}"
+							class="btn flex-col gap-0.5 border text-sm
+						leading-tight {pickClass(sel)} {conflictClass(reasons(gestaltEthic.key), sel)} {debug
+								? 'cursor-text select-text'
+								: ''}"
 							onclick={debug ? undefined : selectGestalt}
 						>
 							<span>{ethicLabel(gestaltEthic)}</span>

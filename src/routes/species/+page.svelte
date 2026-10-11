@@ -11,7 +11,7 @@
 	import Tip from '$lib/Tip.svelte';
 	import { compatChecker, grantedTraits } from '$lib/compat';
 	import { addedBy, traitLimits, withTrait } from '$lib/limits';
-	import { conflictClass } from '$lib/conflict';
+	import { conflictClass, pickClass } from '$lib/conflict';
 	import { betterVersions, traitRequirementLines } from '$lib/traits';
 	import { settings } from '$lib/settings.svelte';
 	import { tick } from 'svelte';
@@ -443,14 +443,12 @@
 				<svelte:element
 					this={debug ? 'div' : 'button'}
 					{...a}
-					class="relative flex h-full flex-col card text-left transition-all
+					class="relative flex h-full flex-col rounded-lg border text-left transition-all
 				{isBase
-						? 'cursor-default preset-filled opacity-70'
-						: isSelected && !debug
-							? 'preset-filled-primary-500'
-							: debug
-								? 'cursor-text preset-filled select-text'
-								: 'cursor-pointer preset-filled card-hover'}
+						? 'border-surface-400-500/30 cursor-default opacity-70'
+						: debug
+							? 'border-surface-400-500/30 cursor-text select-text'
+							: `cursor-pointer ${pickClass(isSelected)}`}
 				{debug ? '' : conflictClass(reasons, isSelected)}
 				{anchor && flashKey === trait.key ? 'ring-4 ring-primary-400' : ''}
 				p-3"
@@ -662,7 +660,7 @@
 		</div>
 
 		<!-- Budget + selection summary -->
-		<div class="card preset-filled p-4">
+		<div class="border-surface-400-500/30 rounded-lg border p-4">
 			<!-- Points & picks dots -->
 			<div class="mb-2 flex items-baseline justify-between text-sm">
 				<span>
