@@ -18,7 +18,15 @@
 	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
 	import RuleText from '$lib/RuleText.svelte';
 	import LockIcon from '$lib/LockIcon.svelte';
-	import { compatChecker, grantedTraits } from '$lib/compat';
+	import {
+		allowedAscensionPaths,
+		ascensionGates,
+		compatChecker,
+		grantedTraits,
+		ASCENSION_PATHS
+	} from '$lib/compat';
+	import { ethicLimits, traitLimits } from '$lib/limits';
+	import AscensionChips from '$lib/AscensionChips.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const predefined = $derived(data.predefined as Empire[]);
@@ -173,7 +181,35 @@
 	// Rules the draft breaks across sections (warn only — see $lib/compat), and the traits
 	// its civics/origin grant the founder species (shown with its traits and effects).
 	const compat = $derived(compatChecker(draft, data));
-	const conflicts = $derived(compat.all());
+	// Plus each section's own limits (ethic points/axes, trait picks/points/opposites), per
+	// species; a species' budget is only known once its class (archetype) is picked.
+	const traitInfo = $derived({
+		costs: traitCosts,
+		opposites: data.compat.opposites,
+		uncounted: new Set(data.historyTraits)
+	});
+	const traitBudget = (classKey: string | null) => {
+		const a = classKey ? data.archetypes[data.compat.archetypeByClass[classKey]] : undefined;
+		return a ? { maxTraits: a.maxTraits, maxPoints: a.traitPoints } : null;
+	};
+	const conflicts = $derived([
+		...compat.all(),
+		...ethicLimits(draft.ethics, data.ethics, compat.name).map((c) => c.text),
+		...traitLimits(draft.traits, traitBudget(draft.speciesClass), traitInfo, compat.name).map(
+			(c) => `Founder species: ${c.text}`
+		),
+		...(draft.secondary
+			? traitLimits(
+					draft.secondary.traits,
+					traitBudget(draft.secondary.speciesClass),
+					traitInfo,
+					compat.name
+				).map((c) => `Secondary species: ${c.text}`)
+			: [])
+	]);
+	// Which ascension paths the civics/origin leave open, and who restricts them.
+	const ascGates = $derived(ascensionGates(compat.picks, data.compat));
+	const ascOpen = $derived(allowedAscensionPaths(ascGates));
 	const founderTraits = $derived([
 		...grantedTraits(compat.picks, data.compat)
 			.map((g) => g.trait)
@@ -581,7 +617,7 @@
 		{/if}
 
 		<!-- Gameplay: ethic implications + civic/origin effect descriptions, with sources -->
-		{#if implications.length || policyRestrictions.length || gameplayEffects.length}
+		{#if implications.length || policyRestrictions.length || gameplayEffects.length || ascGates.length}
 			<section class="border-surface-400-500/30 space-y-4 rounded-lg border p-4">
 				<h2 class="text-xl font-semibold">Gameplay</h2>
 
@@ -601,6 +637,33 @@
 								<li class="text-sm">
 									<span class="opacity-80">{pr.label}</span>
 									<span class="text-xs opacity-45"> (from {pr.sources.join(', ')})</span>
+								</li>
+							{/each}
+						</ul>
+					</div>
+				{/if}
+
+				{#if ascGates.length}
+					<div class="space-y-1">
+						<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">
+							Ascension <span class="font-normal opacity-60">(from civics &amp; origins)</span>
+						</h3>
+						<p class="text-sm">
+							{#if ascOpen.length === ASCENSION_PATHS.length}
+								All paths open
+							{:else if ascOpen.length}
+								Open: <span class="font-medium">{ascOpen.join(', ')}</span>
+							{:else}
+								<span class="text-red-300">No ascension path left</span>
+							{/if}
+						</p>
+						<ul class="space-y-1">
+							{#each ascGates as g (g.source)}
+								{@const r = data.compat.ascension[g.source]}
+								<li class="flex flex-wrap items-center gap-1.5 text-sm">
+									<span class="opacity-80">{name(g.source)}</span>
+									<span class="text-xs opacity-45">({g.kind})</span>
+									<AscensionChips lock={r.lock} blocks={r.blocks} />
 								</li>
 							{/each}
 						</ul>

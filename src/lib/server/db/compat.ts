@@ -1,6 +1,6 @@
 // Cross-section compatibility rules: every civic / origin / authority / species-trait
-// eligibility row in one flat list, plus the traits civics and origins grant and the
-// trait opposites. Evaluated against the draft by $lib/compat.
+// eligibility row in one flat list, plus the traits civics and origins grant, the trait
+// opposites and the ascension-path gates. Evaluated against the draft by $lib/compat.
 import { db } from './client';
 
 export type RuleOwnerKind = 'civic' | 'origin' | 'authority' | 'trait';
@@ -19,6 +19,14 @@ export interface CompatData {
 	grantedTraits: Record<string, string[]>; // civic/origin key → traits it gives the founder species
 	opposites: Record<string, string[]>; // trait key → mutually exclusive traits (as declared)
 	archetypeByClass: Record<string, string>; // species class → BIOLOGICAL / LITHOID / MACHINE …
+	ascension: Record<string, AscensionRestriction>; // civic/origin key → its ascension-path gate
+}
+
+// An origin's or civic's ascension-path gate: locked to one path, or some (all four for
+// Natural Design) blocked.
+export interface AscensionRestriction {
+	lock: string | null;
+	blocks: string[];
 }
 
 const RULE_SOURCES: [RuleOwnerKind, string, string][] = [
@@ -70,5 +78,21 @@ export function loadCompatData(): CompatData {
 		.all() as Array<{ key: string; archetype: string }>) {
 		archetypeByClass[r.key] = r.archetype;
 	}
-	return { rules, grantedTraits, opposites, archetypeByClass };
+	const ascension: Record<string, AscensionRestriction> = {};
+	for (const table of ['origin', 'civic'])
+		for (const r of d
+			.prepare(
+				`SELECT key, ascension_lock, ascension_blocks FROM ${table}
+				 WHERE ascension_lock IS NOT NULL OR ascension_blocks IS NOT NULL`
+			)
+			.all() as Array<{
+			key: string;
+			ascension_lock: string | null;
+			ascension_blocks: string | null;
+		}>)
+			ascension[r.key] = {
+				lock: r.ascension_lock,
+				blocks: r.ascension_blocks ? r.ascension_blocks.split(',') : []
+			};
+	return { rules, grantedTraits, opposites, archetypeByClass, ascension };
 }

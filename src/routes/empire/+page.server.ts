@@ -4,7 +4,9 @@ import {
 	loadModifierIndex,
 	loadEthics,
 	loadCivics,
-	loadOrigins
+	loadOrigins,
+	loadArchetypes,
+	loadHistoryTraitKeys
 } from '$lib/server/db';
 import type { PageServerLoad } from './$types';
 
@@ -14,5 +16,8 @@ export const load: PageServerLoad = () => ({
 	modifierIndex: loadModifierIndex(),
 	ethics: loadEthics(),
 	civics: loadCivics(),
-	origins: loadOrigins()
+	origins: loadOrigins(),
+	// Trait-pick / point budgets, checked like the Species page does (see $lib/limits).
+	archetypes: loadArchetypes(),
+	historyTraits: loadHistoryTraitKeys()
 });

@@ -19,7 +19,9 @@
 	import RequirementLegend from '$lib/RequirementLegend.svelte';
 	import LockIcon from '$lib/LockIcon.svelte';
 	import ConflictBadge from '$lib/ConflictBadge.svelte';
+	import AscensionChips from '$lib/AscensionChips.svelte';
 	import { compatChecker } from '$lib/compat';
+	import { conflictClass } from '$lib/conflict';
 	import { empire } from '$lib/empire.svelte';
 	import { settings } from '$lib/settings.svelte';
 
@@ -92,9 +94,10 @@
 						onclick={debug ? undefined : () => empire.toggleCivic(civic.key)}
 						class="relative flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
-							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflicts.length
-							? 'ring-2 ring-red-500/70 ring-inset'
-							: ''} {debug ? 'cursor-text select-text' : ''}"
+							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflictClass(
+							conflicts,
+							selected
+						)} {debug ? 'cursor-text select-text' : ''}"
 					>
 						<header class="flex items-start justify-between gap-2">
 							<h3 class="font-semibold">{civic.name ?? civic.key}</h3>
@@ -110,6 +113,7 @@
 										)}">DLC</Tip
 									>
 								{/if}
+								<AscensionChips lock={civic.ascensionLock} blocks={civic.ascensionBlocks} />
 								{#if civic.locked}<LockIcon />{/if}
 								<ConflictBadge reasons={conflicts} />
 							</div>

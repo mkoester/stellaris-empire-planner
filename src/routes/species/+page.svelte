@@ -10,6 +10,8 @@
 	} from '$lib/civics';
 	import Tip from '$lib/Tip.svelte';
 	import { compatChecker, grantedTraits } from '$lib/compat';
+	import { addedBy, traitLimits } from '$lib/limits';
+	import { conflictClass } from '$lib/conflict';
 
 	let { data }: { data: PageData } = $props();
 
@@ -317,23 +319,27 @@
 	);
 	const effectiveBudget = $derived(maxPoints - negativeBonus); // maxPoints + |negativeBonus|
 
-	// Maps blocked trait key → the first selected trait causing the conflict
-	const blockedByOpposite = $derived.by(() => {
-		const blocked = new Map<string, string>();
-		for (const key of selected) {
-			const trait = data.traits.find((t) => t.key === key);
-			if (trait) for (const opp of trait.opposites) if (!blocked.has(opp)) blocked.set(opp, key);
-		}
-		return blocked;
-	});
-
 	// Cross-section conflicts (warn only — see $lib/compat): civic/origin gates on the species
 	// class, traits granted by civics/origins (Tankbound) and their opposites, trait gates on
 	// origin/ethics/homeworld. Checked for the founder species, which those rules apply to.
 	const compat = $derived(compatChecker(empire.draft, data));
 	const founderSlot = $derived(activeSlot === 'founder');
 	const classConflicts = (key: string) => (founderSlot ? compat.reasons('species_class', key) : []);
-	const traitConflicts = (key: string) => (founderSlot ? compat.reasons('trait', key) : []);
+	// Any trait can be picked; picks, points and opposites are flagged, not enforced (see
+	// $lib/limits) — for whichever species is being edited.
+	const traitInfo = $derived({
+		costs: Object.fromEntries(data.traits.map((t) => [t.key, t.cost ?? 0])),
+		opposites: Object.fromEntries(data.traits.map((t) => [t.key, t.opposites])),
+		uncounted: allHistoryKeys
+	});
+	const traitReasons = (key: string) => [
+		...(founderSlot ? compat.reasons('trait', key) : []),
+		...addedBy(
+			(ks) => traitLimits(ks, { maxTraits, maxPoints }, traitInfo, compat.name),
+			[...selected],
+			key
+		)
+	];
 	// Traits the picked civics/origin give the founder: fixed cards, outside points and picks.
 	const granted = $derived(
 		founderSlot
@@ -344,21 +350,10 @@
 			: []
 	);
 
-	function canToggle(trait: Trait): boolean {
-		if (selected.has(trait.key)) return true;
-		if (traitCount >= maxTraits) return false;
-		if (pointsUsed + (trait.cost ?? 0) > maxPoints) return false;
-		if (blockedByOpposite.has(trait.key)) return false;
-		return true;
-	}
-
 	function toggle(trait: Trait) {
 		const next = new Set(selected);
-		if (next.has(trait.key)) {
-			next.delete(trait.key);
-		} else if (canToggle(trait)) {
-			next.add(trait.key);
-		}
+		if (next.has(trait.key)) next.delete(trait.key);
+		else next.add(trait.key);
 		commitTraits([...next]);
 	}
 
@@ -408,23 +403,14 @@
 		grantedBy: string | null = null
 	)}
 		{@const isSelected = !isBase && selected.has(trait.key)}
-		{@const isConflicted = !isBase && !isSelected && blockedByOpposite.has(trait.key)}
-		{@const isBlockable = !isBase && !isSelected && !canToggle(trait)}
-		{@const warnings = isBase ? [] : traitConflicts(trait.key).map((r) => `⚠ ${r}`)}
+		{@const reasons = isBase ? [] : traitReasons(trait.key)}
 		{@const debug = isBase || data.debugDisableSelection}
-		{@const tooltip = isConflicted
-			? `Conflicts with ${formatKey(blockedByOpposite.get(trait.key)!)}`
-			: isBlockable
-				? traitCount >= maxTraits
-					? 'No trait picks remaining'
-					: 'Not enough points remaining'
-				: undefined}
 		<Tip
 			text={grantedBy
 				? `Granted by ${grantedBy} — not counted toward picks or points`
 				: isBase
 					? 'Always included — not counted toward picks or points'
-					: [...warnings, ...(tooltip ? [tooltip] : [])].join('\n') || undefined}
+					: reasons.map((r) => `⚠ ${r}`).join('\n') || undefined}
 		>
 			{#snippet trigger(a)}
 				<svelte:element
@@ -435,18 +421,13 @@
 						? 'cursor-default preset-filled opacity-70'
 						: isSelected && !debug
 							? 'preset-filled-primary-500'
-							: isConflicted && !debug
-								? 'cursor-not-allowed preset-filled opacity-50 ring-2 ring-red-500/80 ring-inset'
-								: isBlockable && !debug
-									? 'cursor-not-allowed preset-filled opacity-35'
-									: debug
-										? 'cursor-text preset-filled select-text'
-										: 'cursor-pointer preset-filled card-hover'}
-				{warnings.length && !isConflicted ? 'ring-2 ring-red-500/70 ring-inset' : ''}
+							: debug
+								? 'cursor-text preset-filled select-text'
+								: 'cursor-pointer preset-filled card-hover'}
+				{debug ? '' : conflictClass(reasons, isSelected)}
 				p-3"
 					style="border-top: 2px solid {borderColor}"
 					onclick={debug ? undefined : () => toggle(trait)}
-					disabled={!debug && isBlockable}
 				>
 					{#if isBase}
 						<span
@@ -701,7 +682,7 @@
 								{...a}
 								class="btn text-sm {selectedClassKey === sc.key
 									? 'preset-filled-primary-500'
-									: 'preset-filled'} {warn.length ? 'ring-2 ring-red-500/70 ring-inset' : ''}"
+									: 'preset-filled'} {conflictClass(warn, selectedClassKey === sc.key)}"
 								onclick={() => selectClass(sc.key)}
 							>
 								{sc.label}

@@ -1,9 +1,18 @@
-// Shared ethics helpers: the "Gameplay Implications" / policy-restriction aggregation
-// and the monument-bonus reference table. Used by both the Ethics page and the Empire
+// Shared ethics helpers: the axes and point budget, the "Gameplay Implications" /
+// policy-restriction aggregation and the monument-bonus reference table. Used by both the Ethics page and the Empire
 // summary so the two stay in lockstep.
 import type { Ethic } from '$lib/server/db';
 
 const ethicSource = (e: Ethic) => e.label ?? e.key;
+
+// Opposite pairs of regular ethics, one axis each (fanatic forms share their regular's).
+export const ETHIC_AXES: [string, string][] = [
+	['ethic_authoritarian', 'ethic_egalitarian'],
+	['ethic_xenophobe', 'ethic_xenophile'],
+	['ethic_militarist', 'ethic_pacifist'],
+	['ethic_spiritualist', 'ethic_materialist']
+];
+export const ETHIC_BUDGET = 3;
 
 // One implication/restriction line and which selected ethics contribute it.
 export interface SourcedItem {

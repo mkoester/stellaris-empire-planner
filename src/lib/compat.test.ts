@@ -1,5 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import { conflictsFor, grantedTraits, violations, type Picks } from './compat';
+import {
+	allowedAscensionPaths,
+	ascensionGates,
+	conflictsFor,
+	grantedTraits,
+	violations,
+	type Picks
+} from './compat';
 import type { CompatData, CompatRule } from '$lib/server/db';
 
 // Rule rows shaped like the extracted game data (origin_requirement / civic_requirement /
@@ -27,14 +34,27 @@ const data: CompatData = {
 		rule('origin', 'origin_default', 'gameplay', 'forbid', 'nomadic'),
 		rule('civic', 'civic_caravan', 'gameplay', 'require', 'nomadic'),
 		rule('trait', 'trait_sedentary', 'origin', 'forbid', 'origin_default_nomads'),
-		rule('trait', 'trait_aquatic', 'planet_class', 'require_any', 'pc_ocean', 1)
+		rule('trait', 'trait_aquatic', 'planet_class', 'require_any', 'pc_ocean', 1),
+		rule('civic', 'civic_environmentalist', 'gameplay', 'forbid', 'nomadic')
 	],
 	grantedTraits: {
 		civic_tankbound: ['trait_tankbound'],
 		civic_anglers: ['trait_aquatic']
 	},
-	opposites: { trait_tankbound: ['trait_weak', 'trait_hollow_bones', 'trait_photoadaptive'] },
-	archetypeByClass: { HUM: 'BIOLOGICAL', NECROID: 'BIOLOGICAL', MACHINE: 'MACHINE' }
+	opposites: {
+		trait_tankbound: ['trait_weak', 'trait_hollow_bones', 'trait_photoadaptive'],
+		trait_pc_ark_preference: ['trait_resilient', 'trait_genetic_memory', 'trait_sedentary']
+	},
+	archetypeByClass: { HUM: 'BIOLOGICAL', NECROID: 'BIOLOGICAL', MACHINE: 'MACHINE' },
+	ascension: {
+		origin_evolutionary_predators: { lock: 'Genetic', blocks: [] },
+		origin_mindwardens: { lock: null, blocks: ['Psionic'] },
+		civic_chosen: { lock: 'Psionic', blocks: [] },
+		civic_natural_design: {
+			lock: null,
+			blocks: ['Genetic', 'Cybernetic', 'Synthetic', 'Psionic']
+		}
+	}
 };
 
 const name = (k: string) => k;
@@ -139,5 +159,64 @@ describe('other gates', () => {
 		const nomad = picks({ origin: 'origin_default_nomads' });
 		expect(conflictsFor(nomad, { kind: 'civic', key: 'civic_caravan' }, data, name)).toEqual([]);
 		expect(conflictsFor(picks(), { kind: 'civic', key: 'civic_caravan' }, data, name)).toEqual([]);
+	});
+});
+
+describe('homeworld', () => {
+	it('Arkship means nomadic play: settled-only civics clash', () => {
+		const ark = picks({ homeworld: 'pc_ark' });
+		expect(
+			texts(conflictsFor(ark, { kind: 'civic', key: 'civic_environmentalist' }, data, name))
+		).toEqual(['civic_environmentalist (civic) rules out nomadic gameplay']);
+		expect(conflictsFor(ark, { kind: 'civic', key: 'civic_caravan' }, data, name)).toEqual([]);
+		// and the other direction: Arkship is flagged while the civic is picked
+		const env = picks({ civics: ['civic_environmentalist'] });
+		expect(conflictsFor(env, { kind: 'planet_class', key: 'pc_ark' }, data, name)).toHaveLength(1);
+	});
+
+	it('a settled homeworld clashes with a nomads-only origin', () => {
+		const p = picks({ homeworld: 'pc_desert' });
+		expect(
+			texts(conflictsFor(p, { kind: 'origin', key: 'origin_default_nomads' }, data, name))
+		).toEqual(['origin_default_nomads (origin) needs nomadic gameplay']);
+	});
+
+	it("the Arkship climate trait's opposites clash (Sedentary)", () => {
+		const ark = picks({ homeworld: 'pc_ark' });
+		expect(texts(conflictsFor(ark, { kind: 'trait', key: 'trait_sedentary' }, data, name))).toEqual(
+			['pc_ark homeworld rules out trait_sedentary']
+		);
+		expect(conflictsFor(ark, { kind: 'trait', key: 'trait_strong' }, data, name)).toEqual([]);
+	});
+});
+
+describe('ascension paths', () => {
+	it('an origin lock against a civic lock leaves no path', () => {
+		const p = picks({ origin: 'origin_evolutionary_predators' });
+		expect(texts(conflictsFor(p, { kind: 'civic', key: 'civic_chosen' }, data, name))).toEqual([
+			'origin_evolutionary_predators (origin) locks ascension to Genetic, civic_chosen (civic) locks ascension to Psionic'
+		]);
+	});
+
+	it('a block against a lock on the same path also leaves none', () => {
+		const p = picks({ origin: 'origin_mindwardens' });
+		expect(conflictsFor(p, { kind: 'civic', key: 'civic_chosen' }, data, name)).toHaveLength(1);
+	});
+
+	it('the open paths are what every gate allows', () => {
+		const gen = picks({ origin: 'origin_evolutionary_predators' });
+		expect(allowedAscensionPaths(ascensionGates(gen, data))).toEqual(['Genetic']);
+		expect(allowedAscensionPaths(ascensionGates(picks(), data))).toEqual([
+			'Genetic',
+			'Cybernetic',
+			'Synthetic',
+			'Psionic'
+		]);
+	});
+
+	it('Natural Design alone blocks every path without being a conflict', () => {
+		const p = picks({ civics: ['civic_natural_design'], origin: 'origin_evolutionary_predators' });
+		expect(violations(p, data, name)).toEqual([]);
+		expect(allowedAscensionPaths(ascensionGates(p, data))).toEqual([]);
 	});
 });

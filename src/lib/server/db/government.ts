@@ -139,6 +139,8 @@ export interface Civic {
 	civicType: string; // 'normal' | 'gestalt' | 'corporate' | 'special'
 	requiredDlc: string | null;
 	locked: boolean; // `modification = no`: can't be added/removed after game start
+	ascensionLock: string | null; // locked to this single ascension path (blocks the others)
+	ascensionBlocks: string[]; // ascension paths blocked; all four = no ascension at all
 	icon: string | null;
 	modifiers: Modifier[];
 	requirements: CivicRequirement[];
@@ -150,7 +152,8 @@ export function loadCivics(): Civic[] {
 	const d = db();
 	const rows = d
 		.prepare(
-			`SELECT key, name, description, civic_type, required_dlc, locked, icon
+			`SELECT key, name, description, civic_type, required_dlc, locked, ascension_lock,
+			        ascension_blocks, icon
 			 FROM civic WHERE selectable = 1 ORDER BY civic_type, sort_order`
 		)
 		.all() as Array<{
@@ -160,6 +163,8 @@ export function loadCivics(): Civic[] {
 		civic_type: string;
 		required_dlc: string | null;
 		locked: number;
+		ascension_lock: string | null;
+		ascension_blocks: string | null;
 		icon: string | null;
 	}>;
 
@@ -218,6 +223,8 @@ export function loadCivics(): Civic[] {
 		civicType: r.civic_type,
 		requiredDlc: r.required_dlc,
 		locked: r.locked === 1,
+		ascensionLock: r.ascension_lock,
+		ascensionBlocks: r.ascension_blocks ? r.ascension_blocks.split(',') : [],
 		icon: r.icon,
 		modifiers: modByCivic.get(r.key) ?? [],
 		requirements: reqByCivic.get(r.key) ?? []

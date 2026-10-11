@@ -3,25 +3,26 @@
 	import type { Ethic, Modifier, EthicImplication, PolicyRestriction } from '$lib/server/db';
 	import { empire } from '$lib/empire.svelte';
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
-	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
+	import {
+		combineImplications,
+		combinePolicyRestrictions,
+		ETHIC_AXES,
+		ETHIC_BUDGET,
+		MONUMENT_BONUSES
+	} from '$lib/ethics';
 	import Tip from '$lib/Tip.svelte';
 	import FederationLink from '$lib/FederationLink.svelte';
 	import { federationTip } from '$lib/federations';
 	import { compatChecker } from '$lib/compat';
+	import { addedBy, ethicLimits } from '$lib/limits';
+	import { conflictClass } from '$lib/conflict';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
 	const debug = $derived(data.debugDisableSelection);
 
-	// ── Ethic axes (opposite pairs, displayed as rows) ──────────────────────
-	const AXES: [string, string][] = [
-		['ethic_authoritarian', 'ethic_egalitarian'],
-		['ethic_xenophobe', 'ethic_xenophile'],
-		['ethic_militarist', 'ethic_pacifist'],
-		['ethic_spiritualist', 'ethic_materialist']
-	];
-
-	const ETHIC_BUDGET = 3;
+	// Ethic axes (opposite pairs) are displayed as rows.
+	const AXES = ETHIC_AXES;
 
 	// ── Lookup helpers ───────────────────────────────────────────────────────
 	const ethicMap = $derived(new Map(data.ethics.map((e) => [e.key, e])));
@@ -40,41 +41,11 @@
 	);
 	const pointsRemaining = $derived(ETHIC_BUDGET - pointsUsed);
 
-	function axisKeys(regularKey: string): string[] {
-		const fanatic = getFanatic(regularKey);
-		return fanatic ? [regularKey, fanatic.key] : [regularKey];
-	}
-
-	function oppositeKeys(regularKey: string): string[] {
-		const other = AXES.find(([a, b]) => a === regularKey || b === regularKey);
-		if (!other) return [];
-		const otherSide = other[0] === regularKey ? other[1] : other[0];
-		return axisKeys(otherSide);
-	}
-
-	function isBlocked(ethicKey: string): boolean {
-		if (selected.has(ethicKey)) return false;
-		const e = ethicMap.get(ethicKey);
-		if (!e) return true;
-		// Over budget
-		if (pointsRemaining < e.cost) return true;
-		// Opposite axis selected
-		const reg = e.regular_variant ?? ethicKey;
-		const opp = oppositeKeys(reg);
-		if (opp.some((k) => selected.has(k))) return true;
-		// Same axis (regular + fanatic conflict)
-		const sameAxis = axisKeys(reg);
-		if (sameAxis.filter((k) => k !== ethicKey).some((k) => selected.has(k))) return true;
-		return false;
-	}
-
+	// Any ethic can be picked; points and axes are flagged, not enforced (see $lib/limits).
 	function toggle(ethicKey: string) {
 		const next = new Set(selected);
-		if (next.has(ethicKey)) {
-			next.delete(ethicKey);
-		} else if (!isBlocked(ethicKey)) {
-			next.add(ethicKey);
-		}
+		if (next.has(ethicKey)) next.delete(ethicKey);
+		else next.add(ethicKey);
 		empire.setEthics([...next]);
 	}
 
@@ -193,18 +164,21 @@
 	}
 
 	function ethicTooltip(ethic: Ethic): string {
-		const conflicts = compat.reasons('ethic', ethic.key).map((r) => `⚠ ${r}`);
+		const conflicts = reasons(ethic.key).map((r) => `⚠ ${r}`);
 		const mods = ethic.modifiers.length
 			? ethic.modifiers.map((mod) => `${formatValue(mod)}  ${modLabel(mod)}`)
 			: [ethicLabel(ethic)];
 		return [...conflicts, ...mods].join('\n');
 	}
 
-	// Cross-section conflicts (origin / civics / government rules) — warn only: a red ring
-	// plus the reasons atop the tooltip; the ethic stays pickable.
+	// Why an ethic clashes: cross-section rules (origin / civics / government) plus the
+	// section's own points and axes. Greyed out but pickable, reasons atop the tooltip.
 	const compat = $derived(compatChecker(empire.draft, data));
-	const conflictRing = (key: string) =>
-		compat.reasons('ethic', key).length ? 'ring-2 ring-red-500/80 ring-inset' : '';
+	const ethicName = (k: string) => ethicMap.get(k)?.label ?? compat.name(k);
+	const reasons = (key: string) => [
+		...compat.reasons('ethic', key),
+		...addedBy((ks) => ethicLimits(ks, data.ethics, ethicName), [...selected], key)
+	];
 </script>
 
 <main class="mx-auto max-w-7xl space-y-8 p-4">
@@ -243,7 +217,6 @@
 					<!-- Left side -->
 					<div class="flex justify-end gap-1.5">
 						{#each ([leftEthic, leftFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
-							{@const blocked = isBlocked(ethic!.key)}
 							{@const sel = selected.has(ethic!.key)}
 							<Tip text={debug ? undefined : ethicTooltip(ethic!)}>
 								{#snippet trigger(a)}
@@ -251,15 +224,11 @@
 										this={debug ? 'div' : 'button'}
 										{...a}
 										class="btn flex-col gap-0.5 text-sm leading-tight
-									{sel
-											? 'preset-filled-primary-500'
-											: blocked
-												? 'cursor-not-allowed preset-filled opacity-30'
-												: 'preset-filled card-hover'} {conflictRing(ethic!.key)} {debug
-											? 'cursor-text select-text'
-											: ''}"
+									{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {conflictClass(
+											reasons(ethic!.key),
+											sel
+										)} {debug ? 'cursor-text select-text' : ''}"
 										onclick={debug ? undefined : () => toggle(ethic!.key)}
-										disabled={debug ? undefined : blocked && !sel}
 									>
 										<span>{ethicLabel(ethic!)}</span>
 										<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
@@ -275,7 +244,6 @@
 					<!-- Right side -->
 					<div class="flex justify-start gap-1.5">
 						{#each ([rightEthic, rightFanatic] as (Ethic | undefined)[]).filter((e): e is Ethic => !!e) as ethic (ethic.key)}
-							{@const blocked = isBlocked(ethic!.key)}
 							{@const sel = selected.has(ethic!.key)}
 							<Tip text={debug ? undefined : ethicTooltip(ethic!)}>
 								{#snippet trigger(a)}
@@ -283,15 +251,11 @@
 										this={debug ? 'div' : 'button'}
 										{...a}
 										class="btn flex-col gap-0.5 text-sm leading-tight
-									{sel
-											? 'preset-filled-primary-500'
-											: blocked
-												? 'cursor-not-allowed preset-filled opacity-30'
-												: 'preset-filled card-hover'} {conflictRing(ethic!.key)} {debug
-											? 'cursor-text select-text'
-											: ''}"
+									{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {conflictClass(
+											reasons(ethic!.key),
+											sel
+										)} {debug ? 'cursor-text select-text' : ''}"
 										onclick={debug ? undefined : () => toggle(ethic!.key)}
-										disabled={debug ? undefined : blocked && !sel}
 									>
 										<span>{ethicLabel(ethic!)}</span>
 										<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
@@ -316,8 +280,9 @@
 							this={debug ? 'div' : 'button'}
 							{...a}
 							class="btn flex-col gap-0.5 text-sm leading-tight
-						{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {conflictRing(
-								gestaltEthic.key
+						{sel ? 'preset-filled-primary-500' : 'preset-filled card-hover'} {conflictClass(
+								reasons(gestaltEthic.key),
+								sel
 							)} {debug ? 'cursor-text select-text' : ''}"
 							onclick={debug ? undefined : selectGestalt}
 						>

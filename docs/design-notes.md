@@ -71,10 +71,10 @@ ethic_modifier          — ethic_key, modifier_key, modifier_value, sort_order
 ethic_tag_label         — tag (PK), label  ← DROP+CREATE each run
 ethic_tag               — ethic_key, tag, sort_order
 ethic_policy_restriction — policy_key, option_key, option_label, ethic_key
-civic                   — key, name, description, civic_type (normal/gestalt/corporate/special), required_dlc, selectable, icon, sort_order
+civic                   — key, name, description, civic_type (normal/gestalt/corporate/special), required_dlc, selectable, locked, ascension_lock, ascension_blocks, icon, sort_order
 civic_modifier          — civic_key, modifier_key, modifier_value, sort_order
 civic_requirement       — civic_key, kind (authority/ethic/civic/origin), operator (require/forbid/require_any), value, group_id (ties require_any OR sets)
-origin                  — key, name, description, required_dlc, selectable, icon, sort_order
+origin                  — key, name, description, required_dlc, selectable, ascension_lock, ascension_blocks, starting_colony, forces_home_system, icon, sort_order
 origin_modifier         — origin_key, modifier_key, modifier_value, sort_order
 origin_requirement      — origin_key, kind, operator, value, group_id  (same shape as civic_requirement; kind includes 'ship_type' value 'organic' and 'gameplay' value 'nomadic')
 planet_class            — key, name, climate (wet/dry/cold/null), colonizable, is_standard (default startable climate)

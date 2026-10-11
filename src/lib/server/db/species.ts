@@ -319,6 +319,17 @@ export interface Trait {
 }
 
 // trait key → point cost, for the empire overviews to colour negative (drawback) traits.
+// History (background) traits: one per species, outside the trait-pick count.
+export function loadHistoryTraitKeys(): string[] {
+	return (
+		db()
+			.prepare(`SELECT trait_key FROM trait_tag WHERE tag = 'background' ORDER BY trait_key`)
+			.all() as Array<{
+			trait_key: string;
+		}>
+	).map((r) => r.trait_key);
+}
+
 export function loadTraitCosts(): Record<string, number> {
 	const out: Record<string, number> = {};
 	for (const r of db()

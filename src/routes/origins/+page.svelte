@@ -19,7 +19,9 @@
 	import { empire } from '$lib/empire.svelte';
 	import { settings } from '$lib/settings.svelte';
 	import ConflictBadge from '$lib/ConflictBadge.svelte';
+	import AscensionChips from '$lib/AscensionChips.svelte';
 	import { compatChecker } from '$lib/compat';
+	import { conflictClass } from '$lib/conflict';
 	import type { JobSwap } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
@@ -110,9 +112,10 @@
 						onclick={debug ? undefined : () => empire.setOrigin(selected ? null : origin.key)}
 						class="flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
-							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflicts.length
-							? 'ring-2 ring-red-500/70 ring-inset'
-							: ''} {debug ? 'cursor-text select-text' : ''}"
+							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflictClass(
+							conflicts,
+							selected
+						)} {debug ? 'cursor-text select-text' : ''}"
 					>
 						<div class="flex items-start justify-between gap-2">
 							<h3 class="font-semibold">{origin.name ?? origin.key}</h3>
@@ -122,23 +125,7 @@
 									{#if swaps.length}
 										<SwapTables {swaps} />
 									{/if}
-									{#if origin.ascensionLock}
-										<Tip
-											text="Locked to {origin.ascensionLock} Ascension — blocks all other ascension paths"
-											class="rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-200"
-										>
-											{origin.ascensionLock} ascension only
-										</Tip>
-									{:else}
-										{#each origin.ascensionBlocks as path (path)}
-											<Tip
-												text="Cannot pursue {path} Ascension"
-												class="rounded border border-fuchsia-500/40 bg-fuchsia-500/10 px-1.5 py-0.5 text-[10px] font-medium text-fuchsia-200"
-											>
-												no {path} ascension
-											</Tip>
-										{/each}
-									{/if}
+									<AscensionChips lock={origin.ascensionLock} blocks={origin.ascensionBlocks} />
 								</div>
 							{/if}
 						</div>

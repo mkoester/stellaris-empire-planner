@@ -4,6 +4,10 @@
 // gives trait_tankbound, which rules out Weak). Warn-only: the builder pages mark
 // conflicting options with the reasons, and the Empire page lists what the draft breaks.
 //
+// The homeworld counts too: Arkship means nomadic play, and its climate trait has
+// opposites (Arkship rules out Sedentary). Origins and civics that gate the ascension paths
+// are checked against each other (an origin locked to Genetic vs a civic blocking it).
+//
 // A gate on something not chosen yet never fires — an unset species class can't violate
 // "needs an Infernal species" — so planning in any order doesn't drown in warnings.
 import type { CompatData, CompatRule } from '$lib/server/db';
@@ -25,7 +29,14 @@ export interface Picks {
 
 // What a builder page offers: one candidate pick, checked against the rest of the draft.
 export type PickKind =
-	'ethic' | 'civic' | 'origin' | 'authority' | 'species_class' | 'trait' | 'planet_class';
+	| 'ethic'
+	| 'civic'
+	| 'origin'
+	| 'authority'
+	| 'species_class'
+	| 'trait'
+	| 'planet_class'
+	| 'ship_type';
 export interface PickRef {
 	kind: PickKind;
 	key: string;
@@ -71,6 +82,14 @@ export function grantedTraits(p: Picks, data: CompatData): { trait: string; sour
 	return out;
 }
 
+// The homeworld's climate-preference trait (pc_ark → trait_pc_ark_preference), when it
+// has opposites — the only way it can clash, since no rule names a climate trait.
+const NOMAD_HOMEWORLD = 'pc_ark';
+function climateTrait(p: Picks, data: CompatData): string | null {
+	const t = p.homeworld ? `trait_${p.homeworld}_preference` : null;
+	return t && data.opposites[t] ? t : null;
+}
+
 const founderTraits = (p: Picks, data: CompatData): string[] => [
 	...new Set([
 		...(p.baseTrait ? [p.baseTrait] : []),
@@ -84,7 +103,8 @@ function facts(p: Picks, data: CompatData): Record<string, string[] | null> {
 	const nonEmpty = (xs: string[]) => (xs.length ? xs : null);
 	const one = (x: string | null) => (x ? [x] : null);
 	const archetype = p.speciesClass ? (data.archetypeByClass[p.speciesClass] ?? null) : null;
-	// Nomadic play is decided by the origin: it either requires or forbids it (or allows both).
+	// Nomadic play is decided by the homeworld (Arkship or not); before one is picked, by
+	// the origin, which either requires or forbids it (or allows both).
 	const nomadRule = p.origin
 		? rulesByOwner(data)
 				.get(`origin:${p.origin}`)
@@ -100,7 +120,15 @@ function facts(p: Picks, data: CompatData): Record<string, string[] | null> {
 		planet_class: one(p.homeworld),
 		trait: nonEmpty(founderTraits(p, data)),
 		ship_type: one(p.shipType),
-		gameplay: nomadRule ? (nomadRule.operator === 'forbid' ? [] : ['nomadic']) : null
+		gameplay: p.homeworld
+			? p.homeworld === NOMAD_HOMEWORLD
+				? ['nomadic']
+				: []
+			: nomadRule
+				? nomadRule.operator === 'forbid'
+					? []
+					: ['nomadic']
+				: null
 	};
 }
 
@@ -183,6 +211,66 @@ export function violations(p: Picks, data: CompatData, name: NameFn): Conflict[]
 					id: `${g.source}|opposite|${g.trait}|${t}`,
 					text: `${name(g.source)} gives the ${name(g.trait)} trait, which rules out ${name(t)}`
 				});
+	// The homeworld's climate trait's opposites (Arkship ↔ Sedentary / Resilient / …).
+	const climate = climateTrait(p, data);
+	if (climate)
+		for (const t of mine)
+			if (opp(climate, t))
+				out.push({
+					id: `${p.homeworld}|opposite|${climate}|${t}`,
+					text: `${valueLabel('planet_class', p.homeworld!, name)} rules out ${name(t)}`
+				});
+	out.push(...ascensionViolations(p, data, name));
+	return out;
+}
+
+// ── Ascension paths ─────────────────────────────────────────────────────────
+
+export const ASCENSION_PATHS = ['Genetic', 'Cybernetic', 'Synthetic', 'Psionic'];
+
+export interface AscensionGate {
+	source: string; // civic/origin key
+	kind: 'civic' | 'origin';
+	allowed: string[]; // the paths this pick leaves open (empty = none at all)
+}
+
+// Every picked origin/civic that restricts the ascension paths, and what it leaves open.
+export function ascensionGates(p: Picks, data: CompatData): AscensionGate[] {
+	const owners: [string, AscensionGate['kind']][] = [
+		...(p.origin ? [[p.origin, 'origin'] as [string, 'origin']] : []),
+		...p.civics.map((k): [string, 'civic'] => [k, 'civic'])
+	];
+	return owners.flatMap(([source, kind]) => {
+		const r = data.ascension[source];
+		if (!r) return [];
+		const allowed = r.lock ? [r.lock] : ASCENSION_PATHS.filter((path) => !r.blocks.includes(path));
+		return [{ source, kind, allowed }];
+	});
+}
+
+// The paths the whole draft leaves open (all four when nothing restricts them).
+export const allowedAscensionPaths = (gates: AscensionGate[]): string[] =>
+	ASCENSION_PATHS.filter((path) => gates.every((g) => g.allowed.includes(path)));
+
+// Two picks whose ascension gates leave no path between them (Evolutionary Predators,
+// locked to Genetic, vs Chosen, locked to Psionic). A pick that alone blocks every path
+// (Natural Design) is a documented restriction, not a conflict.
+function ascensionViolations(p: Picks, data: CompatData, name: NameFn): Conflict[] {
+	const gates = ascensionGates(p, data).filter((g) => g.allowed.length);
+	const out: Conflict[] = [];
+	for (let i = 0; i < gates.length; i++)
+		for (const b of gates.slice(i + 1)) {
+			const a = gates[i];
+			if (a.allowed.some((path) => b.allowed.includes(path))) continue;
+			const leaves = (g: AscensionGate) =>
+				g.allowed.length === 1
+					? `locks ascension to ${g.allowed[0]}`
+					: `allows only ${g.allowed.join(' / ')} ascension`;
+			out.push({
+				id: `ascension|${[a.source, b.source].sort().join('|')}`,
+				text: `${name(a.source)} (${a.kind}) ${leaves(a)}, ${name(b.source)} (${b.kind}) ${leaves(b)}`
+			});
+		}
 	return out;
 }
 
@@ -205,6 +293,8 @@ function setPick(p: Picks, ref: PickRef, on: boolean): Picks {
 			return { ...p, speciesClass: one };
 		case 'planet_class':
 			return { ...p, homeworld: one };
+		case 'ship_type':
+			return { ...p, shipType: on ? (ref.key as Picks['shipType']) : null };
 	}
 }
 
