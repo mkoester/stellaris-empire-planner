@@ -73,7 +73,7 @@ ethic_tag               — ethic_key, tag, sort_order
 ethic_policy_restriction — policy_key, option_key, option_label, ethic_key
 civic                   — key, name, description, civic_type (normal/gestalt/corporate/special), required_dlc, selectable, locked, ascension_lock, ascension_blocks, icon, sort_order
 civic_modifier          — civic_key, modifier_key, modifier_value, sort_order
-council_position        — key, civic_key, name, description, leader_classes (comma list), effect (custom tooltip), sort_order  (the seat a civic opens)
+council_position        — key, civic_key (NULL: not a civic seat), possible_json, name, description, leader_classes (comma list), effect (custom tooltip), sort_order  (every council seat; the planner reads the civic ones)
 council_position_modifier — position_key, modifier_key, modifier_value (per leader level), sort_order
 building_modifier       — building_key, scope (planet/country/system/station), modifier_key, value, condition (null or a required AP key), sort_order
 building_unlock         — owner_key (civic/origin), building_key  (hard requirement only)

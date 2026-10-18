@@ -370,7 +370,7 @@ export function loadCouncilPositions(): Record<string, CouncilPosition> {
 	for (const r of d
 		.prepare(
 			`SELECT key, civic_key, name, description, leader_classes, effect
-			 FROM council_position ORDER BY sort_order`
+			 FROM council_position WHERE civic_key IS NOT NULL ORDER BY sort_order`
 		)
 		.all() as Array<{
 		key: string;
