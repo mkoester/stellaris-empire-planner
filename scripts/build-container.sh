@@ -53,8 +53,25 @@ echo "==> Staging DB: $DB_SRC -> data/stellaris.sqlite"
 mkdir -p data
 cp "$DB_SRC" data/stellaris.sqlite
 
-echo "==> Building image: $IMAGE_TAG"
-podman build "${EXTRA_ARGS[@]}" -t "$IMAGE_TAG" -f Containerfile .
+# package.json's version, decorated with git state (vault: "Artifact versioning"): as-is on a
+# clean main, -<hash> on any other commit, -SNAPSHOT with uncommitted changes.
+decorated_version() {
+	local base
+	base=$(sed -nE 's/^\t"version": "([^"]+)",$/\1/p' package.json)
+	if ! git rev-parse --git-dir >/dev/null 2>&1; then
+		echo "$base"
+	elif [[ -n $(git status --porcelain --untracked-files=no) ]]; then
+		echo "$base-SNAPSHOT"
+	elif [[ $(git branch --show-current) == main ]]; then
+		echo "$base"
+	else
+		echo "$base-$(git rev-parse --short HEAD)"
+	fi
+}
+APP_VERSION=$(decorated_version)
+
+echo "==> Building image: $IMAGE_TAG (version $APP_VERSION)"
+podman build "${EXTRA_ARGS[@]}" --build-arg "APP_VERSION=$APP_VERSION" -t "$IMAGE_TAG" -f Containerfile .
 
 if [[ "$SAVE" -eq 1 ]]; then
 	OUT="${IMAGE_TAG//[:\/]/_}.tar"

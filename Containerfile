@@ -28,7 +28,11 @@ RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
 # ── Runtime stage: lean image, just Node + server bundle + prod deps + DB ───────
 FROM base AS runtime
 WORKDIR /app
-ENV NODE_ENV=production \
+# The version shown in the nav, decorated with git state by build-container.sh (the
+# build context has no .git); empty falls back to package.json's.
+ARG APP_VERSION=
+ENV APP_VERSION=$APP_VERSION \
+    NODE_ENV=production \
     PORT=3000 \
     HOST=0.0.0.0 \
     STELLARIS_DB=/app/data/stellaris.sqlite
