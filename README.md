@@ -2,6 +2,8 @@
 
 A web app for planning empires in [Stellaris](https://www.paradoxinteractive.com/games/stellaris),
 built on data from [stellaris-data-extraction](https://github.com/mkoester/stellaris-data-extraction).
+Use it at **https://stellaris-empire-planner.mirkokoester.de/**. Changes: [`CHANGELOG.md`](CHANGELOG.md),
+releases: [`RELEASE.md`](RELEASE.md).
 
 ## Licence
 
@@ -81,8 +83,8 @@ sudo dnf install -y podman git sqlite
 Fetch both repos and build the SQLite DB from the committed SQL dump:
 
 ```sh
-git clone https://github.com/mkoester/stellaris-empire-planner.git
-git clone https://github.com/mkoester/stellaris-data-extraction.git
+git clone -b main https://github.com/mkoester/stellaris-empire-planner.git
+git clone -b main https://github.com/mkoester/stellaris-data-extraction.git
 ./stellaris-data-extraction/build-sqlite.sh    # -> stellaris-data-extraction/sqlite/stellaris.sqlite
 ```
 

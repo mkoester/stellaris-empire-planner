@@ -36,7 +36,7 @@ sudo loginctl enable-linger stellaris-empire-planner
 REPO_URL=https://github.com/mkoester/stellaris-empire-planner.git
 REPO=~stellaris-empire-planner/stellaris-empire-planner
 
-sudo -u stellaris-empire-planner git clone $REPO_URL $REPO
+sudo -u stellaris-empire-planner git clone -b main $REPO_URL $REPO
 sudo -u stellaris-empire-planner mkdir -p ~stellaris-empire-planner/.config/containers/systemd
 ```
 
@@ -85,7 +85,7 @@ Then point your reverse proxy at `http://127.0.0.1:3000` for the host in `ORIGIN
 
 ## Updating a running deployment
 
-After pushing new commits to **both** repos (a game patch regenerates the extraction repo's `sql/stellaris.sql`), run on the server:
+The server's clones stay on `main`, so this deploys the latest **release** (`RELEASE.md`; work in progress lives on `develop`). After pushing a release of **both** repos (a game patch regenerates the extraction repo's `sql/stellaris.sql`), run on the server:
 
 ```sh
 sudo -u stellaris-empire-planner git -C ~stellaris-empire-planner/stellaris-empire-planner pull --ff-only

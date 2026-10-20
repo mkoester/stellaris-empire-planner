@@ -13,7 +13,8 @@ import { version as appVersion } from '../../package.json';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = () => ({
-	appVersion,
+	// The container build passes the git-decorated version (scripts/build-container.sh).
+	appVersion: env.APP_VERSION || appVersion,
 	gameVersion: loadGameVersion(),
 	names: loadEntityNames(),
 	lockedCivics: loadLockedCivicKeys(),
