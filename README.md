@@ -2,6 +2,8 @@
 
 A web app for planning empires in [Stellaris](https://www.paradoxinteractive.com/games/stellaris),
 built on data from [stellaris-data-extraction](https://github.com/mkoester/stellaris-data-extraction).
+Use it at **https://stellaris-empire-planner.mirkokoester.de/**. Changes: [`CHANGELOG.md`](CHANGELOG.md),
+releases: [`RELEASE.md`](RELEASE.md).
 
 ## Licence
 
