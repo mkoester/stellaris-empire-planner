@@ -36,7 +36,7 @@ sudo loginctl enable-linger stellaris-empire-planner
 REPO_URL=https://github.com/mkoester/stellaris-empire-planner.git
 REPO=~stellaris-empire-planner/stellaris-empire-planner
 
-sudo -u stellaris-empire-planner git clone $REPO_URL $REPO
+sudo -u stellaris-empire-planner git clone -b main $REPO_URL $REPO
 sudo -u stellaris-empire-planner mkdir -p ~stellaris-empire-planner/.config/containers/systemd
 ```
 

@@ -45,7 +45,7 @@ main() {
 
 	step "Pulling the extraction repo (for its committed SQL dump)"
 	if [[ ! -d $extraction/.git ]]; then
-		as_svc git clone "$EXTRACTION_URL" "$extraction"
+		as_svc git clone -b main "$EXTRACTION_URL" "$extraction"
 	fi
 	as_svc git -C "$extraction" pull --ff-only
 
