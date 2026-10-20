@@ -124,6 +124,14 @@
 
 {@render children()}
 
+<footer class="px-4 py-3 text-center text-[11px] opacity-40">
+	Unofficial fan project, not affiliated with Paradox Interactive. Stellaris and all game data and
+	text © Paradox Interactive AB. ·
+	<a href="https://github.com/mkoester/stellaris-empire-planner" class="underline"
+		>Source (AGPL-3.0)</a
+	>
+</footer>
+
 <!-- Floating running summary of the current empire (hidden on /empire, which shows its
      own, and on the / landing page, which isn't part of empire creation). -->
 {#if page.url.pathname !== '/empire' && page.url.pathname !== '/'}

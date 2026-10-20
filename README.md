@@ -1,4 +1,17 @@
-# sv
+# stellaris-empire-planner
+
+A web app for planning empires in [Stellaris](https://www.paradoxinteractive.com/games/stellaris),
+built on data from [stellaris-data-extraction](https://github.com/mkoester/stellaris-data-extraction).
+
+## Licence
+
+The code is licensed under the [GNU Affero General Public License v3.0](LICENSE). If you run a
+modified version as a public service, you must offer its source code to its users.
+
+> Unofficial fan project, not affiliated with Paradox Interactive. Stellaris and all game data and
+> text © Paradox Interactive AB.
+
+## Development
 
 Everything you need to build a Svelte project, powered by [`sv`](https://github.com/sveltejs/cli).
 
