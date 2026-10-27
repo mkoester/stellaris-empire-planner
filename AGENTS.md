@@ -29,6 +29,15 @@ Two consequences when driving the app this way, both harmless and both easy to m
 Start the server and make the requests **in one Bash command**; that is general sandbox behaviour
 covered by the vault's `claude-sandbox` skill, not a planner quirk.
 
+When the restart loop makes the dev server answer 500/504, smoke-test a production build
+instead (in one command): `STELLARIS_DB=… pnpm build`, then `STELLARIS_DB=… PORT=5202 node build`
+and `curl` the routes. That needs no `.env`.
+
+**Open check (2026-10-27): the Starting Capital card and tables have not been compared with a
+real game start.** Start 3–4 contrasting empires on Linux (default materialist, hive, machine,
+nomads), save on day 1, and compare each capital's districts, zones and buildings with the
+card. Nomads come out with no capital building: confirm that in game.
+
 After changing the extraction script, regenerate the DB from the sibling repo — the two are only
 consistent if you do.
 
