@@ -6,6 +6,8 @@
 	import { prettyKey } from '$lib/civics';
 	import { leafText, profileFromDraft } from '$lib/triggers';
 	import { capitalOf, fromText, partsText, type CapitalData } from '$lib/startCapital';
+	import type { ReferenceBuilding } from '$lib/server/db';
+	import BuildingName from '$lib/BuildingName.svelte';
 
 	let {
 		draft,
@@ -13,7 +15,7 @@
 		names
 	}: {
 		draft: EmpireDraft;
-		data: CapitalData;
+		data: CapitalData & { capitalBuildings: Record<string, ReferenceBuilding> };
 		names: Record<string, string>; // entity names plus buildings, districts and zones
 	} = $props();
 
@@ -44,9 +46,14 @@
 	{#if !ready}
 		<p class="text-sm opacity-50">Pick a government and an origin to see the starting capital.</p>
 	{:else}
-		{#snippet row(label: string, source: string, cls = '')}
+		{#snippet row(label: string, source: string, cls = '', building?: string)}
 			<li class="flex items-baseline gap-3 {cls}">
-				<span class="flex-1">{label}</span>
+				<span class="flex-1"
+					>{#if building}<BuildingName
+							building={data.capitalBuildings[building]}
+							{label}
+						/>{:else}{label}{/if}</span
+				>
 				<span class="shrink-0 text-right text-xs opacity-50">{source}</span>
 			</li>
 		{/snippet}
@@ -73,7 +80,12 @@
 							'font-medium'
 						)}
 						{#each inZone(z.zone) as b, j (j)}
-							{@render row(`${name(b.building)}`, from(b.reasons), 'pl-4 text-emerald-300/90')}
+							{@render row(
+								name(b.building),
+								from(b.reasons),
+								'pl-4 text-emerald-300/90',
+								b.building
+							)}
 						{/each}
 					{/each}
 				</ul>
@@ -85,7 +97,7 @@
 				<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">Buildings</h3>
 				<ul class="space-y-0.5 text-sm">
 					{#each unzoned as b, i (i)}
-						{@render row(name(b.building), from(b.reasons), 'text-emerald-300/90')}
+						{@render row(name(b.building), from(b.reasons), 'text-emerald-300/90', b.building)}
 					{/each}
 				</ul>
 			</div>

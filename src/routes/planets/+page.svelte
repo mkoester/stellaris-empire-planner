@@ -138,6 +138,7 @@
 		rows={capitalRows}
 		assumed={completeDraft(empire.draft, data).assumed}
 		names={{ ...data.names, ...data.capitalNames }}
+		buildings={data.capitalBuildings}
 		pick="Homeworld"
 	/>
 </main>

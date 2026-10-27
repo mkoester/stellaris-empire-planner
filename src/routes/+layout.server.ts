@@ -9,7 +9,8 @@ import {
 	loadCompatData,
 	loadProfileInputs,
 	loadGameStartScripts,
-	loadCapitalNames
+	loadCapitalNames,
+	loadCapitalBuildings
 } from '$lib/server/db';
 import { env } from '$env/dynamic/private';
 import { version as appVersion } from '../../package.json';
@@ -32,6 +33,7 @@ export const load: LayoutServerLoad = () => ({
 	...loadProfileInputs(),
 	gameStartScripts: loadGameStartScripts(),
 	capitalNames: loadCapitalNames(),
+	capitalBuildings: loadCapitalBuildings(), // their numbers, for the building popups
 	// When set, every builder section renders its cards as plain (non-interactive)
 	// elements so their text can be selected/copied. See each section's `debug` flag.
 	debugDisableSelection: !!env.DEBUG_DISABLE_SELECTION
