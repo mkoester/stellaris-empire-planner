@@ -27,6 +27,7 @@
 	} from '$lib/compat';
 	import { ethicLimits, traitLimits } from '$lib/limits';
 	import AscensionChips from '$lib/AscensionChips.svelte';
+	import StartingCapital from '$lib/StartingCapital.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const predefined = $derived(data.predefined as Empire[]);
@@ -615,6 +616,16 @@
 				{/each}
 			</section>
 		{/if}
+
+		<StartingCapital
+			{draft}
+			picks={compat.picks}
+			{founderTraits}
+			scripts={data.gameStartScripts}
+			archetypeOf={data.archetypeOf}
+			nomadicOrigins={data.nomadicOrigins}
+			names={{ ...names, ...data.capitalNames }}
+		/>
 
 		<!-- Gameplay: ethic implications + civic/origin effect descriptions, with sources -->
 		{#if implications.length || policyRestrictions.length || gameplayEffects.length || ascGates.length}

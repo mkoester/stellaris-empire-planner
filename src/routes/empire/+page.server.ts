@@ -6,7 +6,10 @@ import {
 	loadCivics,
 	loadOrigins,
 	loadArchetypes,
-	loadHistoryTraitKeys
+	loadHistoryTraitKeys,
+	loadProfileInputs,
+	loadGameStartScripts,
+	loadCapitalNames
 } from '$lib/server/db';
 import type { PageServerLoad } from './$types';
 
@@ -19,5 +22,9 @@ export const load: PageServerLoad = () => ({
 	origins: loadOrigins(),
 	// Trait-pick / point budgets, checked like the Species page does (see $lib/limits).
 	archetypes: loadArchetypes(),
-	historyTraits: loadHistoryTraitKeys()
+	historyTraits: loadHistoryTraitKeys(),
+	// The starting capital: the game's setup scripts, run client-side by $lib/startCapital.
+	...loadProfileInputs(),
+	gameStartScripts: loadGameStartScripts(),
+	capitalNames: loadCapitalNames()
 });
