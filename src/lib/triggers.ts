@@ -151,6 +151,8 @@ export function profileFromDraft(
 export interface EvalOptions {
 	perks?: number; // number of ascension perks taken (for the tier search)
 	assumeAbsent?: boolean; // unknown origins/civics count as not had (the typical empire)
+	// Answers leaves the profile doesn't cover (a planet's state); undefined = not handled.
+	leaf?: (t: { leaf: string; value: string; cmp?: string; which?: string }) => Tri | undefined;
 }
 
 function leafValue(
@@ -209,7 +211,10 @@ function leafValue(
 
 export function evaluate(t: Trigger | null, p: EmpireProfile, o: EvalOptions = {}): Tri {
 	if (t === null) return true;
-	if ('leaf' in t) return leafValue(t.leaf, t.value, t.cmp, p, o);
+	if ('leaf' in t) {
+		const v = o.leaf?.(t); // null is an answer (unknown), undefined is not
+		return v !== undefined ? v : leafValue(t.leaf, t.value, t.cmp, p, o);
+	}
 	if (t.op === 'not') {
 		const v = evaluate(t.args[0], p, o);
 		return v === null ? null : !v;

@@ -49,8 +49,21 @@ export interface Conflict {
 
 export type NameFn = (key: string) => string;
 
+// The draft fields the picks read (a whole draft will do).
+export type DraftPicks = Pick<
+	EmpireDraft,
+	| 'ethics'
+	| 'civics'
+	| 'origin'
+	| 'authority'
+	| 'speciesClass'
+	| 'traits'
+	| 'planetClass'
+	| 'graphicalCulture'
+> & { secondary?: EmpireDraft['secondary'] };
+
 export function picksFromDraft(
-	d: EmpireDraft,
+	d: DraftPicks,
 	baseTraitByClass: Record<string, string>,
 	originStarts: Record<string, { world: string | null }>
 ): Picks {

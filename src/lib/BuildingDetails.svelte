@@ -7,8 +7,11 @@
 	import { ascensionPerkName } from '$lib/precursors';
 	import RuleText from '$lib/RuleText.svelte';
 	import Tip from '$lib/Tip.svelte';
+	import { workedOutput } from '$lib/jobs';
 
 	let { building: b }: { building: ReferenceBuilding } = $props();
+	// The jobs' net output when filled (base values, per $lib/jobs workedOutput).
+	const worked = $derived(workedOutput(b.jobs));
 
 	const titleCase = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 	const num = (n: number) => (Number.isInteger(n) ? n : parseFloat(n.toFixed(2)));
@@ -41,10 +44,22 @@
 	<div class="flex flex-wrap gap-1">
 		{#each b.jobs as j (j.job)}
 			<span class="rounded bg-sky-500/15 px-1.5 py-0.5 text-[11px] text-sky-300/90">
-				{titleCase(j.job)} ×{num(j.amount)}
+				{j.name ?? titleCase(j.job)}
+				{num(j.amount)}
 			</span>
 		{/each}
 	</div>
+	{#if worked.length}
+		<div class="flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[11px]">
+			<span class="opacity-50">If worked:</span>
+			{#each worked as r (r.resource)}
+				<span class={r.amount > 0 ? 'text-emerald-400' : 'text-red-400'}>
+					{r.amount > 0 ? '+' : '−'}{num(Math.abs(r.amount))}
+					{titleCase(r.resource)}
+				</span>
+			{/each}
+		</div>
+	{/if}
 {/if}
 
 {#if b.modifiers.length}

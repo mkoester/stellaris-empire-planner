@@ -23,6 +23,8 @@
 	import CouncilChip from '$lib/CouncilChip.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
+	import CapitalContributions from '$lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows, fitAuthority, mentioned } from '$lib/startCapital';
 	import { empire } from '$lib/empire.svelte';
 	import { settings } from '$lib/settings.svelte';
 
@@ -48,6 +50,28 @@
 				: civics
 		)
 	);
+	// What each civic the setup scripts test adds to the starting capital, run on a government
+	// the civic allows.
+	const capitalRows = $derived.by(() => {
+		const tested = mentioned(data.gameStartScripts, ['has_valid_civic', 'has_civic']);
+		return contributionRows(
+			civics
+				.filter((c) => tested.has(c.key))
+				.map((c) => ({
+					key: c.key,
+					label: c.name ?? c.key,
+					active: empire.draft.civics.includes(c.key),
+					apply: (d) => ({
+						...d,
+						authority: fitAuthority(d.authority, c.requirements),
+						civics: d.civics.includes(c.key) ? d.civics : [...d.civics, c.key]
+					}),
+					own: (r) => (r.leaf === 'has_valid_civic' || r.leaf === 'has_civic') && r.value === c.key
+				})),
+			empire.draft,
+			data
+		);
+	});
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
@@ -170,4 +194,11 @@
 			</div>
 		</section>
 	{/each}
+	<CapitalContributions
+		rows={capitalRows}
+		assumed={completeDraft(empire.draft, data).assumed}
+		names={{ ...data.names, ...data.capitalNames }}
+		buildings={data.capitalBuildings}
+		pick="Civic"
+	/>
 </main>

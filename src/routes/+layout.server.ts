@@ -6,7 +6,11 @@ import {
 	loadTraitCosts,
 	loadBaseTraitByClass,
 	loadOverviewTooltips,
-	loadCompatData
+	loadCompatData,
+	loadProfileInputs,
+	loadGameStartScripts,
+	loadCapitalNames,
+	loadCapitalBuildings
 } from '$lib/server/db';
 import { env } from '$env/dynamic/private';
 import { version as appVersion } from '../../package.json';
@@ -24,6 +28,12 @@ export const load: LayoutServerLoad = () => ({
 	overviewTooltips: loadOverviewTooltips(),
 	// Cross-section eligibility rules, evaluated client-side by $lib/compat.
 	compat: loadCompatData(),
+	// The starting capital (Empire card, and what each pick adds on the builder pages): the
+	// game's setup scripts, run client-side by $lib/startCapital.
+	...loadProfileInputs(),
+	gameStartScripts: loadGameStartScripts(),
+	capitalNames: loadCapitalNames(),
+	capitalBuildings: loadCapitalBuildings(), // their numbers, for the building popups
 	// When set, every builder section renders its cards as plain (non-interactive)
 	// elements so their text can be selected/copied. See each section's `debug` flag.
 	debugDisableSelection: !!env.DEBUG_DISABLE_SELECTION

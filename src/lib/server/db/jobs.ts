@@ -199,6 +199,11 @@ export interface BuildingJobRow {
 	job: string; // display name, e.g. "metallurgist"
 	amount: number; // raw count (Stellaris 4.0 scales jobs ×100)
 }
+// A building's job with what one job (100 workforce) produces and costs, base values.
+export interface WorkedJobRow extends BuildingJobRow {
+	name: string | null;
+	resources: JobResource[];
+}
 // A building effect other than jobs; `condition` = an ascension perk it needs (else null).
 export interface ReferenceBuildingModifier extends Modifier {
 	scope: 'planet' | 'country' | 'system' | 'station';
@@ -210,7 +215,7 @@ export interface ReferenceBuilding {
 	category: string | null;
 	description: string | null;
 	resources: BuildingResourceRow[];
-	jobs: BuildingJobRow[];
+	jobs: WorkedJobRow[];
 	modifiers: ReferenceBuildingModifier[];
 	unlockedBy: string[]; // the civics/origins it requires
 }
@@ -276,10 +281,17 @@ export function loadBuildings(): ReferenceBuilding[] {
 		(unlockBy.get(r.building_key) ?? unlockBy.set(r.building_key, []).get(r.building_key)!).push(
 			r.owner_key
 		);
-	const jobBy = new Map<string, BuildingJobRow[]>();
+	const jobs = new Map(loadJobs().map((j) => [j.key, j]));
+	const jobBy = new Map<string, WorkedJobRow[]>();
 	for (const r of jobRows) {
 		if (!jobBy.has(r.building_key)) jobBy.set(r.building_key, []);
-		jobBy.get(r.building_key)!.push({ job: r.job, amount: r.amount });
+		const job = jobs.get(r.job);
+		jobBy.get(r.building_key)!.push({
+			job: r.job,
+			amount: r.amount,
+			name: job?.name ?? null,
+			resources: job?.resources ?? []
+		});
 	}
 	return rows.map((r) => ({
 		...r,
@@ -288,6 +300,19 @@ export function loadBuildings(): ReferenceBuilding[] {
 		modifiers: modBy.get(r.key) ?? [],
 		unlockedBy: unlockBy.get(r.key) ?? []
 	}));
+}
+
+// The buildings a game-start setup script can place, by key (starting-capital tooltips).
+export function loadCapitalBuildings(): Record<string, ReferenceBuilding> {
+	const scripts = db().prepare(`SELECT effects_json FROM game_start_script`).all() as Array<{
+		effects_json: string;
+	}>;
+	const text = scripts.map((r) => r.effects_json).join();
+	return Object.fromEntries(
+		loadBuildings()
+			.filter((b) => text.includes(`"building":"${b.key}"`))
+			.map((b) => [b.key, b])
+	);
 }
 
 // civic/origin key → the buildings it unlocks (for the Civics / Origins cards).

@@ -16,6 +16,8 @@
 	import { compatChecker } from '$lib/compat';
 	import { addedBy, ethicLimits, withEthic } from '$lib/limits';
 	import { conflictClass, pickClass } from '$lib/conflict';
+	import CapitalContributions from '$lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows } from '$lib/startCapital';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -140,6 +142,32 @@
 				.filter((p): p is { regular: Ethic; fanatic: Ethic | undefined } => !!p.regular)
 		)
 	);
+
+	// What each ethic family adds to the starting capital (Materialist → Research Labs). The
+	// scripts test the plain or fanatic ethic alike, so one row per family, run with the
+	// plain one on a regular government.
+	const familyOf = (k: string) => k.replace('ethic_fanatic_', 'ethic_');
+	const capitalRows = $derived.by(() => {
+		const regular = (a: string | null) =>
+			a === 'auth_hive_mind' || a === 'auth_machine_intelligence' ? null : a;
+		return contributionRows(
+			// Every family, untested ones too, so each axis stays a pair side by side.
+			tableEthicPairs.map(({ regular: e, fanatic }) => ({
+				key: e.key,
+				label: ethicLabel(e),
+				active: selected.has(e.key) || !!(fanatic && selected.has(fanatic.key)),
+				apply: (d) => ({
+					...d,
+					authority: regular(d.authority),
+					ethics: [...d.ethics.filter((x) => familyOf(x) !== e.key), e.key]
+				}),
+				own: (r) => r.leaf === 'has_ethic' && familyOf(r.value) === e.key
+			})),
+			empire.draft,
+			data
+		);
+	});
+	const capitalAssumed = $derived(completeDraft(empire.draft, data).assumed);
 
 	const nonGestaltEthics = $derived(data.ethics.filter((e: Ethic) => !e.gestalt));
 
@@ -549,6 +577,15 @@
 		</section>
 	{/if}
 
+	<CapitalContributions
+		rows={capitalRows}
+		assumed={capitalAssumed}
+		names={{ ...data.names, ...data.capitalNames }}
+		buildings={data.capitalBuildings}
+		pick="Ethic"
+		paired
+	/>
+
 	<!-- Monument bonuses per 100 civilians -->
 	<section>
 		<h2 class="mb-1 text-lg font-semibold">Monument Bonuses per 100 Civilians</h2>
@@ -560,56 +597,74 @@
 			<table class="w-full text-xs">
 				<thead>
 					<tr class="border-surface-400-500/40 border-b">
-						<th
-							class="sticky top-0 z-10 w-40 py-1.5 pr-4 text-left font-medium opacity-60"
-							style="background-color: var(--color-surface-50-950)">Ethic</th
-						>
-						<th
-							class="sticky top-0 z-10 px-3 py-1.5 text-left font-medium opacity-60"
-							style="background-color: var(--color-surface-50-950)">Effect</th
-						>
-						<th
-							class="sticky top-0 z-10 px-3 py-1.5 text-center font-medium opacity-60"
-							style="background-color: var(--color-surface-50-950)">Regular</th
-						>
-						<th
-							class="sticky top-0 z-10 px-3 py-1.5 text-center font-medium opacity-60"
-							style="background-color: var(--color-surface-50-950)">Fanatic</th
-						>
+						{#each [0, 1] as side (side)}
+							<th
+								class="sticky top-0 z-10 w-36 py-1.5 pr-4 text-left font-medium opacity-60 {side
+									? 'border-surface-400-500/30 border-l pl-3'
+									: ''}"
+								style="background-color: var(--color-surface-50-950)">Ethic</th
+							>
+							<th
+								class="sticky top-0 z-10 px-3 py-1.5 text-left font-medium opacity-60"
+								style="background-color: var(--color-surface-50-950)">Effect</th
+							>
+							<th
+								class="sticky top-0 z-10 px-3 py-1.5 text-center font-medium opacity-60"
+								style="background-color: var(--color-surface-50-950)">Regular</th
+							>
+							<th
+								class="sticky top-0 z-10 px-3 py-1.5 text-center font-medium opacity-60"
+								style="background-color: var(--color-surface-50-950)">Fanatic</th
+							>
+						{/each}
 					</tr>
 				</thead>
 				<tbody>
-					{#each MONUMENT_BONUSES as { ethicKey, rows } (ethicKey)}
-						{@const ethic = ethicMap.get(ethicKey)}
-						{@const active =
-							selected.has(ethicKey) ||
-							!!(ethic?.regular_variant && selected.has(ethic.regular_variant)) ||
-							!!(ethic?.fanatic_variant && selected.has(ethic.fanatic_variant))}
-						{#each rows as row, i (row.label)}
+					<!-- One row group per axis: an ethic and its opposite side by side -->
+					{#each AXES as axis (axis[0])}
+						{@const sides = axis.map((k) => ({
+							key: k,
+							rows: MONUMENT_BONUSES.find((m) => m.ethicKey === k)?.rows ?? []
+						}))}
+						{@const height = Math.max(1, ...sides.map((x) => x.rows.length))}
+						{#each Array.from({ length: height }, (_, i) => i) as i (i)}
 							<tr class="border-surface-400-500/20 border-b hover:bg-surface-500/10">
-								{#if i === 0}
-									<td
-										class="py-1.5 pr-4 font-medium {active ? 'text-primary-400' : 'opacity-70'}"
-										rowspan={rows.length}
-									>
-										{ethic ? ethicLabel(ethic) : ethicKey}
-									</td>
-								{/if}
-								<td class="px-3 py-1.5 opacity-70">{row.label}</td>
-								<td
-									class="px-3 py-1.5 text-center font-mono {row.good
-										? 'text-emerald-400'
-										: 'text-red-400'} {active ? '' : 'opacity-70'}">{row.regular}</td
-								>
-								<td
-									class="px-3 py-1.5 text-center font-mono {row.fanatic
-										? row.good
-											? 'text-emerald-400'
-											: 'text-red-400'
-										: 'opacity-20'} {active ? '' : 'opacity-70'}"
-								>
-									{row.fanatic ?? '—'}
-								</td>
+								{#each sides as { key, rows }, side (key)}
+									{@const ethic = ethicMap.get(key)}
+									{@const active =
+										selected.has(key) ||
+										!!(ethic?.fanatic_variant && selected.has(ethic.fanatic_variant))}
+									{@const row = rows[i]}
+									{#if i === 0}
+										<td
+											class="py-1.5 pr-4 font-medium {active
+												? 'text-primary-400'
+												: 'opacity-70'} {side ? 'border-surface-400-500/30 border-l pl-3' : ''}"
+											rowspan={height}
+										>
+											{ethic ? ethicLabel(ethic) : key}
+										</td>
+									{/if}
+									{#if row}
+										<td class="px-3 py-1.5 opacity-70">{row.label}</td>
+										<td
+											class="px-3 py-1.5 text-center font-mono {row.good
+												? 'text-emerald-400'
+												: 'text-red-400'} {active ? '' : 'opacity-70'}">{row.regular}</td
+										>
+										<td
+											class="px-3 py-1.5 text-center font-mono {row.fanatic
+												? row.good
+													? 'text-emerald-400'
+													: 'text-red-400'
+												: 'opacity-20'} {active ? '' : 'opacity-70'}"
+										>
+											{row.fanatic ?? '—'}
+										</td>
+									{:else}
+										<td class="px-3 py-1.5 opacity-20" colspan="3">—</td>
+									{/if}
+								{/each}
 							</tr>
 						{/each}
 					{/each}

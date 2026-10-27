@@ -5,6 +5,8 @@
 	import { empire } from '$lib/empire.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
+	import CapitalContributions from '$lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows } from '$lib/startCapital';
 	import ConflictBadge from '$lib/ConflictBadge.svelte';
 
 	let { data }: { data: PageData } = $props();
@@ -35,6 +37,22 @@
 	const lockedCivics = $derived(civics.filter((c) => forbidsOrganic(c.requirements)));
 	const organicOrigins = $derived(origins.filter((o) => requiresOrganic(o.requirements)));
 	const organicCivics = $derived(civics.filter((c) => requiresOrganic(c.requirements)));
+	// What the organic ship type adds to the starting capital (a bio ship set uses food).
+	const capitalRows = $derived(
+		contributionRows(
+			[
+				{
+					key: 'organic',
+					label: 'Organic',
+					active: shipType === 'organic',
+					apply: (d) => ({ ...d, graphicalCulture: 'biogenesis_01' }),
+					own: (r) => r.leaf === 'uses_ship_category' && r.value === 'bio_ship'
+				}
+			],
+			empire.draft,
+			data
+		)
+	);
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
@@ -140,4 +158,11 @@
 			{/each}
 		</div>
 	</section>
+	<CapitalContributions
+		rows={capitalRows}
+		assumed={completeDraft(empire.draft, data).assumed}
+		names={{ ...data.names, ...data.capitalNames }}
+		buildings={data.capitalBuildings}
+		pick="Ship type"
+	/>
 </main>

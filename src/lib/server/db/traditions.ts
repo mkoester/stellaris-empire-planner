@@ -4,7 +4,8 @@ import type { Modifier } from './types';
 
 // A normalised game trigger (extraction: extractor/triggers.py normalize_trigger).
 export type Trigger =
-	{ op: 'and' | 'or' | 'not'; args: Trigger[] } | { leaf: string; value: string; cmp?: string };
+	| { op: 'and' | 'or' | 'not'; args: Trigger[] }
+	| { leaf: string; value: string; cmp?: string; which?: string }; // which: check_variable's variable
 
 // A modifier that may only apply under a condition (triggered_modifier).
 export interface ConditionalModifier extends Modifier {
