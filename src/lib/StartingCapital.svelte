@@ -5,7 +5,15 @@
 	import type { EmpireDraft } from '$lib/empire.svelte';
 	import { prettyKey } from '$lib/civics';
 	import { leafText, profileFromDraft } from '$lib/triggers';
-	import { simulateStartCapital, SETUP_REGULAR, SETUP_VOID, type Effect } from '$lib/startCapital';
+	import {
+		reasonText,
+		simulateStartCapital,
+		SETUP_REGULAR,
+		SETUP_VOID,
+		type Effect,
+		type Part,
+		type Reason
+	} from '$lib/startCapital';
 
 	let {
 		draft,
@@ -45,6 +53,19 @@
 	const unzoned = $derived(
 		capital.buildings.filter((b) => !b.zone || !capital.zones.some((z) => z.zone === b.zone))
 	);
+	// Where something comes from: the conditions that put it there, or the setup everyone gets.
+	const from = (rs: Reason[]) =>
+		rs.length ? `from ${rs.map((r) => reasonText(r, names)).join(' + ')}` : 'base setup';
+	// A count's parts: "base setup", "from Anglers (civic)", or "3 base · +1 Prosperous …".
+	const partsText = (parts: Part[]) =>
+		parts.length === 1
+			? from(parts[0].reasons)
+			: parts
+					.map((p, i) => {
+						const n = i === 0 ? `${p.amount}` : p.amount > 0 ? `+${p.amount}` : `−${-p.amount}`;
+						return `${n} ${p.reasons.length ? from(p.reasons) : 'base'}`;
+					})
+					.join(' · ');
 	const missing = $derived(
 		[
 			!draft.speciesClass && 'species class',
@@ -59,32 +80,37 @@
 	{#if !ready}
 		<p class="text-sm opacity-50">Pick a government and an origin to see the starting capital.</p>
 	{:else}
+		{#snippet row(label: string, source: string, cls = '')}
+			<li class="flex items-baseline gap-3 {cls}">
+				<span class="flex-1">{label}</span>
+				<span class="shrink-0 text-right text-xs opacity-50">{source}</span>
+			</li>
+		{/snippet}
+
 		<div class="space-y-1">
 			<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">Districts</h3>
-			<div class="flex flex-wrap gap-1.5">
+			<ul class="space-y-0.5 text-sm">
 				{#each capital.districts as d (d.district)}
-					<span class="rounded bg-sky-500/15 px-1.5 py-0.5 text-xs text-sky-300/90">
-						{name(d.district)} <span class="tabular-nums opacity-70">×{d.count}</span>
-					</span>
+					{@render row(`${name(d.district)} ×${d.count}`, partsText(d.parts))}
 				{/each}
-			</div>
+			</ul>
 		</div>
 
 		{#if capital.zones.length}
 			<div class="space-y-1">
-				<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">Zones</h3>
-				<ul class="space-y-1 text-sm">
+				<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">
+					Zones <span class="font-normal opacity-60">· with their buildings</span>
+				</h3>
+				<ul class="space-y-0.5 text-sm">
 					{#each capital.zones as z, i (i)}
-						<li>
-							<span class="font-medium">{name(z.zone)}</span>
-							<span class="text-xs opacity-45">(in {name(z.district)})</span>
-							{#each inZone(z.zone) as b, j (j)}
-								<span
-									class="ml-1 rounded bg-emerald-500/15 px-1.5 py-0.5 text-xs text-emerald-300/90"
-									>{name(b.building)}</span
-								>
-							{/each}
-						</li>
+						{@render row(
+							`${name(z.zone)} (in ${name(z.district)})`,
+							from(z.reasons),
+							'font-medium'
+						)}
+						{#each inZone(z.zone) as b, j (j)}
+							{@render row(`${name(b.building)}`, from(b.reasons), 'pl-4 text-emerald-300/90')}
+						{/each}
 					{/each}
 				</ul>
 			</div>
@@ -93,13 +119,11 @@
 		{#if unzoned.length}
 			<div class="space-y-1">
 				<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">Buildings</h3>
-				<div class="flex flex-wrap gap-1.5">
+				<ul class="space-y-0.5 text-sm">
 					{#each unzoned as b, i (i)}
-						<span class="rounded bg-emerald-500/15 px-1.5 py-0.5 text-xs text-emerald-300/90"
-							>{name(b.building)}</span
-						>
+						{@render row(name(b.building), from(b.reasons), 'text-emerald-300/90')}
 					{/each}
-				</div>
+				</ul>
 			</div>
 		{/if}
 
