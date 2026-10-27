@@ -22,6 +22,8 @@
 	import BuildingChips from '$lib/BuildingChips.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
+	import CapitalContributions from '$lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows, fitAuthority, mentioned } from '$lib/startCapital';
 	import type { JobSwap } from '$lib/server/db';
 
 	let { data }: { data: PageData } = $props();
@@ -59,6 +61,28 @@
 				label: dlc ?? 'Base game',
 				items: by.get(dlc)!.sort((a, b) => (a.name ?? a.key).localeCompare(b.name ?? b.key))
 			}));
+	});
+	// What each origin the setup scripts test adds to the starting capital, run on a government
+	// the origin allows (and on its forced homeworld).
+	const capitalRows = $derived.by(() => {
+		const tested = mentioned(data.gameStartScripts, ['has_origin']);
+		return contributionRows(
+			origins
+				.filter((o) => tested.has(o.key))
+				.map((o) => ({
+					key: o.key,
+					label: o.name ?? o.key,
+					active: empire.draft.origin === o.key,
+					apply: (d) => ({
+						...d,
+						origin: o.key,
+						authority: fitAuthority(d.authority, o.requirements)
+					}),
+					own: (r) => r.leaf === 'has_origin' && r.value === o.key
+				})),
+			empire.draft,
+			data
+		);
 	});
 </script>
 
@@ -191,4 +215,10 @@
 			</div>
 		</section>
 	{/each}
+	<CapitalContributions
+		rows={capitalRows}
+		assumed={completeDraft(empire.draft, data).assumed}
+		names={{ ...data.names, ...data.capitalNames }}
+		pick="Origin"
+	/>
 </main>

@@ -17,6 +17,8 @@
 	import ConflictBadge from '$lib/ConflictBadge.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
+	import CapitalContributions from '$lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows } from '$lib/startCapital';
 
 	let { data }: { data: PageData } = $props();
 	// Cross-section conflicts (warn only — see $lib/compat).
@@ -29,6 +31,27 @@
 	function toggle(key: string) {
 		empire.setAuthority(empire.draft.authority === key ? null : key);
 	}
+	// What each government adds to the starting capital: by name (has_authority), or by its
+	// kind (Hive Mind, Machine Intelligence, gestalt).
+	const KIND_LEAVES: Record<string, string[]> = {
+		auth_hive_mind: ['is_hive_empire', 'is_gestalt'],
+		auth_machine_intelligence: ['is_machine_empire', 'is_gestalt']
+	};
+	const capitalRows = $derived(
+		contributionRows(
+			authorities.map((a) => ({
+				key: a.key,
+				label: a.name ?? a.key,
+				active: empire.draft.authority === a.key,
+				apply: (d) => ({ ...d, authority: a.key }),
+				own: (r) =>
+					(r.leaf === 'has_authority' && r.value === a.key) ||
+					((KIND_LEAVES[a.key] ?? []).includes(r.leaf) && r.value === 'yes')
+			})),
+			empire.draft,
+			data
+		)
+	);
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
@@ -104,4 +127,10 @@
 			</svelte:element>
 		{/each}
 	</div>
+	<CapitalContributions
+		rows={capitalRows}
+		assumed={completeDraft(empire.draft, data).assumed}
+		names={{ ...data.names, ...data.capitalNames }}
+		pick="Government"
+	/>
 </main>

@@ -6,6 +6,8 @@
 	import Tip from '$lib/Tip.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
+	import CapitalContributions from '$lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows, isHomeworld, mentioned } from '$lib/startCapital';
 
 	let { data }: { data: PageData } = $props();
 	const groups = $derived(groupPlanetClasses(data.planetClasses as PlanetClass[]));
@@ -15,6 +17,29 @@
 	const debug = $derived(data.debugDisableSelection);
 	// Cross-section conflicts (warn only — see $lib/compat): civic/origin/trait homeworld gates.
 	const compat = $derived(compatChecker(empire.draft, data));
+	// What each homeworld the setup scripts test adds to the starting capital. An origin that
+	// forces another world is dropped for the row (the default origin stands in).
+	const capitalRows = $derived.by(() => {
+		const tested = mentioned(data.gameStartScripts, ['is_planet_class']);
+		const forced = (o: string | null) => (o ? (data.originStarts[o]?.world ?? null) : null);
+		return contributionRows(
+			(data.planetClasses as PlanetClass[])
+				.filter((pc) => tested.has(pc.key) || pc.key === 'pc_volcanic')
+				.map((pc) => ({
+					key: pc.key,
+					label: pc.name ?? pc.key,
+					active: draft.planetClass === pc.key,
+					apply: (d) => ({
+						...d,
+						planetClass: pc.key,
+						origin: forced(d.origin) && forced(d.origin) !== pc.key ? null : d.origin
+					}),
+					own: (r) => isHomeworld(r, pc.key)
+				})),
+			empire.draft,
+			data
+		);
+	});
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
@@ -109,4 +134,10 @@
 			</div>
 		</section>
 	{/each}
+	<CapitalContributions
+		rows={capitalRows}
+		assumed={completeDraft(empire.draft, data).assumed}
+		names={{ ...data.names, ...data.capitalNames }}
+		pick="Homeworld"
+	/>
 </main>

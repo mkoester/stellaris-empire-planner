@@ -5,9 +5,10 @@
 // own (zones, flags, variables counting rural districts), so they are interpreted here in
 // order rather than looked up. A limit the planner can't decide counts as false, and its unknown
 // checks are reported, so the preview never claims more than it knows.
-import type { Trigger } from '$lib/server/db';
+import type { CivicRequirement, Trigger } from '$lib/server/db';
 import { prettyKey } from '$lib/civics';
-import { evaluate, leafText, type EmpireProfile, type Tri } from '$lib/triggers';
+import { picksFromDraft, type DraftPicks } from '$lib/compat';
+import { evaluate, leafText, profileFromDraft, type EmpireProfile, type Tri } from '$lib/triggers';
 
 type Amount = number | string; // a number, or a script variable's name
 
@@ -60,6 +61,10 @@ type Leaf = { leaf: string; value: string; cmp?: string; which?: string };
 const MAX_LOOPS = 100;
 // The scripts only test one district set; its sole planet class (common/planet_classes).
 const DISTRICT_SET_CLASS: Record<string, string> = { volcanic_world: 'pc_volcanic' };
+// Whether a reason is about this homeworld class (by class, or by its district set).
+export const isHomeworld = (r: Reason, planetClass: string): boolean =>
+	(r.leaf === 'is_planet_class' && r.value === planetClass) ||
+	(r.leaf === 'uses_district_set' && DISTRICT_SET_CLASS[r.value] === planetClass);
 // Traits the game adds to a species of these archetypes (species_subspecies checks them).
 const ARCHETYPE_TRAIT: Record<string, string> = {
 	MACHINE: 'trait_machine_unit',
@@ -118,6 +123,22 @@ export function reasonText(r: Reason, names: Record<string, string>): string {
 						? (names[r.value] ?? prettyKey(r.value))
 						: leafText(r, names);
 	return kind && !['authority', 'species', 'gameplay'].includes(kind) ? `${text} (${kind})` : text;
+}
+
+// Where something comes from: "from Materialist (ethic) + …", or the setup everyone gets.
+export function fromText(rs: Reason[], names: Record<string, string>): string {
+	return rs.length ? `from ${rs.map((r) => reasonText(r, names)).join(' + ')}` : 'base setup';
+}
+
+// A count's parts: "base setup", "from Anglers (civic)", or "3 base · +1 from Prosperous …".
+export function partsText(parts: Part[], names: Record<string, string>): string {
+	if (parts.length === 1) return fromText(parts[0].reasons, names);
+	return parts
+		.map((p, i) => {
+			const n = i === 0 ? `${p.amount}` : p.amount > 0 ? `+${p.amount}` : `−${-p.amount}`;
+			return `${n} ${p.reasons.length ? fromText(p.reasons, names) : 'base'}`;
+		})
+		.join(' · ');
 }
 
 export function simulateStartCapital(effects: Effect[], inp: CapitalInputs): Capital {
@@ -315,4 +336,171 @@ export function simulateStartCapital(effects: Effect[], inp: CapitalInputs): Cap
 		unknownChecks: [...unknownChecks.values()],
 		unknownEffects: [...unknownEffects]
 	};
+}
+
+// ── The planned empire's capital, and what one pick adds to it ─────────────────
+// What running the scripts for a draft needs beyond the draft (layout + page data).
+export interface CapitalData {
+	gameStartScripts: Record<string, Effect[]>;
+	archetypeOf: Record<string, string | null>; // species class → archetype
+	nomadicOrigins: string[];
+	baseTraitByClass: Record<string, string>;
+	originStarts: Record<string, { world: string | null }>;
+	compat: { grantedTraits: Record<string, string[]> }; // civic/origin → traits it gives
+}
+
+// The capital of a draft as it stands.
+export function capitalOf(d: DraftPicks, data: CapitalData): Capital {
+	const picks = picksFromDraft(d, data.baseTraitByClass, data.originStarts);
+	const profile = profileFromDraft(d, data.archetypeOf, data.nomadicOrigins);
+	const granted = [...(d.origin ? [d.origin] : []), ...d.civics].flatMap(
+		(k) => data.compat.grantedTraits[k] ?? []
+	);
+	const script = profile.flags.includes('voidDweller') ? SETUP_VOID : SETUP_REGULAR;
+	return simulateStartCapital(data.gameStartScripts[script] ?? [], {
+		profile,
+		authority: d.authority,
+		traits: [...new Set([...(picks.baseTrait ? [picks.baseTrait] : []), ...granted, ...d.traits])],
+		archetype: d.speciesClass ? (data.archetypeOf[d.speciesClass] ?? null) : null,
+		planetClass: profile.flags.includes('nomadic') ? 'pc_ark' : picks.homeworld,
+		bioShips: picks.shipType === null ? null : picks.shipType === 'organic'
+	});
+}
+
+// What a draft with gaps is completed with to show what a pick adds: a plain empire.
+export const CAPITAL_DEFAULTS = {
+	authority: 'auth_democratic',
+	origin: 'origin_default',
+	speciesClass: 'HUM',
+	planetClass: 'pc_continental'
+} as const;
+const GESTALT_ETHIC = 'ethic_gestalt_consciousness';
+const GESTALT_SPECIES: Record<string, string> = { auth_machine_intelligence: 'MACHINE' };
+
+// A draft with its unpicked fields defaulted, and those fields named. A gestalt authority
+// brings its ethic (and a Machine Intelligence a machine species); a regular one drops it.
+export function completeDraft<D extends DraftPicks>(
+	d: D,
+	data: Pick<CapitalData, 'archetypeOf'>
+): {
+	draft: D;
+	assumed: { field: keyof typeof CAPITAL_DEFAULTS; value: string }[];
+} {
+	const assumed = (Object.keys(CAPITAL_DEFAULTS) as (keyof typeof CAPITAL_DEFAULTS)[]).filter(
+		(k) => d[k] === null
+	);
+	const draft = { ...d };
+	for (const k of assumed) draft[k] = CAPITAL_DEFAULTS[k];
+	const auth = draft.authority ?? '';
+	const gestalt = auth === 'auth_hive_mind' || auth in GESTALT_SPECIES;
+	draft.ethics = gestalt ? [GESTALT_ETHIC] : draft.ethics.filter((e) => e !== GESTALT_ETHIC);
+	const species = GESTALT_SPECIES[auth];
+	if (species && data.archetypeOf[draft.speciesClass!] !== data.archetypeOf[species])
+		draft.speciesClass = species;
+	return { draft, assumed: assumed.map((field) => ({ field, value: CAPITAL_DEFAULTS[field] })) };
+}
+
+// The government a pick needs: the current one when its authority rules allow it, else
+// the first it requires, else the first regular one it doesn't forbid.
+const REGULAR_AUTHORITIES = [
+	'auth_democratic',
+	'auth_oligarchic',
+	'auth_dictatorial',
+	'auth_imperial'
+];
+export function fitAuthority(current: string | null, reqs: CivicRequirement[]): string | null {
+	const rules = reqs.filter((r) => r.kind === 'authority');
+	const required = rules.filter((r) => r.operator !== 'forbid').map((r) => r.value);
+	const forbidden = rules.filter((r) => r.operator === 'forbid').map((r) => r.value);
+	const ok = (a: string) => (!required.length || required.includes(a)) && !forbidden.includes(a);
+	if (current && ok(current)) return current;
+	return required[0] ?? REGULAR_AUTHORITIES.find(ok) ?? current;
+}
+
+// One thing a pick puts into the capital; `also` = the other conditions it needed.
+export interface Contribution {
+	kind: 'district' | 'zone' | 'building';
+	key: string;
+	amount: number | null; // districts only
+	also: Reason[];
+}
+
+// What in a capital is there because of reasons `own` accepts.
+export function contributions(c: Capital, own: (r: Reason) => boolean): Contribution[] {
+	const also = (rs: Reason[]) => rs.filter((r) => !own(r));
+	return [
+		...c.districts.flatMap((d) =>
+			d.parts
+				.filter((p) => p.reasons.some(own))
+				.map((p) => ({
+					kind: 'district' as const,
+					key: d.district,
+					amount: p.amount,
+					also: also(p.reasons)
+				}))
+		),
+		...c.zones
+			.filter((z) => z.reasons.some(own))
+			.map((z) => ({ kind: 'zone' as const, key: z.zone, amount: null, also: also(z.reasons) })),
+		...c.buildings
+			.filter((b) => b.reasons.some(own))
+			.map((b) => ({
+				kind: 'building' as const,
+				key: b.building,
+				amount: null,
+				also: also(b.reasons)
+			}))
+	];
+}
+
+// Every value the scripts test with one of these checks (the picks worth a row).
+export function mentioned(scripts: Record<string, Effect[]>, leaves: string[]): Set<string> {
+	const out = new Set<string>();
+	const tree = (t: Trigger | null): void => {
+		if (t === null) return;
+		if ('leaf' in t) {
+			if (leaves.includes(t.leaf)) out.add(t.value);
+		} else t.args.forEach(tree);
+	};
+	const walk = (list: Effect[]): void => {
+		for (const x of list)
+			if (x.e === 'if')
+				for (const b of x.branches) {
+					tree(b.limit);
+					walk(b.body);
+				}
+			else if (x.e === 'while') {
+				tree(x.limit);
+				walk(x.body);
+			}
+	};
+	Object.values(scripts).forEach(walk);
+	return out;
+}
+
+// A table row: one pick, what it adds to the capital of the draft changed to include it.
+export interface PickOption<D extends DraftPicks> {
+	key: string;
+	label: string;
+	active: boolean; // part of the draft
+	apply: (d: D) => D; // the draft with this pick
+	own: (r: Reason) => boolean; // the reasons that are this pick
+}
+export interface ContributionRow {
+	key: string;
+	label: string;
+	active: boolean;
+	items: Contribution[];
+}
+export function contributionRows<D extends DraftPicks>(
+	options: PickOption<D>[],
+	d: D,
+	data: CapitalData
+): ContributionRow[] {
+	return options.map((o) => ({
+		key: o.key,
+		label: o.label,
+		active: o.active,
+		items: contributions(capitalOf(completeDraft(o.apply(d), data).draft, data), o.own)
+	}));
 }

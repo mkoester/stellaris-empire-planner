@@ -1,6 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import type { Trigger } from '$lib/server/db';
 import {
+	completeDraft,
+	contributions,
+	fitAuthority,
+	mentioned,
 	reasonText,
 	simulateStartCapital,
 	type CapitalInputs,
@@ -230,5 +234,121 @@ describe('simulateStartCapital', () => {
 		);
 		expect(c.buildings.map((b) => b.building)).toEqual(['b']);
 		expect(c.zones).toEqual([]);
+	});
+});
+
+const draft = {
+	ethics: ['ethic_materialist'],
+	civics: [],
+	origin: null,
+	authority: null,
+	speciesClass: null,
+	traits: [],
+	planetClass: null,
+	graphicalCulture: null
+};
+const archetypeOf = { HUM: 'BIOLOGICAL', MACHINE: 'MACHINE' };
+
+describe('completeDraft', () => {
+	it('defaults the unpicked fields and names them', () => {
+		const { draft: d, assumed } = completeDraft(draft, { archetypeOf });
+		expect(d).toMatchObject({
+			authority: 'auth_democratic',
+			origin: 'origin_default',
+			speciesClass: 'HUM',
+			planetClass: 'pc_continental',
+			ethics: ['ethic_materialist']
+		});
+		expect(assumed.map((a) => a.field)).toEqual([
+			'authority',
+			'origin',
+			'speciesClass',
+			'planetClass'
+		]);
+	});
+
+	it('gives a gestalt government its ethic, and a machine one a machine species', () => {
+		const { draft: d, assumed } = completeDraft(
+			{ ...draft, authority: 'auth_machine_intelligence', speciesClass: 'HUM' },
+			{ archetypeOf }
+		);
+		expect(d.ethics).toEqual(['ethic_gestalt_consciousness']);
+		expect(d.speciesClass).toBe('MACHINE');
+		expect(assumed.map((a) => a.field)).not.toContain('authority');
+	});
+});
+
+describe('fitAuthority', () => {
+	const req = (operator: string, value: string) => ({
+		kind: 'authority',
+		operator,
+		value,
+		groupId: 0
+	});
+	it('keeps an allowed government, else takes the required or a regular one', () => {
+		expect(fitAuthority('auth_imperial', [])).toBe('auth_imperial');
+		expect(fitAuthority('auth_imperial', [req('require', 'auth_hive_mind')])).toBe(
+			'auth_hive_mind'
+		);
+		expect(fitAuthority('auth_corporate', [req('forbid', 'auth_corporate')])).toBe(
+			'auth_democratic'
+		);
+		expect(fitAuthority(null, [])).toBe('auth_democratic');
+	});
+});
+
+describe('contributions', () => {
+	it('keeps what a pick put there, with the other conditions it needed', () => {
+		const anglers = { leaf: 'has_valid_civic', value: 'civic_anglers' };
+		const ocean = { leaf: 'is_planet_class', value: 'pc_ocean' };
+		const got = contributions(
+			{
+				districts: [
+					{
+						district: 'district_farming',
+						count: 4,
+						parts: [
+							{ amount: 3, reasons: [] },
+							{ amount: 1, reasons: [anglers] }
+						]
+					}
+				],
+				zones: [
+					{
+						district: 'district_farming',
+						zone: 'zone_anglers',
+						slot: null,
+						reasons: [anglers, ocean]
+					}
+				],
+				buildings: [{ building: 'building_capital', zone: null, reasons: [] }],
+				unknownChecks: [],
+				unknownEffects: []
+			},
+			(r) => r.value === 'civic_anglers'
+		);
+		expect(got).toEqual([
+			{ kind: 'district', key: 'district_farming', amount: 1, also: [] },
+			{ kind: 'zone', key: 'zone_anglers', amount: null, also: [ocean] }
+		]);
+	});
+});
+
+describe('mentioned', () => {
+	it('collects the values a check is tested with, in limits at any depth', () => {
+		const scripts = {
+			a: [
+				iff([
+					and(L('has_ethic', 'ethic_materialist'), L('is_hive_empire')),
+					[iff([L('has_ethic', 'ethic_pacifist'), []])]
+				])
+			],
+			b: [{ e: 'while', count: 1, limit: L('has_ethic', 'ethic_xenophile'), body: [] } as Effect]
+		};
+		expect([...mentioned(scripts, ['has_ethic'])].sort()).toEqual([
+			'ethic_materialist',
+			'ethic_pacifist',
+			'ethic_xenophile'
+		]);
 	});
 });

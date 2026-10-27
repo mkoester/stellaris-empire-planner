@@ -12,6 +12,9 @@
 	import { compatChecker, grantedTraits } from '$lib/compat';
 	import { addedBy, traitLimits, withTrait } from '$lib/limits';
 	import { conflictClass, pickClass } from '$lib/conflict';
+	import CapitalContributions from '$lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows, mentioned } from '$lib/startCapital';
+	import { prettyKey } from '$lib/civics';
 	import { betterVersions, traitRequirementLines } from '$lib/traits';
 	import { settings } from '$lib/settings.svelte';
 	import { tick } from 'svelte';
@@ -419,6 +422,36 @@
 
 	// Value formatting (fractions vs percentages) lives in one place: $lib/civics.
 	const formatModifier = formatModifierValue;
+	// What the founder species' kind adds to the starting capital. The scripts test base traits
+	// (Organic, Lithoid, Infernal, …) and archetypes, so one row per base trait, run with the
+	// first species class that has it.
+	const capitalRows = $derived.by(() => {
+		const traitsTested = mentioned(data.gameStartScripts, ['has_trait']);
+		const archetypesTested = mentioned(data.gameStartScripts, ['is_archetype']);
+		const byBase = new Map<string, { key: string; archetype: string }>();
+		for (const c of data.speciesClasses)
+			if (
+				c.baseTrait &&
+				!byBase.has(c.baseTrait) &&
+				(traitsTested.has(c.baseTrait) || archetypesTested.has(c.archetype))
+			)
+				byBase.set(c.baseTrait, c);
+		return contributionRows(
+			[...byBase].map(([base, c]) => ({
+				key: base,
+				label: prettyKey(base.replace(/^trait_/, '')),
+				active:
+					empire.draft.speciesClass !== null &&
+					data.baseTraitByClass[empire.draft.speciesClass] === base,
+				apply: (d) => ({ ...d, speciesClass: c.key }),
+				own: (r) =>
+					(r.leaf === 'has_trait' && r.value === base) ||
+					(r.leaf === 'is_archetype' && r.value === c.archetype)
+			})),
+			empire.draft,
+			data
+		);
+	});
 </script>
 
 <main class="mx-auto max-w-7xl space-y-6 p-4">
@@ -961,4 +994,10 @@
 			</section>
 		{/if}
 	{/each}
+	<CapitalContributions
+		rows={capitalRows}
+		assumed={completeDraft(empire.draft, data).assumed}
+		names={{ ...data.names, ...data.capitalNames }}
+		pick="Species"
+	/>
 </main>

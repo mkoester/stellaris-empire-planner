@@ -16,6 +16,8 @@
 	import { compatChecker } from '$lib/compat';
 	import { addedBy, ethicLimits, withEthic } from '$lib/limits';
 	import { conflictClass, pickClass } from '$lib/conflict';
+	import CapitalContributions from '$lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows, mentioned } from '$lib/startCapital';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -140,6 +142,34 @@
 				.filter((p): p is { regular: Ethic; fanatic: Ethic | undefined } => !!p.regular)
 		)
 	);
+
+	// What each ethic family adds to the starting capital (Materialist → Research Labs). The
+	// scripts test the plain or fanatic ethic alike, so one row per family, run with the
+	// plain one on a regular government.
+	const familyOf = (k: string) => k.replace('ethic_fanatic_', 'ethic_');
+	const capitalRows = $derived.by(() => {
+		const tested = new Set([...mentioned(data.gameStartScripts, ['has_ethic'])].map(familyOf));
+		const regular = (a: string | null) =>
+			a === 'auth_hive_mind' || a === 'auth_machine_intelligence' ? null : a;
+		return contributionRows(
+			tableEthicPairs
+				.filter(({ regular: e }) => tested.has(e.key))
+				.map(({ regular: e, fanatic }) => ({
+					key: e.key,
+					label: ethicLabel(e),
+					active: selected.has(e.key) || !!(fanatic && selected.has(fanatic.key)),
+					apply: (d) => ({
+						...d,
+						authority: regular(d.authority),
+						ethics: [...d.ethics.filter((x) => familyOf(x) !== e.key), e.key]
+					}),
+					own: (r) => r.leaf === 'has_ethic' && familyOf(r.value) === e.key
+				})),
+			empire.draft,
+			data
+		);
+	});
+	const capitalAssumed = $derived(completeDraft(empire.draft, data).assumed);
 
 	const nonGestaltEthics = $derived(data.ethics.filter((e: Ethic) => !e.gestalt));
 
@@ -548,6 +578,13 @@
 			{/if}
 		</section>
 	{/if}
+
+	<CapitalContributions
+		rows={capitalRows}
+		assumed={capitalAssumed}
+		names={{ ...data.names, ...data.capitalNames }}
+		pick="Ethic"
+	/>
 
 	<!-- Monument bonuses per 100 civilians -->
 	<section>

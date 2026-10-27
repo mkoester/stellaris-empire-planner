@@ -617,15 +617,7 @@
 			</section>
 		{/if}
 
-		<StartingCapital
-			{draft}
-			picks={compat.picks}
-			{founderTraits}
-			scripts={data.gameStartScripts}
-			archetypeOf={data.archetypeOf}
-			nomadicOrigins={data.nomadicOrigins}
-			names={{ ...names, ...data.capitalNames }}
-		/>
+		<StartingCapital {draft} {data} names={{ ...names, ...data.capitalNames }} />
 
 		<!-- Gameplay: ethic implications + civic/origin effect descriptions, with sources -->
 		{#if implications.length || policyRestrictions.length || gameplayEffects.length || ascGates.length}

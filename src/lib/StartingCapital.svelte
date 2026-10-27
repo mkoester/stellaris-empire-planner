@@ -1,75 +1,39 @@
 <script lang="ts">
 	// The capital the planned empire starts with: districts, zones and buildings, from the
 	// game's own setup scripts (see $lib/startCapital).
-	import type { Picks } from '$lib/compat';
+	import { picksFromDraft } from '$lib/compat';
 	import type { EmpireDraft } from '$lib/empire.svelte';
 	import { prettyKey } from '$lib/civics';
 	import { leafText, profileFromDraft } from '$lib/triggers';
-	import {
-		reasonText,
-		simulateStartCapital,
-		SETUP_REGULAR,
-		SETUP_VOID,
-		type Effect,
-		type Part,
-		type Reason
-	} from '$lib/startCapital';
+	import { capitalOf, fromText, partsText, type CapitalData } from '$lib/startCapital';
 
 	let {
 		draft,
-		picks,
-		founderTraits,
-		scripts,
-		archetypeOf,
-		nomadicOrigins,
+		data,
 		names
 	}: {
 		draft: EmpireDraft;
-		picks: Picks;
-		founderTraits: string[]; // picked and granted; the class's base trait is added here
-		scripts: Record<string, Effect[]>;
-		archetypeOf: Record<string, string | null>;
-		nomadicOrigins: string[];
+		data: CapitalData;
 		names: Record<string, string>; // entity names plus buildings, districts and zones
 	} = $props();
 
 	const name = (k: string) => names[k] ?? prettyKey(k);
+	const from = (rs: Parameters<typeof fromText>[0]) => fromText(rs, names);
 	const ready = $derived(draft.authority !== null && draft.origin !== null);
-	const profile = $derived(profileFromDraft(draft, archetypeOf, nomadicOrigins));
-	const capital = $derived.by(() => {
-		const script =
-			scripts[profile.flags.includes('voidDweller') ? SETUP_VOID : SETUP_REGULAR] ?? [];
-		return simulateStartCapital(script, {
-			profile,
-			authority: draft.authority,
-			traits: [...(picks.baseTrait ? [picks.baseTrait] : []), ...founderTraits],
-			archetype: draft.speciesClass ? (archetypeOf[draft.speciesClass] ?? null) : null,
-			planetClass: profile.flags.includes('nomadic') ? 'pc_ark' : picks.homeworld,
-			bioShips: picks.shipType === null ? null : picks.shipType === 'organic'
-		});
-	});
+	const picks = $derived(picksFromDraft(draft, data.baseTraitByClass, data.originStarts));
+	const nomadic = $derived(
+		profileFromDraft(draft, data.archetypeOf, data.nomadicOrigins).flags.includes('nomadic')
+	);
+	const capital = $derived(capitalOf(draft, data));
 	// Buildings by the zone they went into; the rest stand on their own.
 	const inZone = (zone: string) => capital.buildings.filter((b) => b.zone === zone);
 	const unzoned = $derived(
 		capital.buildings.filter((b) => !b.zone || !capital.zones.some((z) => z.zone === b.zone))
 	);
-	// Where something comes from: the conditions that put it there, or the setup everyone gets.
-	const from = (rs: Reason[]) =>
-		rs.length ? `from ${rs.map((r) => reasonText(r, names)).join(' + ')}` : 'base setup';
-	// A count's parts: "base setup", "from Anglers (civic)", or "3 base · +1 Prosperous …".
-	const partsText = (parts: Part[]) =>
-		parts.length === 1
-			? from(parts[0].reasons)
-			: parts
-					.map((p, i) => {
-						const n = i === 0 ? `${p.amount}` : p.amount > 0 ? `+${p.amount}` : `−${-p.amount}`;
-						return `${n} ${p.reasons.length ? from(p.reasons) : 'base'}`;
-					})
-					.join(' · ');
 	const missing = $derived(
 		[
 			!draft.speciesClass && 'species class',
-			!picks.homeworld && !profile.flags.includes('nomadic') && 'homeworld',
+			!picks.homeworld && !nomadic && 'homeworld',
 			picks.shipType === null && 'ship set'
 		].filter((x): x is string => !!x)
 	);
@@ -91,7 +55,7 @@
 			<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">Districts</h3>
 			<ul class="space-y-0.5 text-sm">
 				{#each capital.districts as d (d.district)}
-					{@render row(`${name(d.district)} ×${d.count}`, partsText(d.parts))}
+					{@render row(`${name(d.district)} ×${d.count}`, partsText(d.parts, names))}
 				{/each}
 			</ul>
 		</div>
