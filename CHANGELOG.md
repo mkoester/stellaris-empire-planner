@@ -4,6 +4,29 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.3] - 2026-11-01
+
+### Added
+
+- Branch offices: a marker on each building for who may build it — every MegaCorp (a Criminal
+  Syndicate only with a tie to the host), a Criminal Syndicate, a civic's (with the civics or
+  origin that unlock it) or special —, what else it needs (a tech, 25+ pops on the colony, an
+  upgraded capital), the civics that boost it, and "hide conflicting civics" as on council seats.
+  Needs the extraction's `building.owner_trigger_json` and siblings (v0.1.9); without them
+  the markers stay hidden.
+  The same markers stand next to each building in "Civics that add to them".
+
+### Fixed
+
+- The version in the nav is git-decorated outside the container build too (`pnpm dev`, a local
+  `pnpm build`): `-<hash>` off `main`, `-SNAPSHOT` with uncommitted changes
+  (`scripts/version.mjs`). Before, only the server's build decorated it.
+
+### Changed
+
+- Branch offices: job amounts as the game's texts give them, in workforce ("+200 Trader
+  jobs"), the job count on hover (before: +2, the workforce on hover).
+
 ## [0.1.2] - 2026-11-01
 
 ### Added

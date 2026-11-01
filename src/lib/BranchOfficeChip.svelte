@@ -28,8 +28,12 @@
 								><span class="opacity-60">{e.scope === 'planet' ? 'colony' : 'capital'}:</span>
 								{modifierLabel(e.modifier)}</span
 							>
-							<span class="shrink-0 font-mono {modifierColor(e.modifier)}"
-								>{jobs === null ? formatModifierValue(e.modifier) : `+${num(jobs)}`}</span
+							<span
+								class="shrink-0 font-mono {modifierColor(e.modifier)}"
+								title={jobs === null
+									? undefined
+									: `${num(e.modifier.value)} workforce: ${num(jobs)} job${jobs === 1 ? '' : 's'}`}
+								>{formatModifierValue(e.modifier)}</span
 							>
 						</li>
 					{/each}

@@ -5,6 +5,8 @@
 	import type { Civic, OwnedBuilding, OwnedBuildingEffect } from '$lib/server/db';
 	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
 	import {
+		access,
+		boostingCivics,
 		buildingJobs,
 		civicBoosts,
 		conditionText,
@@ -22,7 +24,8 @@
 		selected,
 		reasons,
 		ontoggle,
-		ownerLabel
+		ownerLabel,
+		names
 	}: {
 		title: string;
 		note: string;
@@ -32,22 +35,49 @@
 		reasons: (civicKey: string) => string[];
 		ontoggle: (civicKey: string) => void;
 		ownerLabel: string; // where `country` effects go: "capital", "overlord"
+		names: Record<string, string>; // for the requirements' text
 	} = $props();
+
+	// hide the civics that conflict with the draft (a picked one stays), and the buildings only
+	// such civics unlock
+	let hideConflicts = $state(false);
+	const civicKeys = $derived(new Set(civics.map((c) => c.key)));
+	const shownCivic = (key: string) =>
+		!hideConflicts || selected.includes(key) || !civicKeys.has(key) || !reasons(key).length;
+	// a data DB from before the requirement columns has none: no markers rather than wrong ones
+	const requirementsKnown = $derived(buildings.some((b) => b.ownerTrigger !== null));
+	const ACCESS = {
+		everyone: ['every MegaCorp', 'Criminal Syndicates too', 'bg-emerald-500/20 text-emerald-200'],
+		legit: [
+			'every MegaCorp',
+			'a Criminal Syndicate only where it has a commercial pact, a federation or a subject tie with the host',
+			'bg-emerald-500/20 text-emerald-200'
+		],
+		criminal: [
+			'Criminal Syndicate',
+			'a Criminal Syndicate without a commercial pact, federation or subject tie with the host',
+			'bg-red-500/20 text-red-200'
+		],
+		civic: ['civic', 'unlocked by a civic or origin', 'bg-violet-500/20 text-violet-200'],
+		other: ['special', 'needs what is listed beside', 'bg-amber-500/20 text-amber-200']
+	} as const;
 
 	// the job filter: buildings that give or add to any of the jobs picked; none picked, all
 	let jobFilter: string[] = $state([]);
 	const jobsOf = $derived(new Map(buildings.map((b) => [b.key, buildingJobs(b)])));
 	const allJobs = $derived(jobNames(buildings));
 	const shown = $derived(
-		jobFilter.length
-			? buildings.filter((b) => jobsOf.get(b.key)!.some((j) => jobFilter.includes(j.name)))
-			: buildings
+		buildings.filter(
+			(b) =>
+				(!jobFilter.length || jobsOf.get(b.key)!.some((j) => jobFilter.includes(j.name))) &&
+				(!b.unlockedBy.length || b.unlockedBy.some(shownCivic))
+		)
 	);
 	const toggleJob = (name: string) =>
 		(jobFilter = jobFilter.includes(name)
 			? jobFilter.filter((n) => n !== name)
 			: [...jobFilter, name]);
-	const boosts = $derived(civicBoosts(shown, civics));
+	const boosts = $derived(civicBoosts(shown, civics).filter((b) => shownCivic(b.civic.key)));
 	const civicName = $derived(new Map(civics.map((c) => [c.key, c.name ?? c.key])));
 	const where = (e: OwnedBuildingEffect) => (e.scope === 'planet' ? 'colony' : ownerLabel);
 	const num = (n: number) => (Number.isInteger(n) ? n : parseFloat(n.toFixed(2)));
@@ -63,13 +93,31 @@
 		>
 		<span
 			class="shrink-0 font-mono {modifierColor(e.modifier)}"
-			title={jobs === null ? undefined : `${num(e.modifier.value)} workforce`}
-			>{jobs === null ? formatModifierValue(e.modifier) : `+${num(jobs)}`}</span
+			title={jobs === null
+				? undefined
+				: `${num(e.modifier.value)} workforce: ${num(jobs)} job${jobs === 1 ? '' : 's'}`}
+			>{formatModifierValue(e.modifier)}</span
 		>
 	</li>
 {/snippet}
 
+{#snippet marker(b: OwnedBuilding)}
+	{#if requirementsKnown}
+		{@const a = access(b, names)}
+		<span
+			class="rounded px-1.5 text-[10px] {ACCESS[a.kind][2]}"
+			title={[ACCESS[a.kind][1], ...a.needs].join(' · ')}>{ACCESS[a.kind][0]}</span
+		>
+	{/if}
+{/snippet}
+
 {#snippet civicButton(key: string)}
+	{#if civicKeys.has(key)}{@render pickButton(key)}{:else}<span class="px-1.5"
+			>{names[key] ?? key}</span
+		>{/if}
+{/snippet}
+
+{#snippet pickButton(key: string)}
 	{@const on = selected.includes(key)}
 	<button
 		type="button"
@@ -88,8 +136,17 @@
 		<span class="text-sm font-normal opacity-40">· {buildings.length} — {note}</span>
 	</summary>
 
+	<div class="mt-3 flex flex-wrap items-center gap-3 text-xs">
+		<label
+			><input type="checkbox" class="checkbox" bind:checked={hideConflicts} /> hide conflicting civics</label
+		>
+		<span class="opacity-50"
+			>Markers: who may build it — every MegaCorp, a Criminal Syndicate, a civic's — and what else
+			it needs.</span
+		>
+	</div>
 	{#if allJobs.length}
-		<div class="mt-3 flex flex-wrap items-center gap-1 text-xs">
+		<div class="mt-2 flex flex-wrap items-center gap-1 text-xs">
 			<span class="mr-1 opacity-60">Jobs</span>
 			{#each allJobs as name (name)}
 				{@const on = jobFilter.includes(name)}
@@ -123,6 +180,7 @@
 							{#each b.buildings as row (row.building.key)}
 								<div class="mb-1">
 									<span class="font-medium">{row.building.name ?? row.building.key}</span>
+									{@render marker(row.building)}
 									<ul class="space-y-0.5">
 										{#each row.effects as e, i (i)}{@render effect(e, true)}{/each}
 									</ul>
@@ -139,8 +197,33 @@
 	<div class="mt-1 grid gap-3 lg:grid-cols-2 xl:grid-cols-3">
 		{#each shown as b (b.key)}
 			{@const s = splitEffects(b)}
+			{@const a = access(b, names)}
+			{@const boostedBy = boostingCivics(b).filter(shownCivic)}
 			<div class="border-surface-400-500/30 space-y-1 rounded border p-2 text-xs">
-				<div class="font-semibold">{b.name ?? b.key}</div>
+				<div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+					<span class="font-semibold">{b.name ?? b.key}</span>
+					{@render marker(b)}
+				</div>
+				{#if b.unlockedBy.length}
+					<div class="flex flex-wrap items-center gap-1">
+						<span class="text-[10px] uppercase opacity-45">Unlocked by</span>
+						{#each b.unlockedBy.filter(shownCivic) as key, i (key)}{#if i}<span class="opacity-40"
+									>or</span
+								>{/if}{@render civicButton(key)}{/each}
+					</div>
+				{/if}
+				{#if a.needs.length}
+					<div class="opacity-70">
+						<span class="text-[10px] uppercase opacity-60">Needs</span>
+						{a.needs.join(' · ')}
+					</div>
+				{/if}
+				{#if boostedBy.length}
+					<div class="flex flex-wrap items-center gap-1">
+						<span class="text-[10px] uppercase opacity-45">Boosted by</span>
+						{#each boostedBy as key (key)}{@render civicButton(key)}{/each}
+					</div>
+				{/if}
 				{#if jobsOf.get(b.key)!.length}
 					<div class="flex flex-wrap gap-1">
 						{#each jobsOf.get(b.key)! as j (j.name)}
@@ -178,8 +261,11 @@
 						{#each b.jobs as j (j.job)}
 							<li class="flex justify-between gap-3">
 								<span class="opacity-70">{j.name ?? title_(j.job)} Jobs</span>
-								<span class="font-mono" title="{num(j.amount)} workforce"
-									>+{num(j.amount / 100)}</span
+								<span
+									class="font-mono"
+									title="{num(j.amount)} workforce: {num(j.amount / 100)} job{j.amount === 100
+										? ''
+										: 's'}">+{num(j.amount)}</span
 								>
 							</li>
 						{/each}

@@ -13,12 +13,12 @@ import {
 	loadCapitalBuildings
 } from '$lib/server/db';
 import { env } from '$env/dynamic/private';
-import { version as appVersion } from '../../package.json';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = () => ({
-	// The container build passes the git-decorated version (scripts/build-container.sh).
-	appVersion: env.APP_VERSION || appVersion,
+	// git-decorated: by the container build (scripts/build-container.sh), else at dev/build time
+	// (scripts/version.mjs)
+	appVersion: env.APP_VERSION || __APP_VERSION__,
 	gameVersion: loadGameVersion(),
 	names: loadEntityNames(),
 	lockedCivics: loadLockedCivicKeys(),

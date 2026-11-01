@@ -1,6 +1,7 @@
 // Pop jobs, job swaps, reference buildings.
 import { db } from './client';
 import type { Modifier } from './types';
+import type { Trigger } from './traditions';
 
 export interface JobResource {
 	kind: 'produces' | 'upkeep';
@@ -335,6 +336,12 @@ export interface OwnedBuildingEffect {
 export interface OwnedBuilding extends ReferenceBuilding {
 	ownerType: 'corporate' | 'subject_holding';
 	effects: OwnedBuildingEffect[];
+	// what building it takes (#lib/branchOffices.ts `access`); null: none, or a data DB from
+	// before the columns (extraction v0.1.9)
+	ownerTrigger: Trigger | null; // the owner's (branch_office_owner = {…})
+	hostTrigger: Trigger | null; // the host colony's
+	allow: Trigger | null;
+	techs: { key: string; name: string | null }[];
 }
 
 // Buildings someone else owns on a colony: a MegaCorp's branch office buildings and an
@@ -346,13 +353,38 @@ export function loadOwnedBuildings(): OwnedBuilding[] {
 		d.prepare('PRAGMA table_info(building)').all() as Array<{ name: string }>
 	).some((c) => c.name === 'owner_type');
 	if (!hasColumn) return [];
+	const hasRequirements = (
+		d.prepare('PRAGMA table_info(building)').all() as Array<{ name: string }>
+	).some((c) => c.name === 'owner_trigger_json');
 	const owner = new Map(
 		(
 			d
-				.prepare('SELECT key, owner_type FROM building WHERE owner_type IS NOT NULL')
-				.all() as Array<{ key: string; owner_type: OwnedBuilding['ownerType'] }>
-		).map((r) => [r.key, r.owner_type])
+				.prepare(
+					hasRequirements
+						? `SELECT key, owner_type, owner_trigger_json, host_trigger_json, allow_json,
+						          prerequisites_json
+						   FROM building WHERE owner_type IS NOT NULL`
+						: 'SELECT key, owner_type FROM building WHERE owner_type IS NOT NULL'
+				)
+				.all() as Array<{
+				key: string;
+				owner_type: OwnedBuilding['ownerType'];
+				owner_trigger_json?: string | null;
+				host_trigger_json?: string | null;
+				allow_json?: string | null;
+				prerequisites_json?: string | null;
+			}>
+		).map((r) => [r.key, r])
 	);
+	const techName = new Map(
+		(
+			d.prepare('SELECT key, label AS name FROM technology').all() as Array<{
+				key: string;
+				name: string | null;
+			}>
+		).map((r) => [r.key, r.name])
+	);
+	const tree = (s: string | null | undefined): Trigger | null => (s ? JSON.parse(s) : null);
 	const effects = new Map<string, OwnedBuildingEffect[]>();
 	for (const r of d
 		.prepare(
@@ -384,7 +416,19 @@ export function loadOwnedBuildings(): OwnedBuilding[] {
 			condition: r.condition
 		});
 	return loadBuildings().flatMap((b) => {
-		const t = owner.get(b.key);
-		return t ? [{ ...b, ownerType: t, effects: effects.get(b.key) ?? [] }] : [];
+		const r = owner.get(b.key);
+		if (!r) return [];
+		const techs: string[] = r.prerequisites_json ? JSON.parse(r.prerequisites_json) : [];
+		return [
+			{
+				...b,
+				ownerType: r.owner_type,
+				effects: effects.get(b.key) ?? [],
+				ownerTrigger: tree(r.owner_trigger_json),
+				hostTrigger: tree(r.host_trigger_json),
+				allow: tree(r.allow_json),
+				techs: techs.map((key) => ({ key, name: techName.get(key) ?? null }))
+			}
+		];
 	});
 }
