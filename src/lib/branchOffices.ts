@@ -44,7 +44,8 @@ export function civicBoosts(buildings: OwnedBuilding[], civics: Civic[]): CivicB
 	);
 }
 
-/** A job modifier counts workforce (200 = two jobs); the label keeps "Jobs". */
+/** A job modifier counts workforce (200 = two jobs), and shows it so, as the game's texts do
+ * ("adds +200 Trader jobs"); the job count goes in the hover. */
 export function jobCount(e: OwnedBuildingEffect): number | null {
 	return /^job_\w+_add$/.test(e.modifier.key) ? e.modifier.value / 100 : null;
 }

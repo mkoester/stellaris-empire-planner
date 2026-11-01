@@ -63,8 +63,10 @@
 		>
 		<span
 			class="shrink-0 font-mono {modifierColor(e.modifier)}"
-			title={jobs === null ? undefined : `${num(e.modifier.value)} workforce`}
-			>{jobs === null ? formatModifierValue(e.modifier) : `+${num(jobs)}`}</span
+			title={jobs === null
+				? undefined
+				: `${num(e.modifier.value)} workforce: ${num(jobs)} job${jobs === 1 ? '' : 's'}`}
+			>{formatModifierValue(e.modifier)}</span
 		>
 	</li>
 {/snippet}
@@ -178,8 +180,11 @@
 						{#each b.jobs as j (j.job)}
 							<li class="flex justify-between gap-3">
 								<span class="opacity-70">{j.name ?? title_(j.job)} Jobs</span>
-								<span class="font-mono" title="{num(j.amount)} workforce"
-									>+{num(j.amount / 100)}</span
+								<span
+									class="font-mono"
+									title="{num(j.amount)} workforce: {num(j.amount / 100)} job{j.amount === 100
+										? ''
+										: 's'}">+{num(j.amount)}</span
 								>
 							</li>
 						{/each}

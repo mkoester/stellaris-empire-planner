@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Branch offices: job amounts as the game's texts give them, in workforce ("+200 Trader
+  jobs"), the job count on hover (before: +2, the workforce on hover).
+
 ## [0.1.2] - 2026-11-01
 
 ### Added
