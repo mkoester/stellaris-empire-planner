@@ -1,6 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import type { Civic, OwnedBuilding, OwnedBuildingEffect } from '$lib/server/db';
-import { civicBoosts, conditionText, jobCount, splitEffects } from './branchOffices';
+import {
+	buildingJobs,
+	civicBoosts,
+	conditionText,
+	jobCount,
+	jobNames,
+	splitEffects
+} from './branchOffices';
 
 const eff = (
 	scope: 'planet' | 'country',
@@ -76,5 +83,31 @@ describe('jobCount and conditionText', () => {
 		expect(conditionText('exists = planet.owner planet.owner = is_gestalt = no')).toBe(
 			'colony owner: is gestalt = no'
 		);
+	});
+});
+
+describe('buildingJobs', () => {
+	const labelled = (key: string, label: string): OwnedBuildingEffect => ({
+		...eff('planet', key, 100),
+		modifier: { key, value: 100, label, positiveIsGood: true }
+	});
+	const b = {
+		...building('mining', [
+			labelled('planet_miners_trade_produces_add', 'Trade Produced per 100 Miners'),
+			labelled('job_capital_trader_add', 'Capital Trader Jobs'),
+			labelled('planet_doctors_trade_produces_add', 'Trade Produced per 100 Medical Workers'),
+			labelled('planet_crime_floor_add', 'Crime')
+		]),
+		jobs: [{ job: 'miner', name: 'Miner', amount: 200, resources: [] }]
+	} as OwnedBuilding;
+	it('names the jobs it gives and the ones it adds to, each once', () => {
+		expect(buildingJobs(b)).toEqual([
+			{ name: 'Miner', adds: true, boosts: true },
+			{ name: 'Capital Trader', adds: true, boosts: false },
+			{ name: 'Medical Workers', adds: false, boosts: true } // no singular to match
+		]);
+	});
+	it('lists the filter choices sorted', () => {
+		expect(jobNames([b])).toEqual(['Capital Trader', 'Medical Workers', 'Miner']);
 	});
 });

@@ -26,7 +26,14 @@
 	let leaderClass: string | null = $state(null);
 	let sort: SeatSort = $state('seat');
 	const classes = $derived(seatClasses(council));
-	const rows = $derived(councilSeatRows(civics, council, { query, leaderClass, sort }));
+	// hide the civics that conflict with the draft; a picked one stays
+	let hideConflicts = $state(false);
+	const allRows = $derived(councilSeatRows(civics, council, { query, leaderClass, sort }));
+	const rows = $derived(
+		hideConflicts
+			? allRows.filter((r) => selected.includes(r.civic.key) || reasons(r.civic.key).length === 0)
+			: allRows
+	);
 	const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 </script>
 
@@ -52,6 +59,9 @@
 				<option value="civic">civic</option>
 				<option value="group">civic type</option>
 			</select></label
+		>
+		<label
+			><input type="checkbox" class="checkbox" bind:checked={hideConflicts} /> hide conflicting civics</label
 		>
 		<span class="opacity-50">The filter above searches seats and their effects too.</span>
 	</div>
