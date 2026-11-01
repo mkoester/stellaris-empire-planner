@@ -22,6 +22,7 @@
 	import ConflictBadge from '$lib/ConflictBadge.svelte';
 	import AscensionChips from '$lib/AscensionChips.svelte';
 	import BuildingChips from '$lib/BuildingChips.svelte';
+	import UnlockChips from '$lib/UnlockChips.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
 	import CapitalContributions from '$lib/CapitalContributions.svelte';
@@ -177,6 +178,11 @@
 						{/if}
 
 						<BuildingChips buildings={data.buildings[origin.key] ?? []} />
+						{#if data.unlocks[`origin:${origin.key}`]}
+							<div class="flex flex-wrap gap-1">
+								<UnlockChips unlocks={data.unlocks[`origin:${origin.key}`]} names={data.names} />
+							</div>
+						{/if}
 
 						{#if mods.main.length || mods.attunement.length}
 							{#snippet modRow(mod: (typeof mods.main)[number], muted: boolean)}

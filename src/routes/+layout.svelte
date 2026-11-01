@@ -24,7 +24,8 @@
 		{ href: '/ships', label: 'Ships' },
 		{ href: '/names', label: 'Names' },
 		{ href: '/flag', label: 'Flag' },
-		{ href: '/room', label: 'Room' }
+		{ href: '/room', label: 'Room' },
+		{ href: '/help', label: 'Help me choose' }
 	] as const;
 
 	// Reference game-data tables that augment the planner (not part of empire creation) —

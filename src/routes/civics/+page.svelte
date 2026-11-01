@@ -23,8 +23,9 @@
 	import AscensionChips from '$lib/AscensionChips.svelte';
 	import BuildingChips from '$lib/BuildingChips.svelte';
 	import CouncilChip from '$lib/CouncilChip.svelte';
-	import CouncilSeatTable from '$lib/CouncilSeatTable.svelte';
-	import OwnedBuildingTable from '$lib/OwnedBuildingTable.svelte';
+	import BranchOfficeChip from '$lib/BranchOfficeChip.svelte';
+	import UnlockChips from '$lib/UnlockChips.svelte';
+	import { civicBoosts } from '$lib/branchOffices';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
 	import CapitalContributions from '$lib/CapitalContributions.svelte';
@@ -36,6 +37,15 @@
 	// Cross-section conflicts (warn only — see $lib/compat).
 	const compat = $derived(compatChecker(empire.draft, data));
 	const civics = $derived(data.civics as Civic[]);
+	// what each civic adds to a MegaCorp's branch offices (the table: "Help me choose")
+	const boosts = $derived(
+		new Map(
+			civicBoosts(
+				data.owned.filter((b) => b.ownerType === 'corporate'),
+				civics
+			).map((b) => [b.civic.key, b])
+		)
+	);
 	const jobSwaps = $derived((data.jobSwaps ?? {}) as Record<string, JobSwap[]>);
 	// Debug: render selectable cards as plain elements so their text can be copied.
 	const debug = $derived(data.debugDisableSelection);
@@ -94,27 +104,6 @@
 		</button>
 	</div>
 
-	<CouncilSeatTable
-		{civics}
-		council={data.council}
-		{query}
-		selected={empire.draft.civics}
-		reasons={(k) => compat.reasons('civic', k)}
-		ontoggle={(k) => empire.toggleCivic(k)}
-	/>
-	{#if empire.draft.authority === 'auth_corporate'}
-		<OwnedBuildingTable
-			title="Branch offices"
-			note="what each building gives the colony and your capital, and the civics that add to them"
-			buildings={data.owned.filter((b) => b.ownerType === 'corporate')}
-			{civics}
-			selected={empire.draft.civics}
-			reasons={(k) => compat.reasons('civic', k)}
-			ontoggle={(k) => empire.toggleCivic(k)}
-			ownerLabel="capital"
-		/>
-	{/if}
-
 	<JumpLinks links={sectionLinks(groups)} />
 	{#each groups as group (group.type)}
 		<section id={sectionId(group.label)} class="scroll-mt-16 space-y-3">
@@ -130,6 +119,7 @@
 					{@const conflicts = compat.reasons('civic', civic.key)}
 					{@const mods = sortModifiers(civic.modifiers)}
 					{@const swaps = jobSwaps[civic.key] ?? []}
+					{@const unlocks = data.unlocks[`civic:${civic.key}`]}
 					<!-- svelte-ignore a11y_no_static_element_interactions -->
 					<svelte:element
 						this={debug ? 'div' : 'button'}
@@ -166,10 +156,13 @@
 						<!-- Requirements / exclusions (toggle per card, or all via the button above). -->
 						<RequirementRow lines={reqs} />
 
-						<!-- What the civic adds beyond modifiers: a council seat, unlocked buildings. -->
-						{#if data.council[civic.key] || data.buildings[civic.key]}
+						<!-- What the civic adds beyond modifiers: a council seat, unlocked buildings,
+						     branch offices, agendas and edicts. -->
+						{#if data.council[civic.key] || data.buildings[civic.key] || boosts.has(civic.key) || unlocks}
 							<div class="flex flex-wrap items-center gap-1">
 								{#if data.council[civic.key]}<CouncilChip position={data.council[civic.key]} />{/if}
+								{#if boosts.has(civic.key)}<BranchOfficeChip boost={boosts.get(civic.key)!} />{/if}
+								<UnlockChips {unlocks} names={data.names} />
 								<BuildingChips buildings={data.buildings[civic.key] ?? []} />
 							</div>
 						{/if}

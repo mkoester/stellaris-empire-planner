@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
+	import UnlockChips from '$lib/UnlockChips.svelte';
 	import type { Authority } from '$lib/server/db';
 	import { dlcBadge } from '$lib/precursors';
 	import Tip from '$lib/Tip.svelte';
@@ -102,6 +103,12 @@
 								>{r.type === 'require' ? 'needs' : 'excl.'} {r.text}</span
 							>
 						{/each}
+					</div>
+				{/if}
+
+				{#if data.unlocks[`authority:${authority.key}`]}
+					<div class="flex flex-wrap gap-1">
+						<UnlockChips unlocks={data.unlocks[`authority:${authority.key}`]} names={data.names} />
 					</div>
 				{/if}
 
