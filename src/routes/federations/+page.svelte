@@ -4,7 +4,6 @@
 	import { resolve } from '$app/paths';
 	import EmpireProfileBar from '$lib/EmpireProfileBar.svelte';
 	import RequirementChips from '$lib/RequirementChips.svelte';
-	import BackToTop from '$lib/BackToTop.svelte';
 	import JumpLinks from '$lib/JumpLinks.svelte';
 	import FederationLink from '$lib/FederationLink.svelte';
 	import Tip from '$lib/Tip.svelte';
@@ -216,5 +215,3 @@
 		{/each}
 	</section>
 </main>
-
-<BackToTop />

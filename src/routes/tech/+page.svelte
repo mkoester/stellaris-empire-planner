@@ -1,4 +1,6 @@
 <script lang="ts">
+	import JumpLinks from '$lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '$lib/sections';
 	import type { PageData } from './$types';
 	import type { RepeatableTech } from '$lib/server/db';
 	import { formatModifierValue, modifierLabel, modifierColor } from '$lib/civics';
@@ -55,8 +57,9 @@
 		</p>
 	</div>
 
+	<JumpLinks links={sectionLinks(byArea)} />
 	{#each byArea as area (area.key)}
-		<section class="space-y-5">
+		<section id={sectionId(area.label)} class="scroll-mt-16 space-y-5">
 			<h2 class="text-xl font-bold {AREA_COLOR[area.key] ?? ''}">{area.label}</h2>
 
 			{#each area.categories as cat (cat.key)}

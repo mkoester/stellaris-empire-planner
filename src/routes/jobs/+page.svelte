@@ -1,4 +1,6 @@
 <script lang="ts">
+	import JumpLinks from '$lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '$lib/sections';
 	import type { PageData } from './$types';
 	import type { Job } from '$lib/server/db';
 	import { formatModifierValue, modifierLabel, modifierColor } from '$lib/civics';
@@ -64,8 +66,9 @@
 
 	<input class="input max-w-sm" type="search" placeholder="Filter jobs…" bind:value={query} />
 
+	<JumpLinks links={sectionLinks(groups)} />
 	{#each groups as group (group.category)}
-		<section class="space-y-3">
+		<section id={sectionId(group.label)} class="scroll-mt-16 space-y-3">
 			<h2 class="text-lg font-semibold">
 				{group.label}
 				<span class="text-sm font-normal opacity-40">· {group.items.length}</span>

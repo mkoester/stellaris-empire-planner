@@ -336,7 +336,7 @@ Both evaluate the stored trigger trees against an **`EmpireProfile`** ([`src/lib
 - Perk tiers are per profile: `perkTier` = fewest perks for which `possible` isn't false, with unknown origins/civics assumed absent.
 - Cost calculator: `traditionCost` from the `game_define` values (formula matches the wiki).
 - **Edict/agenda tooltips**: `loadUnlockables()` + `unlocksFor(item, …)` link by tradition/perk key **and** swap loc keys, filtered by the profile; same-named variants merge into one tooltip (`edictTip`/`agendaTip`). `EffectList` makes their names in the game's tooltip text hoverable (`linkify`), and adds an "Unlocks …" line for those the text doesn't name.
-- Navigation: `JumpLinks` (sections + every tree) at the top, `BackToTop` floating button (left of the xl EmpireOverview panel); anchors use `scroll-mt-16` for the sticky nav.
+- Navigation: `JumpLinks` (sections + every tree) at the top; anchors use `scroll-mt-16` for the sticky nav. `BackToTop` (left of the xl EmpireOverview panel) is in the root layout since 2026-11-01, on every page once scrolled 600 px. Pages grouped into sections (civics, origins, jobs, buildings, tech, fallen-empire-tech, precursors) get their JumpLinks and anchors from `$lib/sections.ts` (`sectionLinks`, `sectionId`: `sec-<slug of the label>`).
 
 ### `/federations` — Federations (Information)
 

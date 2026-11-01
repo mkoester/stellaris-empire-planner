@@ -6,6 +6,13 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- "Jump to" links on the pages grouped into sections (civics, origins, jobs, buildings, repeatable
+  and fallen empire techs, precursors).
+- A floating "↑ Top" button on every page once it is scrolled down (before: traditions, ascension
+  perks and federations only).
+
 ## [0.1.1] - 2026-10-27
 
 ### Added
