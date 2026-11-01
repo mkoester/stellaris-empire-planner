@@ -101,6 +101,16 @@
 	</li>
 {/snippet}
 
+{#snippet marker(b: OwnedBuilding)}
+	{#if requirementsKnown}
+		{@const a = access(b, names)}
+		<span
+			class="rounded px-1.5 text-[10px] {ACCESS[a.kind][2]}"
+			title={[ACCESS[a.kind][1], ...a.needs].join(' · ')}>{ACCESS[a.kind][0]}</span
+		>
+	{/if}
+{/snippet}
+
 {#snippet civicButton(key: string)}
 	{#if civicKeys.has(key)}{@render pickButton(key)}{:else}<span class="px-1.5"
 			>{names[key] ?? key}</span
@@ -170,6 +180,7 @@
 							{#each b.buildings as row (row.building.key)}
 								<div class="mb-1">
 									<span class="font-medium">{row.building.name ?? row.building.key}</span>
+									{@render marker(row.building)}
 									<ul class="space-y-0.5">
 										{#each row.effects as e, i (i)}{@render effect(e, true)}{/each}
 									</ul>
@@ -191,11 +202,7 @@
 			<div class="border-surface-400-500/30 space-y-1 rounded border p-2 text-xs">
 				<div class="flex flex-wrap items-baseline gap-x-2 gap-y-1">
 					<span class="font-semibold">{b.name ?? b.key}</span>
-					{#if requirementsKnown}
-						<span class="rounded px-1.5 text-[10px] {ACCESS[a.kind][2]}" title={ACCESS[a.kind][1]}
-							>{ACCESS[a.kind][0]}</span
-						>
-					{/if}
+					{@render marker(b)}
 				</div>
 				{#if b.unlockedBy.length}
 					<div class="flex flex-wrap items-center gap-1">
