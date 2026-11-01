@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.2] - 2026-11-01
 
 ### Added
 
@@ -17,7 +17,7 @@ All notable changes to this project are documented here. The format follows
   - **Branch offices** — each MegaCorp branch office building with what it gives the host colony
     and your capital, a badge per job it gives or adds to (↑: adds to its output) and a job
     filter, and the civics that add to which building, each a button that picks it. Needs the
-    extraction's `building.owner_type` (2026-11-01).
+    extraction's `building.owner_type` (v0.1.8).
   - **Agendas and edicts** — the council agendas and edicts a civic, origin or authority opens,
     each pick a button that picks it; conflicting picks can be hidden.
 - Civic, origin and authority cards: a chip per council agenda or edict the pick opens (what it
