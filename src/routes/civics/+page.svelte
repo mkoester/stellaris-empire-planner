@@ -23,6 +23,8 @@
 	import AscensionChips from '$lib/AscensionChips.svelte';
 	import BuildingChips from '$lib/BuildingChips.svelte';
 	import CouncilChip from '$lib/CouncilChip.svelte';
+	import CouncilSeatTable from '$lib/CouncilSeatTable.svelte';
+	import OwnedBuildingTable from '$lib/OwnedBuildingTable.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
 	import CapitalContributions from '$lib/CapitalContributions.svelte';
@@ -91,6 +93,27 @@
 			{settings.showExclusions ? 'Hide exclusions' : 'Show exclusions'}
 		</button>
 	</div>
+
+	<CouncilSeatTable
+		{civics}
+		council={data.council}
+		{query}
+		selected={empire.draft.civics}
+		reasons={(k) => compat.reasons('civic', k)}
+		ontoggle={(k) => empire.toggleCivic(k)}
+	/>
+	{#if empire.draft.authority === 'auth_corporate'}
+		<OwnedBuildingTable
+			title="Branch offices"
+			note="what each building gives the colony and your capital, and the civics that add to them"
+			buildings={data.owned.filter((b) => b.ownerType === 'corporate')}
+			{civics}
+			selected={empire.draft.civics}
+			reasons={(k) => compat.reasons('civic', k)}
+			ontoggle={(k) => empire.toggleCivic(k)}
+			ownerLabel="capital"
+		/>
+	{/if}
 
 	<JumpLinks links={sectionLinks(groups)} />
 	{#each groups as group (group.type)}

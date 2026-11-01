@@ -3,7 +3,8 @@ import {
 	loadCouncilPositions,
 	loadCivics,
 	loadFederations,
-	loadJobSwapsBySource
+	loadJobSwapsBySource,
+	loadOwnedBuildings
 } from '$lib/server/db';
 import type { PageServerLoad } from './$types';
 
@@ -12,5 +13,6 @@ export const load: PageServerLoad = () => ({
 	jobSwaps: loadJobSwapsBySource(),
 	council: loadCouncilPositions(),
 	buildings: loadBuildingsByUnlock(),
+	owned: loadOwnedBuildings(), // branch office buildings and holdings
 	federationTypes: loadFederations().federationTypes // "Can / Cannot form" lines
 });

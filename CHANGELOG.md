@@ -10,6 +10,11 @@ All notable changes to this project are documented here. The format follows
 
 - "Jump to" links on the pages grouped into sections (civics, origins, jobs, buildings, repeatable
   and fallen empire techs, precursors).
+- Civics: **Council seats** — every seat a civic opens, side by side (who can hold it, what it
+  gives per leader level), filterable by effect and leader class; picking a row picks its civic.
+- Civics, for a MegaCorp (Corporate authority): **Branch offices** — each branch office building
+  with what it gives the host colony and your capital, and the civics that add to which building,
+  each civic a button that picks it. Needs the extraction's `building.owner_type` (2026-11-01).
 - A floating "↑ Top" button on every page once it is scrolled down (before: traditions, ascension
   perks and federations only).
 

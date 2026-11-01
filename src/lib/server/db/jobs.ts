@@ -321,3 +321,70 @@ export function loadBuildingsByUnlock(): Record<string, ReferenceBuilding[]> {
 	for (const b of loadBuildings()) for (const owner of b.unlockedBy) (out[owner] ??= []).push(b);
 	return out;
 }
+
+// ── Branch offices and holdings ───────────────────────────────────────────────
+
+// One effect of a branch office building or holding, its gate kept: `scope` 'planet' is the
+// host colony, 'country' the owner (a branch office's corporate owner — jobs on its capital).
+export interface OwnedBuildingEffect {
+	scope: 'planet' | 'country';
+	modifier: Modifier;
+	ownerCivic: string | null; // only while the owner has this civic
+	condition: string | null; // any other gate, as the game's trigger text
+}
+export interface OwnedBuilding extends ReferenceBuilding {
+	ownerType: 'corporate' | 'subject_holding';
+	effects: OwnedBuildingEffect[];
+}
+
+// Buildings someone else owns on a colony: a MegaCorp's branch office buildings and an
+// overlord's holdings (data DB `building.owner_type`, `building_conditional_modifier`). Empty on
+// a data DB from before the column (extractor 2026-11-01).
+export function loadOwnedBuildings(): OwnedBuilding[] {
+	const d = db();
+	const hasColumn = (
+		d.prepare('PRAGMA table_info(building)').all() as Array<{ name: string }>
+	).some((c) => c.name === 'owner_type');
+	if (!hasColumn) return [];
+	const owner = new Map(
+		(
+			d
+				.prepare('SELECT key, owner_type FROM building WHERE owner_type IS NOT NULL')
+				.all() as Array<{ key: string; owner_type: OwnedBuilding['ownerType'] }>
+		).map((r) => [r.key, r.owner_type])
+	);
+	const effects = new Map<string, OwnedBuildingEffect[]>();
+	for (const r of d
+		.prepare(
+			`SELECT cm.building_key, cm.scope, cm.modifier_key, cm.value, cm.owner_civic, cm.condition,
+			        ml.label, ml.positive_is_good
+			 FROM building_conditional_modifier cm
+			 LEFT JOIN modifier_label ml ON ml.modifier_key = cm.modifier_key
+			 ORDER BY cm.building_key, cm.sort_order`
+		)
+		.all() as Array<{
+		building_key: string;
+		scope: OwnedBuildingEffect['scope'];
+		modifier_key: string;
+		value: number;
+		owner_civic: string | null;
+		condition: string | null;
+		label: string | null;
+		positive_is_good: number | null;
+	}>)
+		(effects.get(r.building_key) ?? effects.set(r.building_key, []).get(r.building_key)!).push({
+			scope: r.scope,
+			modifier: {
+				key: r.modifier_key,
+				value: r.value,
+				label: r.label,
+				positiveIsGood: r.positive_is_good !== 0
+			},
+			ownerCivic: r.owner_civic,
+			condition: r.condition
+		});
+	return loadBuildings().flatMap((b) => {
+		const t = owner.get(b.key);
+		return t ? [{ ...b, ownerType: t, effects: effects.get(b.key) ?? [] }] : [];
+	});
+}
