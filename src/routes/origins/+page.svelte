@@ -1,4 +1,6 @@
 <script lang="ts">
+	import JumpLinks from '$lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '$lib/sections';
 	import type { PageData } from './$types';
 	import type { Origin } from '$lib/server/db';
 	import { dlcBadge } from '$lib/precursors';
@@ -20,6 +22,7 @@
 	import ConflictBadge from '$lib/ConflictBadge.svelte';
 	import AscensionChips from '$lib/AscensionChips.svelte';
 	import BuildingChips from '$lib/BuildingChips.svelte';
+	import UnlockChips from '$lib/UnlockChips.svelte';
 	import { compatChecker } from '$lib/compat';
 	import { conflictClass } from '$lib/conflict';
 	import CapitalContributions from '$lib/CapitalContributions.svelte';
@@ -102,8 +105,9 @@
 		</button>
 	</div>
 
+	<JumpLinks links={sectionLinks(groups)} />
 	{#each groups as group (group.label)}
-		<section class="space-y-3">
+		<section id={sectionId(group.label)} class="scroll-mt-16 space-y-3">
 			<h2 class="flex items-center gap-2 text-lg font-semibold">
 				{group.label}
 				{#if group.dlc}
@@ -174,6 +178,11 @@
 						{/if}
 
 						<BuildingChips buildings={data.buildings[origin.key] ?? []} />
+						{#if data.unlocks[`origin:${origin.key}`]}
+							<div class="flex flex-wrap gap-1">
+								<UnlockChips unlocks={data.unlocks[`origin:${origin.key}`]} names={data.names} />
+							</div>
+						{/if}
 
 						{#if mods.main.length || mods.attunement.length}
 							{#snippet modRow(mod: (typeof mods.main)[number], muted: boolean)}

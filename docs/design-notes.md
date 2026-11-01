@@ -243,6 +243,8 @@ Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder �
 
 **Page data:** `{ civics }` — selectable `Civic[]` from `loadCivics()`. Grouped by type (Regular / Gestalt / Corporate / Special) via `groupCivicsByType`; a free-text filter over name+description; each card shows needs/excludes chips (`civicRequirementLines`), numeric modifiers, and the cleaned effects description. **Cards are selectable** (multi-toggle → `empire.toggleCivic`, highlighted from `empire.draft.civics`).
 
+**Help me choose** (2026-11-01, above the cards, both folded): **Council seats** (`CouncilSeatTable.svelte`, rows from `councilSeatRows()` in `$lib/council.ts` over `data.council` — the civic seats of `loadCouncilPositions()`; the page filter searches seat, civic, leader classes and effect labels too; leader-class and sort selects; each row's civic button toggles the civic, conflicts as on the cards). **Branch offices**, only with `auth_corporate` (`OwnedBuildingTable.svelte`, `$lib/branchOffices.ts`, `data.owned` from `loadOwnedBuildings()`: the data DB's `building.owner_type` and `building_conditional_modifier`, empty on an older DB): per civic the buildings it adds to (`civicBoosts()`: effects gated on `branch_office_owner = { has_valid_civic }`), then every building — cost and output (`produces` goes to the corporation × branch office value), what the colony gets (jobs, ungated planet modifiers), what the capital gets (ungated country modifiers), with a civic (dimmed unless picked), under other conditions (`conditionText()`). Holdings (`subject_holding`) are loaded but not shown: they are built in game, not chosen at creation, and their country scope (overlord?) is not checked.
+
 ### `/origins` — Origins (`src/routes/origins/+page.svelte`)
 
 **Page data:** `{ origins }` from `loadOrigins()`. Grouped by DLC (base game first), free-text filter; each card shows needs/excludes chips + modifiers + cleaned description. **Single-select** (`empire.setOrigin`, highlighted from `empire.draft.origin`).
@@ -336,7 +338,7 @@ Both evaluate the stored trigger trees against an **`EmpireProfile`** ([`src/lib
 - Perk tiers are per profile: `perkTier` = fewest perks for which `possible` isn't false, with unknown origins/civics assumed absent.
 - Cost calculator: `traditionCost` from the `game_define` values (formula matches the wiki).
 - **Edict/agenda tooltips**: `loadUnlockables()` + `unlocksFor(item, …)` link by tradition/perk key **and** swap loc keys, filtered by the profile; same-named variants merge into one tooltip (`edictTip`/`agendaTip`). `EffectList` makes their names in the game's tooltip text hoverable (`linkify`), and adds an "Unlocks …" line for those the text doesn't name.
-- Navigation: `JumpLinks` (sections + every tree) at the top, `BackToTop` floating button (left of the xl EmpireOverview panel); anchors use `scroll-mt-16` for the sticky nav.
+- Navigation: `JumpLinks` (sections + every tree) at the top; anchors use `scroll-mt-16` for the sticky nav. `BackToTop` (left of the xl EmpireOverview panel) is in the root layout since 2026-11-01, on every page once scrolled 600 px. Pages grouped into sections (civics, origins, jobs, buildings, tech, fallen-empire-tech, precursors) get their JumpLinks and anchors from `$lib/sections.ts` (`sectionLinks`, `sectionId`: `sec-<slug of the label>`).
 
 ### `/federations` — Federations (Information)
 

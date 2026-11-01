@@ -5,7 +5,6 @@
 	import ProfileChips from '$lib/ProfileChips.svelte';
 	import RequirementChips from '$lib/RequirementChips.svelte';
 	import EffectList from '$lib/EffectList.svelte';
-	import BackToTop from '$lib/BackToTop.svelte';
 	import JumpLinks from '$lib/JumpLinks.svelte';
 	import Tip from '$lib/Tip.svelte';
 	import { settings } from '$lib/settings.svelte';
@@ -310,8 +309,6 @@
 		<p class="text-sm opacity-60">No tree matches.</p>
 	{/if}
 </main>
-
-<BackToTop />
 
 {#snippet node(tree: TraditionTree, t: Tradition, profile: EmpireProfile, hits: Set<string> | null)}
 	{@const e = effective(t, profile)}

@@ -4,7 +4,6 @@
 	import EmpireProfileBar from '$lib/EmpireProfileBar.svelte';
 	import RequirementChips from '$lib/RequirementChips.svelte';
 	import EffectList from '$lib/EffectList.svelte';
-	import BackToTop from '$lib/BackToTop.svelte';
 	import JumpLinks from '$lib/JumpLinks.svelte';
 	import Tip from '$lib/Tip.svelte';
 	import { settings } from '$lib/settings.svelte';
@@ -215,5 +214,3 @@
 		<p class="text-sm opacity-60">No perk matches.</p>
 	{/if}
 </main>
-
-<BackToTop />

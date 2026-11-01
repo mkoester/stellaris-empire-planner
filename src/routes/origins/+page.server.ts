@@ -1,8 +1,15 @@
-import { loadBuildingsByUnlock, loadOrigins, loadJobSwapsBySource } from '$lib/server/db';
+import { unlocksByPick } from '$lib/unlocks';
+import {
+	loadBuildingsByUnlock,
+	loadOrigins,
+	loadJobSwapsBySource,
+	loadPickUnlocks
+} from '$lib/server/db';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => ({
 	origins: loadOrigins(),
 	jobSwaps: loadJobSwapsBySource(),
-	buildings: loadBuildingsByUnlock()
+	buildings: loadBuildingsByUnlock(),
+	unlocks: unlocksByPick(loadPickUnlocks()) // agendas and edicts it opens, by "kind:key"
 });

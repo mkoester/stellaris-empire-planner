@@ -64,7 +64,7 @@ export interface AscensionPerk {
 
 const parse = (s: string | null): Trigger | null => (s === null ? null : JSON.parse(s));
 
-function loadModifiers(): Map<string, ConditionalModifier[]> {
+export function loadModifiers(): Map<string, ConditionalModifier[]> {
 	const rows = db()
 		.prepare(
 			`SELECT m.owner_key, m.modifier_key, m.modifier_value, m.potential_json,

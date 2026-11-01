@@ -1,9 +1,12 @@
+import { unlocksByPick } from '$lib/unlocks';
 import {
 	loadBuildingsByUnlock,
 	loadCouncilPositions,
 	loadCivics,
 	loadFederations,
-	loadJobSwapsBySource
+	loadJobSwapsBySource,
+	loadOwnedBuildings,
+	loadPickUnlocks
 } from '$lib/server/db';
 import type { PageServerLoad } from './$types';
 
@@ -12,5 +15,7 @@ export const load: PageServerLoad = () => ({
 	jobSwaps: loadJobSwapsBySource(),
 	council: loadCouncilPositions(),
 	buildings: loadBuildingsByUnlock(),
-	federationTypes: loadFederations().federationTypes // "Can / Cannot form" lines
+	owned: loadOwnedBuildings(), // branch office buildings and holdings
+	federationTypes: loadFederations().federationTypes, // "Can / Cannot form" lines
+	unlocks: unlocksByPick(loadPickUnlocks()) // agendas and edicts it opens, by "kind:key"
 });

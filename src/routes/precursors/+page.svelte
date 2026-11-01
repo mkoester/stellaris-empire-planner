@@ -1,4 +1,6 @@
 <script lang="ts">
+	import JumpLinks from '$lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '$lib/sections';
 	import type { PageData } from './$types';
 	import type { Precursor, PrecursorPlanet, PrecursorBuilding } from '$lib/server/db';
 	import {
@@ -215,8 +217,9 @@
 		{/each}
 	</div>
 
+	<JumpLinks links={sectionLinks(groups)} />
 	{#each groups as group (group.label)}
-		<section class="space-y-3">
+		<section id={sectionId(group.label)} class="scroll-mt-16 space-y-3">
 			<h2 class="flex items-center gap-2 text-lg font-semibold">
 				{group.label}
 				{#if group.dlc}

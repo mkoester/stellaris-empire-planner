@@ -3,6 +3,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
+	import BackToTop from '$lib/BackToTop.svelte';
 	import EmpireOverview from '$lib/EmpireOverview.svelte';
 	import Tip from '$lib/Tip.svelte';
 	import { settings } from '$lib/settings.svelte';
@@ -23,7 +24,8 @@
 		{ href: '/ships', label: 'Ships' },
 		{ href: '/names', label: 'Names' },
 		{ href: '/flag', label: 'Flag' },
-		{ href: '/room', label: 'Room' }
+		{ href: '/room', label: 'Room' },
+		{ href: '/help', label: 'Help me choose' }
 	] as const;
 
 	// Reference game-data tables that augment the planner (not part of empire creation) —
@@ -123,6 +125,9 @@
 </nav>
 
 {@render children()}
+
+<!-- Back to the top of any page once it has been scrolled down (hidden on short pages). -->
+<BackToTop />
 
 <footer class="px-4 py-3 text-center text-[11px] opacity-40">
 	Unofficial fan project, not affiliated with Paradox Interactive. Stellaris and all game data and
