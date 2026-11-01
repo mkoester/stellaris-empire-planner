@@ -4,7 +4,7 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.3] - 2026-11-01
 
 ### Added
 
@@ -12,7 +12,7 @@ All notable changes to this project are documented here. The format follows
   Syndicate only with a tie to the host), a Criminal Syndicate, a civic's (with the civics or
   origin that unlock it) or special —, what else it needs (a tech, 25+ pops on the colony, an
   upgraded capital), the civics that boost it, and "hide conflicting civics" as on council seats.
-  Needs the extraction's `building.owner_trigger_json` and siblings (after v0.1.8); without them
+  Needs the extraction's `building.owner_trigger_json` and siblings (v0.1.9); without them
   the markers stay hidden.
   The same markers stand next to each building in "Civics that add to them".
 
