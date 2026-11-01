@@ -51,6 +51,7 @@
 		reasons={(k) => compat.reasons('civic', k)}
 		ontoggle={(k) => empire.toggleCivic(k)}
 		ownerLabel="capital"
+		names={{ ...data.names, ...data.traditionPerkNames }}
 	/>
 	<UnlockTable
 		unlocks={data.unlocks}

@@ -14,13 +14,7 @@ export function loadPickUnlocks(): Unlock[] {
 	const d = db();
 	const mods = loadModifiers();
 	// what else they need names traditions and ascension perks, too
-	const extra = d
-		.prepare(
-			`SELECT key, name FROM tradition WHERE name IS NOT NULL
-			 UNION ALL SELECT key, name FROM ascension_perk WHERE name IS NOT NULL`
-		)
-		.all() as Array<{ key: string; name: string }>;
-	const needNames = Object.fromEntries(extra.map((r) => [r.key, r.name]));
+	const needNames = loadTraditionPerkNames();
 	const rows = [
 		...(
 			d
@@ -77,3 +71,14 @@ type Row = {
 	potential_json: string | null;
 	allow_json: string | null;
 };
+
+/** Tradition and ascension perk names by key, for requirement texts. */
+export function loadTraditionPerkNames(): Record<string, string> {
+	const rows = db()
+		.prepare(
+			`SELECT key, name FROM tradition WHERE name IS NOT NULL
+			 UNION ALL SELECT key, name FROM ascension_perk WHERE name IS NOT NULL`
+		)
+		.all() as Array<{ key: string; name: string }>;
+	return Object.fromEntries(rows.map((r) => [r.key, r.name]));
+}

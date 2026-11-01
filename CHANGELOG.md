@@ -6,6 +6,15 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Branch offices: a marker on each building for who may build it — every MegaCorp (a Criminal
+  Syndicate only with a tie to the host), a Criminal Syndicate, a civic's (with the civics or
+  origin that unlock it) or special —, what else it needs (a tech, 25+ pops on the colony, an
+  upgraded capital), the civics that boost it, and "hide conflicting civics" as on council seats.
+  Needs the extraction's `building.owner_trigger_json` and siblings (after v0.1.8); without them
+  the markers stay hidden.
+
 ### Changed
 
 - Branch offices: job amounts as the game's texts give them, in workforce ("+200 Trader
