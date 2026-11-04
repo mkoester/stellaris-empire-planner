@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.4] - 2026-11-04
+
+### Added
+
+- Bugs and feedback go to the planner's forum on the Mirko's paradox Discord: linked from the
+  home page, the footer, and a Discord icon in the header (before the versions).
+
 ## [0.1.3] - 2026-11-01
 
 ### Added

@@ -48,3 +48,12 @@ consistent if you do.
   hardcode a version string.
 - DB access stays inside `src/lib/server/db/`; routes consume its functions rather than issuing
   their own SQL.
+- **Helpers that compare picks side by side live on "Help me choose"** (`src/routes/help`):
+  council seats, branch offices, agendas and edicts — one folded table each, picking from it
+  picking for the empire. What a helper shows about one pick goes on that pick's card too (a chip
+  with a popup: `CouncilChip`, `BranchOfficeChip`, `UnlockChips`). Page-specific tools (the
+  tradition cost calculator, the starting-capital tables) stay on their pages.
+- **The version in the nav is git-decorated** (`scripts/version.mjs`, injected by Vite as
+  `__APP_VERSION__`): plain on a clean `main` or a `v<version>` tag, `-<hash>` elsewhere,
+  `-SNAPSHOT` when dirty. The container build passes its own `APP_VERSION` (the image has no
+  git), which wins. Read at dev-server start: restart `pnpm dev` after a commit to see it change.
