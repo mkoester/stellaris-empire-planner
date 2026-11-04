@@ -8,8 +8,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-- A "Bugs & feedback (Discord)" link in the footer and a Discord icon in the header (before
-  the versions), to the planner's forum on the Mirko's paradox Discord.
+- Bugs and feedback go to the planner's forum on the Mirko's paradox Discord: linked from the
+  home page, the footer, and a Discord icon in the header (before the versions).
 
 ## [0.1.3] - 2026-11-01
 

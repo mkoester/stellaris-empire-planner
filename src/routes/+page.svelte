@@ -47,8 +47,11 @@
 		<div class="space-y-3 leading-relaxed opacity-80">
 			<p>
 				This is an <strong>early alpha</strong>. It's shared at this stage mainly to
-				<strong>gather feedback from other Stellaris players</strong> — what's useful, what's confusing,
-				and what's missing.
+				<strong>gather feedback from other Stellaris players</strong> — what's useful, what's
+				confusing, and what's missing. Post it in the
+				<a href="https://discord.gg/7pcbj5abfE" target="_blank" rel="noopener" class="underline"
+					>empire-planner forum on Discord</a
+				> — bugs too.
 			</p>
 			<p>
 				Most of the planned features are already here, but expect <strong
