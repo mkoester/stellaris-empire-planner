@@ -135,6 +135,8 @@
 	<a href="https://github.com/mkoester/stellaris-empire-planner" class="underline"
 		>Source (AGPL-3.0)</a
 	>
+	·
+	<a href="https://discord.gg/7pcbj5abfE" class="underline">Bugs &amp; feedback (Discord)</a>
 </footer>
 
 <!-- Floating running summary of the current empire (hidden on /empire, which shows its
