@@ -85,9 +85,5 @@ cat <<EOF
 ==> Done. Run locally with:
       podman run --rm -p 3000:3000 $IMAGE_TAG
 
-    Behind a reverse proxy on the VPS, set the public origin so form posts work:
-      podman run -d --name empire-planner -p 3000:3000 \\
-        -e ORIGIN=https://planner.example.com $IMAGE_TAG
-
-    Then open http://localhost:3000
+    Then open http://localhost:3000 (on the VPS, the Quadlet in DEPLOY.md runs it).
 EOF
