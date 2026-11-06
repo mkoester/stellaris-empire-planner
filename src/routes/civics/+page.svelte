@@ -15,6 +15,7 @@
 	import SwapTables from '#lib/SwapTables.svelte';
 	import FederationAccess from '#lib/FederationAccess.svelte';
 	import Tip from '#lib/Tip.svelte';
+	import PickCard from '#lib/PickCard.svelte';
 	import RequirementRow from '#lib/RequirementRow.svelte';
 	import RuleText from '#lib/RuleText.svelte';
 	import RequirementLegend from '#lib/RequirementLegend.svelte';
@@ -120,18 +121,17 @@
 					{@const mods = sortModifiers(civic.modifiers)}
 					{@const swaps = jobSwaps[civic.key] ?? []}
 					{@const unlocks = data.unlocks[`civic:${civic.key}`]}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<svelte:element
-						this={debug ? 'div' : 'button'}
-						type={debug ? undefined : 'button'}
-						aria-pressed={debug ? undefined : selected}
-						onclick={debug ? undefined : () => empire.toggleCivic(civic.key)}
+					<PickCard
 						class="relative flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
 							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflictClass(
 							conflicts,
 							selected
-						)} {debug ? 'cursor-text select-text' : ''}"
+						)}"
+						{debug}
+						{selected}
+						label={civic.name ?? civic.key}
+						onToggle={() => empire.toggleCivic(civic.key)}
 					>
 						<header class="flex items-start justify-between gap-2">
 							<h3 class="font-semibold">{civic.name ?? civic.key}</h3>
@@ -195,11 +195,11 @@
 
 						<!-- Effects description pinned to the bottom (divider above it if attunement shown).
 						     When the civic replaces jobs, hovering the description also opens the swap table. -->
-						{#snippet descBody()}
-							{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
-							<RuleText text={civic.description!} class="text-xs opacity-55" />
-						{/snippet}
 						{#if civic.description}
+							{#snippet descBody()}
+								{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
+								<RuleText text={civic.description!} class="text-xs opacity-55" />
+							{/snippet}
 							{#if swaps.length}
 								<SwapTables {swaps} placement="top-start" triggerClass="mt-auto block cursor-help">
 									{@render descBody()}
@@ -208,7 +208,7 @@
 								<div class="mt-auto">{@render descBody()}</div>
 							{/if}
 						{/if}
-					</svelte:element>
+					</PickCard>
 				{/each}
 			</div>
 		</section>

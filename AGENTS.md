@@ -53,6 +53,9 @@ consistent if you do.
   picking for the empire. What a helper shows about one pick goes on that pick's card too (a chip
   with a popup: `CouncilChip`, `BranchOfficeChip`, `UnlockChips`). Page-specific tools (the
   tradition cost calculator, the starting-capital tables) stay on their pages.
+- **A pickable card or chip is a `PickCard`** (`src/lib/PickCard.svelte`), never a `<button>`: a
+  button may hold only phrasing content and nothing interactive, and the cards carry chips and
+  popups. Inside any other `<button>`, use `<span>`s (styled `flex`/`block` as needed).
 - **The version in the nav is git-decorated** (`scripts/version.mjs`, injected by Vite as
   `__APP_VERSION__`): plain on a clean `main` or a `v<version>` tag, `-<hash>` elsewhere,
   `-SNAPSHOT` when dirty. The container build passes its own `APP_VERSION` (the image has no

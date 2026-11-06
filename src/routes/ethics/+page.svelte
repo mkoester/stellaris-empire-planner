@@ -16,6 +16,7 @@
 		MONUMENT_BONUSES
 	} from '#lib/ethics.ts';
 	import Tip from '#lib/Tip.svelte';
+	import PickCard from '#lib/PickCard.svelte';
 	import FederationLink from '#lib/FederationLink.svelte';
 	import { federationTip } from '#lib/federations.ts';
 	import { compatChecker } from '#lib/compat.ts';
@@ -255,18 +256,18 @@
 							{@const sel = selected.has(ethic!.key)}
 							<Tip text={debug ? undefined : ethicTooltip(ethic!)}>
 								{#snippet trigger(a)}
-									<svelte:element
-										this={debug ? 'div' : 'button'}
+									<PickCard
 										{...a}
 										class="btn flex-col gap-0.5 border text-sm
-									leading-tight {pickClass(sel)} {conflictClass(reasons(ethic!.key), sel)} {debug
-											? 'cursor-text select-text'
-											: ''}"
-										onclick={debug ? undefined : () => toggle(ethic!.key)}
+									leading-tight {pickClass(sel)} {conflictClass(reasons(ethic!.key), sel)}"
+										{debug}
+										selected={sel}
+										label={ethicLabel(ethic!)}
+										onToggle={() => toggle(ethic!.key)}
 									>
 										<span>{ethicLabel(ethic!)}</span>
 										<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
-									</svelte:element>
+									</PickCard>
 								{/snippet}
 							</Tip>
 						{/each}
@@ -281,18 +282,18 @@
 							{@const sel = selected.has(ethic!.key)}
 							<Tip text={debug ? undefined : ethicTooltip(ethic!)}>
 								{#snippet trigger(a)}
-									<svelte:element
-										this={debug ? 'div' : 'button'}
+									<PickCard
 										{...a}
 										class="btn flex-col gap-0.5 border text-sm
-									leading-tight {pickClass(sel)} {conflictClass(reasons(ethic!.key), sel)} {debug
-											? 'cursor-text select-text'
-											: ''}"
-										onclick={debug ? undefined : () => toggle(ethic!.key)}
+									leading-tight {pickClass(sel)} {conflictClass(reasons(ethic!.key), sel)}"
+										{debug}
+										selected={sel}
+										label={ethicLabel(ethic!)}
+										onToggle={() => toggle(ethic!.key)}
 									>
 										<span>{ethicLabel(ethic!)}</span>
 										<span class="font-mono text-[10px] opacity-60">{'●'.repeat(ethic!.cost)}</span>
-									</svelte:element>
+									</PickCard>
 								{/snippet}
 							</Tip>
 						{/each}
@@ -309,18 +310,18 @@
 				<span class="text-xs opacity-20 select-none">|</span>
 				<Tip text={debug ? undefined : ethicTooltip(gestaltEthic)}>
 					{#snippet trigger(a)}
-						<svelte:element
-							this={debug ? 'div' : 'button'}
+						<PickCard
 							{...a}
 							class="btn flex-col gap-0.5 border text-sm
-						leading-tight {pickClass(sel)} {conflictClass(reasons(gestaltEthic.key), sel)} {debug
-								? 'cursor-text select-text'
-								: ''}"
-							onclick={debug ? undefined : selectGestalt}
+						leading-tight {pickClass(sel)} {conflictClass(reasons(gestaltEthic.key), sel)}"
+							{debug}
+							selected={sel}
+							label={ethicLabel(gestaltEthic)}
+							onToggle={selectGestalt}
 						>
 							<span>{ethicLabel(gestaltEthic)}</span>
 							<span class="font-mono text-[10px] opacity-60">{'●'.repeat(gestaltEthic.cost)}</span>
-						</svelte:element>
+						</PickCard>
 					{/snippet}
 				</Tip>
 			</div>

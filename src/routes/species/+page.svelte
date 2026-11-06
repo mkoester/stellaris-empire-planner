@@ -9,6 +9,7 @@
 		formatScalingModifier
 	} from '#lib/civics.ts';
 	import Tip from '#lib/Tip.svelte';
+	import PickCard from '#lib/PickCard.svelte';
 	import { compatChecker, grantedTraits } from '#lib/compat.ts';
 	import { addedBy, traitLimits, withTrait } from '#lib/limits.ts';
 	import { conflictClass, pickClass } from '#lib/conflict.ts';
@@ -473,8 +474,7 @@
 					: reasons.map((r) => `⚠ ${r}`).join('\n') || undefined}
 		>
 			{#snippet trigger(a)}
-				<svelte:element
-					this={debug ? 'div' : 'button'}
+				<PickCard
 					{...a}
 					class="relative flex h-full flex-col rounded-lg border text-left transition-all
 				{isBase
@@ -487,7 +487,10 @@
 				p-3"
 					id={anchor ? `trait-${trait.key}` : undefined}
 					style="border-top: 2px solid {borderColor}"
-					onclick={debug ? undefined : () => toggle(trait)}
+					{debug}
+					selected={isSelected}
+					label={formatKey(trait.key)}
+					onToggle={() => toggle(trait)}
 				>
 					{#if isBase}
 						<span
@@ -541,19 +544,19 @@
 													class="block w-full rounded p-1.5 text-left hover:bg-surface-500/20"
 													onclick={() => jumpTo(v.key)}
 												>
-													<div class="flex items-baseline justify-between gap-2">
+													<span class="flex items-baseline justify-between gap-2">
 														<span class="font-medium">{formatKey(v.key)}</span>
 														<span class="font-mono opacity-70"
 															>{costLabel(v.cost)} · {data.traitCategories.find(
 																(c) => c.key === v.category
 															)?.label ?? v.category}</span
 														>
-													</div>
+													</span>
 													{#each v.modifiers as m (m.key)}
-														<div class="flex justify-between gap-2 text-[10px]">
+														<span class="flex justify-between gap-2 text-[10px]">
 															<span class="opacity-60">{modifierLabel(m)}</span>
 															<span class="font-mono {modifierColor(m)}">{formatModifier(m)}</span>
-														</div>
+														</span>
 													{/each}
 												</button>
 											{/each}
@@ -639,7 +642,7 @@
 							</div>
 						{/if}
 					{/each}
-				</svelte:element>
+				</PickCard>
 			{/snippet}
 		</Tip>
 	{/snippet}

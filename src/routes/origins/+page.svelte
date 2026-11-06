@@ -13,6 +13,7 @@
 	} from '#lib/civics.ts';
 	import SwapTables from '#lib/SwapTables.svelte';
 	import Tip from '#lib/Tip.svelte';
+	import PickCard from '#lib/PickCard.svelte';
 	import RequirementRow from '#lib/RequirementRow.svelte';
 	import RuleText from '#lib/RuleText.svelte';
 	import RequirementLegend from '#lib/RequirementLegend.svelte';
@@ -125,18 +126,17 @@
 					{@const conflicts = compat.reasons('origin', origin.key)}
 					{@const mods = sortModifiers(origin.modifiers)}
 					{@const swaps = jobSwaps[origin.key] ?? []}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<svelte:element
-						this={debug ? 'div' : 'button'}
-						type={debug ? undefined : 'button'}
-						aria-pressed={debug ? undefined : selected}
-						onclick={debug ? undefined : () => empire.setOrigin(selected ? null : origin.key)}
+					<PickCard
 						class="flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
 							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflictClass(
 							conflicts,
 							selected
-						)} {debug ? 'cursor-text select-text' : ''}"
+						)}"
+						{debug}
+						{selected}
+						label={origin.name ?? origin.key}
+						onToggle={() => empire.setOrigin(selected ? null : origin.key)}
 					>
 						<div class="flex items-start justify-between gap-2">
 							<h3 class="font-semibold">{origin.name ?? origin.key}</h3>
@@ -206,11 +206,11 @@
 							{/if}
 						{/if}
 
-						{#snippet descBody()}
-							{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
-							<RuleText text={origin.description!} class="text-xs opacity-55" />
-						{/snippet}
 						{#if origin.description}
+							{#snippet descBody()}
+								{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
+								<RuleText text={origin.description!} class="text-xs opacity-55" />
+							{/snippet}
 							{#if swaps.length}
 								<SwapTables {swaps} placement="top-start" triggerClass="mt-auto block cursor-help">
 									{@render descBody()}
@@ -219,7 +219,7 @@
 								<div class="mt-auto">{@render descBody()}</div>
 							{/if}
 						{/if}
-					</svelte:element>
+					</PickCard>
 				{/each}
 			</div>
 		</section>

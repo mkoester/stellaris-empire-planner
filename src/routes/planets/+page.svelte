@@ -4,6 +4,7 @@
 	import { groupPlanetClasses, climateBadge } from '#lib/planets.ts';
 	import { empire } from '#lib/empire.svelte.ts';
 	import Tip from '#lib/Tip.svelte';
+	import PickCard from '#lib/PickCard.svelte';
 	import { compatChecker } from '#lib/compat.ts';
 	import { conflictClass } from '#lib/conflict.ts';
 	import CapitalContributions from '#lib/CapitalContributions.svelte';
@@ -94,20 +95,18 @@
 								: [...warn.map((r) => `⚠ ${r}`), 'Set as homeworld'].join('\n')}
 						>
 							{#snippet trigger(a)}
-								<svelte:element
-									this={debug ? 'div' : 'button'}
+								<PickCard
 									{...a}
-									type={debug ? undefined : 'button'}
-									aria-pressed={debug ? undefined : selected}
-									onclick={debug
-										? undefined
-										: () => empire.setPlanetClass(selected ? null : pc.key)}
 									class="flex items-center gap-1.5 rounded border px-2 py-1 text-sm transition-colors {selected
 										? 'border-primary-500 bg-primary-500/10'
 										: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflictClass(
 										warn,
 										selected
-									)} {debug ? 'cursor-text select-text' : ''}"
+									)}"
+									{debug}
+									{selected}
+									label={pc.name ?? pc.key}
+									onToggle={() => empire.setPlanetClass(selected ? null : pc.key)}
 								>
 									{pc.name ?? pc.key}
 									{#if pc.climate}
@@ -120,7 +119,7 @@
 											>start</Tip
 										>
 									{/if}
-								</svelte:element>
+								</PickCard>
 							{/snippet}
 						</Tip>
 					{:else}

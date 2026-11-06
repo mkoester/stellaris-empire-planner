@@ -4,6 +4,7 @@
 	import type { Authority } from '#lib/server/db/index.ts';
 	import { dlcBadge } from '#lib/precursors.ts';
 	import Tip from '#lib/Tip.svelte';
+	import PickCard from '#lib/PickCard.svelte';
 	import {
 		formatModifierValue,
 		modifierColor,
@@ -69,18 +70,17 @@
 			{@const reqs = civicRequirementLines(authority.requirements)}
 			{@const selected = empire.draft.authority === authority.key}
 			{@const conflicts = compat.reasons('authority', authority.key)}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<svelte:element
-				this={debug ? 'div' : 'button'}
-				type={debug ? undefined : 'button'}
-				aria-pressed={debug ? undefined : selected}
-				onclick={debug ? undefined : () => toggle(authority.key)}
+			<PickCard
 				class="relative flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 					? 'border-primary-500 bg-primary-500/10'
 					: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflictClass(
 					conflicts,
 					selected
-				)} {debug ? 'cursor-text select-text' : ''}"
+				)}"
+				{debug}
+				{selected}
+				label={authority.name ?? authority.key}
+				onToggle={() => toggle(authority.key)}
 			>
 				<header class="flex flex-wrap items-baseline gap-2">
 					<h3 class="font-semibold">{authority.name ?? authority.key}</h3>
@@ -131,7 +131,7 @@
 						<RuleText text={authority.description} class="text-xs opacity-55" />
 					</div>
 				{/if}
-			</svelte:element>
+			</PickCard>
 		{/each}
 	</div>
 	<CapitalContributions
