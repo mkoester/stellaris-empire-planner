@@ -1,8 +1,8 @@
 <script lang="ts">
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import { sectionId, sectionLinks } from '$lib/sections';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '#lib/sections.ts';
 	import type { PageData } from './$types';
-	import type { Precursor, PrecursorPlanet, PrecursorBuilding } from '$lib/server/db';
+	import type { Precursor, PrecursorPlanet, PrecursorBuilding } from '#lib/server/db/index.ts';
 	import {
 		EMPIRE_TYPES,
 		type EmpireType,
@@ -38,8 +38,8 @@
 		cooldownLabel,
 		dlcBadge,
 		groupByDlc
-	} from '$lib/precursors';
-	import Tip from '$lib/Tip.svelte';
+	} from '#lib/precursors.ts';
+	import Tip from '#lib/Tip.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -48,7 +48,7 @@
 	// ── Empire-type filter ───────────────────────────────────────────────────
 	// Highlights the effects that apply to the chosen empire type. 'planner' is a
 	// placeholder (will eventually read the empire from the Species Builder) and
-	// applies no highlighting. See $lib/precursors for the applies-logic.
+	// applies no highlighting. See #lib/precursors for the applies-logic.
 	let empireFilter = $state<'planner' | EmpireType>('regular');
 	const activeType = $derived<EmpireType | null>(empireFilter === 'planner' ? null : empireFilter);
 

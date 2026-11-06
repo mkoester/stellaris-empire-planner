@@ -1,17 +1,17 @@
 <script lang="ts">
 	// What each pick on a builder page adds to the starting capital: per pick, the
-	// districts, zones and buildings the game's setup scripts give it (see $lib/startCapital).
+	// districts, zones and buildings the game's setup scripts give it (see #lib/startCapital).
 	// `paired` lays out rows two by two, side by side, for picks that exclude each other
 	// (an ethic and its opposite).
-	import { prettyKey } from '$lib/civics';
-	import type { ReferenceBuilding } from '$lib/server/db';
-	import BuildingName from '$lib/BuildingName.svelte';
+	import { prettyKey } from '#lib/civics.ts';
+	import type { ReferenceBuilding } from '#lib/server/db/index.ts';
+	import BuildingName from '#lib/BuildingName.svelte';
 	import {
 		reasonText,
 		type CAPITAL_DEFAULTS,
 		type Contribution,
 		type ContributionRow
-	} from '$lib/startCapital';
+	} from '#lib/startCapital.ts';
 
 	let {
 		rows,

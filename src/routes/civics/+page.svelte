@@ -1,9 +1,9 @@
 <script lang="ts">
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import { sectionId, sectionLinks } from '$lib/sections';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '#lib/sections.ts';
 	import type { PageData } from './$types';
-	import type { Civic, JobSwap } from '$lib/server/db';
-	import { dlcBadge } from '$lib/precursors';
+	import type { Civic, JobSwap } from '#lib/server/db/index.ts';
+	import { dlcBadge } from '#lib/precursors.ts';
 	import {
 		groupCivicsByType,
 		formatModifierValue,
@@ -11,30 +11,30 @@
 		modifierLabel,
 		sortModifiers,
 		civicRequirementLines
-	} from '$lib/civics';
-	import SwapTables from '$lib/SwapTables.svelte';
-	import FederationAccess from '$lib/FederationAccess.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import RequirementRow from '$lib/RequirementRow.svelte';
-	import RuleText from '$lib/RuleText.svelte';
-	import RequirementLegend from '$lib/RequirementLegend.svelte';
-	import LockIcon from '$lib/LockIcon.svelte';
-	import ConflictBadge from '$lib/ConflictBadge.svelte';
-	import AscensionChips from '$lib/AscensionChips.svelte';
-	import BuildingChips from '$lib/BuildingChips.svelte';
-	import CouncilChip from '$lib/CouncilChip.svelte';
-	import BranchOfficeChip from '$lib/BranchOfficeChip.svelte';
-	import UnlockChips from '$lib/UnlockChips.svelte';
-	import { civicBoosts } from '$lib/branchOffices';
-	import { compatChecker } from '$lib/compat';
-	import { conflictClass } from '$lib/conflict';
-	import CapitalContributions from '$lib/CapitalContributions.svelte';
-	import { completeDraft, contributionRows, fitAuthority, mentioned } from '$lib/startCapital';
-	import { empire } from '$lib/empire.svelte';
-	import { settings } from '$lib/settings.svelte';
+	} from '#lib/civics.ts';
+	import SwapTables from '#lib/SwapTables.svelte';
+	import FederationAccess from '#lib/FederationAccess.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import RequirementRow from '#lib/RequirementRow.svelte';
+	import RuleText from '#lib/RuleText.svelte';
+	import RequirementLegend from '#lib/RequirementLegend.svelte';
+	import LockIcon from '#lib/LockIcon.svelte';
+	import ConflictBadge from '#lib/ConflictBadge.svelte';
+	import AscensionChips from '#lib/AscensionChips.svelte';
+	import BuildingChips from '#lib/BuildingChips.svelte';
+	import CouncilChip from '#lib/CouncilChip.svelte';
+	import BranchOfficeChip from '#lib/BranchOfficeChip.svelte';
+	import UnlockChips from '#lib/UnlockChips.svelte';
+	import { civicBoosts } from '#lib/branchOffices.ts';
+	import { compatChecker } from '#lib/compat.ts';
+	import { conflictClass } from '#lib/conflict.ts';
+	import CapitalContributions from '#lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows, fitAuthority, mentioned } from '#lib/startCapital.ts';
+	import { empire } from '#lib/empire.svelte.ts';
+	import { settings } from '#lib/settings.svelte.ts';
 
 	let { data }: { data: PageData } = $props();
-	// Cross-section conflicts (warn only — see $lib/compat).
+	// Cross-section conflicts (warn only — see #lib/compat).
 	const compat = $derived(compatChecker(empire.draft, data));
 	const civics = $derived(data.civics as Civic[]);
 	// what each civic adds to a MegaCorp's branch offices (the table: "Help me choose")

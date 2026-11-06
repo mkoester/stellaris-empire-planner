@@ -1,17 +1,17 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { FederationType } from '$lib/server/db';
+	import type { FederationType } from '#lib/server/db/index.ts';
 	import { resolve } from '$app/paths';
-	import EmpireProfileBar from '$lib/EmpireProfileBar.svelte';
-	import RequirementChips from '$lib/RequirementChips.svelte';
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import FederationLink from '$lib/FederationLink.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import { settings } from '$lib/settings.svelte';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
-	import { federationSearchText, federationTip, SCOPE_LABELS } from '$lib/federations';
-	import { matches } from '$lib/traditions';
-	import { evaluate, isActive, requirementLines, triggerText, withAllDlc } from '$lib/triggers';
+	import EmpireProfileBar from '#lib/EmpireProfileBar.svelte';
+	import RequirementChips from '#lib/RequirementChips.svelte';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import FederationLink from '#lib/FederationLink.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import { settings } from '#lib/settings.svelte.ts';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
+	import { federationSearchText, federationTip, SCOPE_LABELS } from '#lib/federations.ts';
+	import { matches } from '#lib/traditions.ts';
+	import { evaluate, isActive, requirementLines, triggerText, withAllDlc } from '#lib/triggers.ts';
 
 	let { data }: { data: PageData } = $props();
 

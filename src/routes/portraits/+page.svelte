@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { PortraitClassInfo, PortraitInfo } from '$lib/server/db';
-	import Tip from '$lib/Tip.svelte';
+	import type { PortraitClassInfo, PortraitInfo } from '#lib/server/db/index.ts';
+	import Tip from '#lib/Tip.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const portraits = $derived(data.portraits as PortraitInfo[]);

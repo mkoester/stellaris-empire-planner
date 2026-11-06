@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Origin, Civic } from '$lib/server/db';
-	import { civicTypeLabel } from '$lib/civics';
-	import { empire } from '$lib/empire.svelte';
-	import { compatChecker } from '$lib/compat';
-	import { conflictClass } from '$lib/conflict';
-	import CapitalContributions from '$lib/CapitalContributions.svelte';
-	import { completeDraft, contributionRows } from '$lib/startCapital';
-	import ConflictBadge from '$lib/ConflictBadge.svelte';
+	import type { Origin, Civic } from '#lib/server/db/index.ts';
+	import { civicTypeLabel } from '#lib/civics.ts';
+	import { empire } from '#lib/empire.svelte.ts';
+	import { compatChecker } from '#lib/compat.ts';
+	import { conflictClass } from '#lib/conflict.ts';
+	import CapitalContributions from '#lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows } from '#lib/startCapital.ts';
+	import ConflictBadge from '#lib/ConflictBadge.svelte';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -22,7 +22,7 @@
 				: 'regular'
 	);
 
-	// Cross-section conflicts (warn only — see $lib/compat): origin/civic ship-type gates.
+	// Cross-section conflicts (warn only — see #lib/compat): origin/civic ship-type gates.
 	const compat = $derived(compatChecker(empire.draft, data));
 
 	type Req = { kind: string; operator: string; value: string };

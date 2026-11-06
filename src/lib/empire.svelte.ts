@@ -1,8 +1,8 @@
 // The single "current empire" the whole app works on. The builder pages (Ethics,
 // Species Builder, …) bind to this shared draft; importing a predefined empire or
 // loading a user_empire_designs.txt applies into it (whole or partial — see apply()).
-import type { Empire, EmpireFlag } from '$lib/server/db';
-import type { SerializableEmpire } from '$lib/empireFile';
+import type { Empire, EmpireFlag } from '#lib/server/db/index.ts';
+import type { SerializableEmpire } from '#lib/empireFile.ts';
 
 // A second founding species (Syncretic Evolution / Necrophage / …). Same shape as the
 // founder's species fields; null `secondary` means the empire has only one species.

@@ -2,10 +2,10 @@
 	// A card's "needs …" / "excl. …" chips (see civicRequirementLines). Exclusions start
 	// shown or hidden per the shared setting; the ban icon flips them for this card only.
 	// Clicks never reach the card it sits on.
-	import { requirementChipClass, type CivicRequirementLine } from '$lib/civics';
-	import { settings } from '$lib/settings.svelte';
-	import BanIcon from '$lib/BanIcon.svelte';
-	import Tip from '$lib/Tip.svelte';
+	import { requirementChipClass, type CivicRequirementLine } from '#lib/civics.ts';
+	import { settings } from '#lib/settings.svelte.ts';
+	import BanIcon from '#lib/BanIcon.svelte';
+	import Tip from '#lib/Tip.svelte';
 
 	let { lines }: { lines: CivicRequirementLine[] } = $props();
 	const needs = $derived(lines.filter((r) => r.type === 'require'));

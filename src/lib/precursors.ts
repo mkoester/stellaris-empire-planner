@@ -13,7 +13,7 @@ import type {
 	PrecursorHomeworldReward,
 	BuildingResource,
 	BuildingModifier
-} from '$lib/server/db';
+} from '#lib/server/db/index.ts';
 
 // ── Grouping / ordering ──────────────────────────────────────────────────────
 export interface PrecursorGroup {
@@ -245,7 +245,7 @@ export function rewardQualifier(m: MergedReward): string | null {
 
 // ── Modifier formatting ────────────────────────────────────────────────────
 // Value (fraction vs percentage), good/bad colouring, and label formatting are all
-// shared with the rest of the app — one implementation in $lib/civics. The
+// shared with the rest of the app — one implementation in #lib/civics. The
 // storm-repulsion percentage case that used to be special-cased here is handled by
 // that single rule. Re-exported under the precursor page's existing names.
 export {

@@ -1,8 +1,8 @@
 <script lang="ts">
 	// "Can form / Cannot form" federation lines for a civic or ethic card (federationsFor).
-	import type { FederationType } from '$lib/server/db';
-	import FederationLink from '$lib/FederationLink.svelte';
-	import { federationsFor, federationTip } from '$lib/federations';
+	import type { FederationType } from '#lib/server/db/index.ts';
+	import FederationLink from '#lib/FederationLink.svelte';
+	import { federationsFor, federationTip } from '#lib/federations.ts';
 
 	let { itemKey, types }: { itemKey: string; types: FederationType[] } = $props();
 	const access = $derived(federationsFor(itemKey, types));

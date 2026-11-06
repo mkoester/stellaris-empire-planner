@@ -1,5 +1,5 @@
-import { loadPortraits, loadTraitsForKeys } from '$lib/server/db';
-import { formatModifierValue, formatScalingModifier, modifierLabel } from '$lib/civics';
+import { loadPortraits, loadTraitsForKeys } from '#lib/server/db/index.ts';
+import { formatModifierValue, formatScalingModifier, modifierLabel } from '#lib/civics.ts';
 import type { PageServerLoad } from './$types';
 
 export interface TraitInfo {

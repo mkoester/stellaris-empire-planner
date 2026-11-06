@@ -1,5 +1,5 @@
 // Presentation helpers for the /planets reference. Pure data → display logic.
-import type { PlanetClass } from '$lib/server/db';
+import type { PlanetClass } from '#lib/server/db/index.ts';
 
 export interface PlanetGroup {
 	label: string;

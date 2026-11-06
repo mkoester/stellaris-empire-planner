@@ -5,7 +5,7 @@ import {
 	loadTraits,
 	loadTraitsForKeys,
 	loadCompatData
-} from '$lib/server/db';
+} from '#lib/server/db/index.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => {

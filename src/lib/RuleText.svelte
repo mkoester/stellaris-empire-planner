@@ -2,7 +2,7 @@
 	// Render an effect description whose rules are newline-separated (preserved from
 	// the game tooltip). Layout follows the global setting: inline " | " or one per
 	// line. A single-rule (prose) description just renders as a paragraph.
-	import { settings } from '$lib/settings.svelte';
+	import { settings } from '#lib/settings.svelte.ts';
 
 	let { text, class: cls = '' }: { text: string; class?: string } = $props();
 

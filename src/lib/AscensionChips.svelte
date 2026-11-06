@@ -1,8 +1,8 @@
 <script lang="ts">
 	// An origin's or civic's ascension-path gate as chips: locked to one path, some paths
 	// blocked, or — all four blocked (Natural Design) — no ascension at all.
-	import Tip from '$lib/Tip.svelte';
-	import { ASCENSION_PATHS } from '$lib/compat';
+	import Tip from '#lib/Tip.svelte';
+	import { ASCENSION_PATHS } from '#lib/compat.ts';
 	let { lock, blocks }: { lock: string | null; blocks: string[] } = $props();
 	const none = $derived(!lock && ASCENSION_PATHS.every((p) => blocks.includes(p)));
 	const chip =

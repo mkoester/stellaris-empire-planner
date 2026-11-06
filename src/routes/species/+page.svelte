@@ -1,25 +1,25 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Trait } from '$lib/server/db';
-	import { empire } from '$lib/empire.svelte';
+	import type { Trait } from '#lib/server/db/index.ts';
+	import { empire } from '#lib/empire.svelte.ts';
 	import {
 		formatModifierValue,
 		modifierColor,
 		modifierLabel,
 		formatScalingModifier
-	} from '$lib/civics';
-	import Tip from '$lib/Tip.svelte';
-	import { compatChecker, grantedTraits } from '$lib/compat';
-	import { addedBy, traitLimits, withTrait } from '$lib/limits';
-	import { conflictClass, pickClass } from '$lib/conflict';
-	import CapitalContributions from '$lib/CapitalContributions.svelte';
-	import { completeDraft, contributionRows, mentioned } from '$lib/startCapital';
-	import { prettyKey } from '$lib/civics';
-	import { betterVersions, traitRequirementLines } from '$lib/traits';
-	import { settings } from '$lib/settings.svelte';
+	} from '#lib/civics.ts';
+	import Tip from '#lib/Tip.svelte';
+	import { compatChecker, grantedTraits } from '#lib/compat.ts';
+	import { addedBy, traitLimits, withTrait } from '#lib/limits.ts';
+	import { conflictClass, pickClass } from '#lib/conflict.ts';
+	import CapitalContributions from '#lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows, mentioned } from '#lib/startCapital.ts';
+	import { prettyKey } from '#lib/civics.ts';
+	import { betterVersions, traitRequirementLines } from '#lib/traits.ts';
+	import { settings } from '#lib/settings.svelte.ts';
 	import { tick } from 'svelte';
-	import InfoPopup from '$lib/InfoPopup.svelte';
-	import RequirementRow from '$lib/RequirementRow.svelte';
+	import InfoPopup from '#lib/InfoPopup.svelte';
+	import RequirementRow from '#lib/RequirementRow.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -237,7 +237,7 @@
 		['positive', 'negative'].filter((t) => allTagsInView.includes(t))
 	);
 
-	// Better versions in other categories (larger effect and/or cheaper — see $lib/traits),
+	// Better versions in other categories (larger effect and/or cheaper — see #lib/traits),
 	// among the traits this archetype can take; and each trait's needs / exclusions.
 	const better = (t: Trait) => betterVersions(t, visibleTraits, archetype);
 	const reqLines = (t: Trait) => traitRequirementLines(t, data.compat.rules, data.names);
@@ -346,14 +346,14 @@
 	);
 	const effectiveBudget = $derived(maxPoints - negativeBonus); // maxPoints + |negativeBonus|
 
-	// Cross-section conflicts (warn only — see $lib/compat): civic/origin gates on the species
+	// Cross-section conflicts (warn only — see #lib/compat): civic/origin gates on the species
 	// class, traits granted by civics/origins (Tankbound) and their opposites, trait gates on
 	// origin/ethics/homeworld. Checked for the founder species, which those rules apply to.
 	const compat = $derived(compatChecker(empire.draft, data));
 	const founderSlot = $derived(activeSlot === 'founder');
 	const classConflicts = (key: string) => (founderSlot ? compat.reasons('species_class', key) : []);
 	// Any trait can be picked; picks and points are flagged, not enforced, and an opposite
-	// is replaced on click (see $lib/limits) — for whichever species is being edited.
+	// is replaced on click (see #lib/limits) — for whichever species is being edited.
 	const traitInfo = $derived({
 		costs: Object.fromEntries(data.traits.map((t) => [t.key, t.cost ?? 0])),
 		opposites: Object.fromEntries(data.traits.map((t) => [t.key, t.opposites])),
@@ -420,7 +420,7 @@
 		return 'text-amber-400';
 	}
 
-	// Value formatting (fractions vs percentages) lives in one place: $lib/civics.
+	// Value formatting (fractions vs percentages) lives in one place: #lib/civics.
 	const formatModifier = formatModifierValue;
 	// What the founder species' kind adds to the starting capital. The scripts test base traits
 	// (Organic, Lithoid, Infernal, …) and archetypes, so one row per base trait, run with the

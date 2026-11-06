@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Requirement lines of a trigger as chips, coloured by whether the profile meets them:
 	// emerald = met, red = not met, neutral = unknown (the profile can't tell).
-	import type { RequirementLine } from '$lib/triggers';
+	import type { RequirementLine } from '#lib/triggers.ts';
 
 	let { lines, label = '' }: { lines: RequirementLine[]; label?: string } = $props();
 

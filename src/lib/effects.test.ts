@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { collectEffects, collectSpeciesEffects, groupEffects, effectGroupOf } from './effects';
-import type { Modifier, ModifierSource } from '$lib/server/db';
+import type { Modifier, ModifierSource } from '#lib/server/db/index.ts';
 
 const mod = (key: string, value: number, label: string | null = null): Modifier => ({
 	key,

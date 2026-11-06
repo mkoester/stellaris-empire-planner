@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { PlanetClass } from '$lib/server/db';
+import type { PlanetClass } from '#lib/server/db/index.ts';
 import { groupPlanetClasses } from './planets';
 
 const pc = (o: Partial<PlanetClass> & { key: string }): PlanetClass => ({

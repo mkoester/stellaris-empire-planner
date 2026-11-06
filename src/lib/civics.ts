@@ -1,6 +1,6 @@
 // Presentation-layer helpers for the /civics route. Pure data → display logic so
 // they can be unit-tested; types come in type-only.
-import type { Civic, CivicRequirement, Modifier, ScalingModifier } from '$lib/server/db';
+import type { Civic, CivicRequirement, Modifier, ScalingModifier } from '#lib/server/db/index.ts';
 
 export function civicTypeLabel(t: string): string {
 	return (

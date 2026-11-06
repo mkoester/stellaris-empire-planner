@@ -2,15 +2,15 @@
 	// A building's numbers: build cost / upkeep / output, the jobs it provides, its other
 	// modifiers and its description. Shared by the Buildings page cards and the building
 	// popups on the Civics / Origins cards.
-	import type { ReferenceBuilding } from '$lib/server/db';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
-	import { ascensionPerkName } from '$lib/precursors';
-	import RuleText from '$lib/RuleText.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import { workedOutput } from '$lib/jobs';
+	import type { ReferenceBuilding } from '#lib/server/db/index.ts';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
+	import { ascensionPerkName } from '#lib/precursors.ts';
+	import RuleText from '#lib/RuleText.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import { workedOutput } from '#lib/jobs.ts';
 
 	let { building: b }: { building: ReferenceBuilding } = $props();
-	// The jobs' net output when filled (base values, per $lib/jobs workedOutput).
+	// The jobs' net output when filled (base values, per #lib/jobs workedOutput).
 	const worked = $derived(workedOutput(b.jobs));
 
 	const titleCase = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());

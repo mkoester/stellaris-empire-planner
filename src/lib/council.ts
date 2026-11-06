@@ -1,6 +1,6 @@
 // "Help me choose": every council seat a civic opens, as rows to compare and filter.
-import type { Civic, CouncilPosition } from '$lib/server/db';
-import { civicTypeLabel, modifierLabel } from '$lib/civics';
+import type { Civic, CouncilPosition } from '#lib/server/db/index.ts';
+import { civicTypeLabel, modifierLabel } from '#lib/civics.ts';
 
 export interface CouncilSeatRow {
 	seat: CouncilPosition;

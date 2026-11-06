@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { CivicRequirement, Modifier } from '$lib/server/db';
+import type { CivicRequirement, Modifier } from '#lib/server/db/index.ts';
 import {
 	civicTypeLabel,
 	prettyKey,

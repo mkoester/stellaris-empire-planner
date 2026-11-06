@@ -3,7 +3,7 @@
 	// (federationTip). Shared by tradition/perk effects and the civic and ethic cards. The
 	// click doesn't bubble, so a link inside a selectable card doesn't also toggle the card.
 	import { resolve } from '$app/paths';
-	import Tip from '$lib/Tip.svelte';
+	import Tip from '#lib/Tip.svelte';
 
 	let { key, name, tip }: { key: string; name: string; tip: string } = $props();
 </script>

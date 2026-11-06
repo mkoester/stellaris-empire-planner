@@ -1,5 +1,5 @@
 // Cross-entity display names, modifier label index, overview tooltips.
-import { formatModifierValue, formatScalingModifier, modifierLabel } from '$lib/civics';
+import { formatModifierValue, formatScalingModifier, modifierLabel } from '#lib/civics.ts';
 import { db } from './client';
 import { loadAuthorities, loadCivics, loadEthics, loadOrigins } from './government';
 import { loadTraitsForKeys, scalingModifiersByTrait } from './species';

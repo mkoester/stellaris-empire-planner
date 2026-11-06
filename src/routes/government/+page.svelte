@@ -1,9 +1,9 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import UnlockChips from '$lib/UnlockChips.svelte';
-	import type { Authority } from '$lib/server/db';
-	import { dlcBadge } from '$lib/precursors';
-	import Tip from '$lib/Tip.svelte';
+	import UnlockChips from '#lib/UnlockChips.svelte';
+	import type { Authority } from '#lib/server/db/index.ts';
+	import { dlcBadge } from '#lib/precursors.ts';
+	import Tip from '#lib/Tip.svelte';
 	import {
 		formatModifierValue,
 		modifierColor,
@@ -11,18 +11,18 @@
 		civicRequirementLines,
 		requirementChipClass,
 		AUTHORITY_REQUIREMENT_KINDS
-	} from '$lib/civics';
-	import RuleText from '$lib/RuleText.svelte';
-	import RequirementLegend from '$lib/RequirementLegend.svelte';
-	import { empire } from '$lib/empire.svelte';
-	import ConflictBadge from '$lib/ConflictBadge.svelte';
-	import { compatChecker } from '$lib/compat';
-	import { conflictClass } from '$lib/conflict';
-	import CapitalContributions from '$lib/CapitalContributions.svelte';
-	import { completeDraft, contributionRows } from '$lib/startCapital';
+	} from '#lib/civics.ts';
+	import RuleText from '#lib/RuleText.svelte';
+	import RequirementLegend from '#lib/RequirementLegend.svelte';
+	import { empire } from '#lib/empire.svelte.ts';
+	import ConflictBadge from '#lib/ConflictBadge.svelte';
+	import { compatChecker } from '#lib/compat.ts';
+	import { conflictClass } from '#lib/conflict.ts';
+	import CapitalContributions from '#lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows } from '#lib/startCapital.ts';
 
 	let { data }: { data: PageData } = $props();
-	// Cross-section conflicts (warn only — see $lib/compat).
+	// Cross-section conflicts (warn only — see #lib/compat).
 	const compat = $derived(compatChecker(empire.draft, data));
 	const authorities = $derived(data.authorities as Authority[]);
 	// Debug: render selectable cards as plain elements so their text can be copied.

@@ -16,7 +16,7 @@ Quadlet files (symlinked into place by the steps below):
 |------|---------|
 | `stellaris-empire-planner.container` | the Quadlet unit |
 | `stellaris-empire-planner.env` | committed, non-secret defaults |
-| `stellaris-empire-planner.override.env.template` | copy → `.override.env`, set `ORIGIN` |
+| `stellaris-empire-planner.override.env.template` | copy → `.override.env`, per-deployment overrides (none required) |
 
 ## 1. Build and ship the image (run on your dev box)
 
@@ -48,13 +48,13 @@ sudo -u stellaris-empire-planner podman load -i /tmp/stellaris-empire-planner_la
 
 (Run this again to update — `AutoUpdate=local` + `podman auto-update` will pick up the newer local image, or just `systemctl --user restart stellaris-empire-planner`.)
 
-## 4. Configure the per-deployment override (set your public URL)
+## 4. Create the per-deployment override (nothing to set by default)
 
 ```sh
 sudo -u stellaris-empire-planner cp \
   $REPO/stellaris-empire-planner.override.env.template \
   $REPO/stellaris-empire-planner.override.env
-sudo -u stellaris-empire-planner nano $REPO/stellaris-empire-planner.override.env   # set ORIGIN=https://...
+sudo -u stellaris-empire-planner nano $REPO/stellaris-empire-planner.override.env   # optional overrides
 ```
 
 ## 5. Symlink the unit + env files into the Quadlet dir
@@ -81,7 +81,7 @@ It should report `active (running)` and the container `(healthy)`. Confirm:
 curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/   # -> 200
 ```
 
-Then point your reverse proxy at `http://127.0.0.1:3000` for the host in `ORIGIN`.
+Then point your reverse proxy at `http://127.0.0.1:3000`, passing the `Host` header through (Caddy does by default; nginx needs `proxy_set_header Host $host;`). The planner takes its origin from it.
 
 ## Updating a running deployment
 

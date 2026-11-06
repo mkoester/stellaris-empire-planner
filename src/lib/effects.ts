@@ -2,7 +2,7 @@
 // the Empire page's "Effects" block. Empire-wide picks (ethics/civics/origin) are
 // grouped by theme; species traits are kept separate, grouped per species, since a
 // trait only affects that species' own pops. Pure data → display logic, unit-tested.
-import type { Modifier, ModifierSource, ScalingModifier } from '$lib/server/db';
+import type { Modifier, ModifierSource, ScalingModifier } from '#lib/server/db/index.ts';
 import { keyName } from './empireFile';
 
 export interface EffectEntry {

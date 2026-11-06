@@ -1,13 +1,13 @@
 <script lang="ts">
 	// The capital the planned empire starts with: districts, zones and buildings, from the
-	// game's own setup scripts (see $lib/startCapital).
-	import { picksFromDraft } from '$lib/compat';
-	import type { EmpireDraft } from '$lib/empire.svelte';
-	import { prettyKey } from '$lib/civics';
-	import { leafText, profileFromDraft } from '$lib/triggers';
-	import { capitalOf, fromText, partsText, type CapitalData } from '$lib/startCapital';
-	import type { ReferenceBuilding } from '$lib/server/db';
-	import BuildingName from '$lib/BuildingName.svelte';
+	// game's own setup scripts (see #lib/startCapital).
+	import { picksFromDraft } from '#lib/compat.ts';
+	import type { EmpireDraft } from '#lib/empire.svelte.ts';
+	import { prettyKey } from '#lib/civics.ts';
+	import { leafText, profileFromDraft } from '#lib/triggers.ts';
+	import { capitalOf, fromText, partsText, type CapitalData } from '#lib/startCapital.ts';
+	import type { ReferenceBuilding } from '#lib/server/db/index.ts';
+	import BuildingName from '#lib/BuildingName.svelte';
 
 	let {
 		draft,

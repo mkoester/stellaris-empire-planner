@@ -9,9 +9,9 @@ import type {
 	Tradition,
 	TraditionTree,
 	Trigger
-} from '$lib/server/db';
-import { formatModifierValue, modifierLabel, prettyKey } from '$lib/civics';
-import { federationTip } from '$lib/federations';
+} from '#lib/server/db/index.ts';
+import { formatModifierValue, modifierLabel, prettyKey } from '#lib/civics.ts';
+import { federationTip } from '#lib/federations.ts';
 import {
 	AUTHORITIES,
 	FLAGS,
@@ -23,7 +23,7 @@ import {
 	type EmpireProfile,
 	type ProfileFlag,
 	type Tri
-} from '$lib/triggers';
+} from '#lib/triggers.ts';
 
 // ── Variants ─────────────────────────────────────────────────────────────────
 interface Swappable {

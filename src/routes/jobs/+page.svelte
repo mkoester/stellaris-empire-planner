@@ -1,10 +1,10 @@
 <script lang="ts">
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import { sectionId, sectionLinks } from '$lib/sections';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '#lib/sections.ts';
 	import type { PageData } from './$types';
-	import type { Job } from '$lib/server/db';
-	import { formatModifierValue, modifierLabel, modifierColor } from '$lib/civics';
-	import RuleText from '$lib/RuleText.svelte';
+	import type { Job } from '#lib/server/db/index.ts';
+	import { formatModifierValue, modifierLabel, modifierColor } from '#lib/civics.ts';
+	import RuleText from '#lib/RuleText.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const jobs = $derived(data.jobs as Job[]);

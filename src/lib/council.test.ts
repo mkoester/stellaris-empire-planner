@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Civic, CouncilPosition } from '$lib/server/db';
+import type { Civic, CouncilPosition } from '#lib/server/db/index.ts';
 import { councilSeatRows, seatClasses } from './council';
 
 const civic = (key: string, name: string, civicType = 'normal'): Civic => ({

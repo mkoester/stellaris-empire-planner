@@ -4,11 +4,11 @@
 	// then the custom tooltip text. Edicts/agendas it unlocks get a hover tooltip (federation
 	// types also link to their card): where the text names them, on the name itself;
 	// otherwise on an extra "Unlocks …" line.
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
-	import FederationLink from '$lib/FederationLink.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import { linkify, type Effective, type Unlock } from '$lib/traditions';
-	import { triggerText } from '$lib/triggers';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
+	import FederationLink from '#lib/FederationLink.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import { linkify, type Effective, type Unlock } from '#lib/traditions.ts';
+	import { triggerText } from '#lib/triggers.ts';
 
 	let {
 		effect,

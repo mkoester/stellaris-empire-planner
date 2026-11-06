@@ -1,9 +1,9 @@
 <script lang="ts">
 	// A building's name that opens its numbers (cost, jobs, what they produce worked) on
 	// hover; plain text when the building's data isn't loaded.
-	import type { ReferenceBuilding } from '$lib/server/db';
-	import BuildingDetails from '$lib/BuildingDetails.svelte';
-	import InfoPopup from '$lib/InfoPopup.svelte';
+	import type { ReferenceBuilding } from '#lib/server/db/index.ts';
+	import BuildingDetails from '#lib/BuildingDetails.svelte';
+	import InfoPopup from '#lib/InfoPopup.svelte';
 
 	let {
 		building,

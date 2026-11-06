@@ -1,23 +1,28 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Ethic, Modifier, EthicImplication, PolicyRestriction } from '$lib/server/db';
-	import { empire } from '$lib/empire.svelte';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
+	import type {
+		Ethic,
+		Modifier,
+		EthicImplication,
+		PolicyRestriction
+	} from '#lib/server/db/index.ts';
+	import { empire } from '#lib/empire.svelte.ts';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
 	import {
 		combineImplications,
 		combinePolicyRestrictions,
 		ETHIC_AXES,
 		ETHIC_BUDGET,
 		MONUMENT_BONUSES
-	} from '$lib/ethics';
-	import Tip from '$lib/Tip.svelte';
-	import FederationLink from '$lib/FederationLink.svelte';
-	import { federationTip } from '$lib/federations';
-	import { compatChecker } from '$lib/compat';
-	import { addedBy, ethicLimits, withEthic } from '$lib/limits';
-	import { conflictClass, pickClass } from '$lib/conflict';
-	import CapitalContributions from '$lib/CapitalContributions.svelte';
-	import { completeDraft, contributionRows } from '$lib/startCapital';
+	} from '#lib/ethics.ts';
+	import Tip from '#lib/Tip.svelte';
+	import FederationLink from '#lib/FederationLink.svelte';
+	import { federationTip } from '#lib/federations.ts';
+	import { compatChecker } from '#lib/compat.ts';
+	import { addedBy, ethicLimits, withEthic } from '#lib/limits.ts';
+	import { conflictClass, pickClass } from '#lib/conflict.ts';
+	import CapitalContributions from '#lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows } from '#lib/startCapital.ts';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -44,7 +49,7 @@
 	const pointsRemaining = $derived(ETHIC_BUDGET - pointsUsed);
 
 	// Any ethic can be picked: one on an axis that already has a pick replaces it, and
-	// going over the points is flagged, not enforced (see $lib/limits).
+	// going over the points is flagged, not enforced (see #lib/limits).
 	function toggle(ethicKey: string) {
 		empire.setEthics(
 			selected.has(ethicKey)
@@ -184,7 +189,7 @@
 
 	// ── Formatting ───────────────────────────────────────────────────────────
 	// Value (fractions vs percentages), good/bad colouring, and label formatting all
-	// live in one place: $lib/civics.
+	// live in one place: #lib/civics.
 	const formatValue = formatModifierValue;
 	const valueColor = modifierColor;
 	const modLabel = modifierLabel;

@@ -2,13 +2,13 @@
 	// "Help me choose": the helpers that compare picks side by side, across the builder pages —
 	// each a folded table, picking from it as on the page it belongs to.
 	import type { PageData } from './$types';
-	import type { Civic } from '$lib/server/db';
-	import CouncilSeatTable from '$lib/CouncilSeatTable.svelte';
-	import OwnedBuildingTable from '$lib/OwnedBuildingTable.svelte';
-	import UnlockTable from '$lib/UnlockTable.svelte';
-	import type { Pick } from '$lib/unlocks';
-	import { compatChecker } from '$lib/compat';
-	import { empire } from '$lib/empire.svelte';
+	import type { Civic } from '#lib/server/db/index.ts';
+	import CouncilSeatTable from '#lib/CouncilSeatTable.svelte';
+	import OwnedBuildingTable from '#lib/OwnedBuildingTable.svelte';
+	import UnlockTable from '#lib/UnlockTable.svelte';
+	import type { Pick } from '#lib/unlocks.ts';
+	import { compatChecker } from '#lib/compat.ts';
+	import { empire } from '#lib/empire.svelte.ts';
 
 	let { data }: { data: PageData } = $props();
 	const compat = $derived(compatChecker(empire.draft, data));

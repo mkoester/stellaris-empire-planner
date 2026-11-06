@@ -1,9 +1,9 @@
 <script lang="ts">
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import { sectionId, sectionLinks } from '$lib/sections';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '#lib/sections.ts';
 	import type { PageData } from './$types';
-	import type { FallenEmpireTech } from '$lib/server/db';
-	import Tip from '$lib/Tip.svelte';
+	import type { FallenEmpireTech } from '#lib/server/db/index.ts';
+	import Tip from '#lib/Tip.svelte';
 
 	let { data }: { data: PageData } = $props();
 

@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { PlanetClass } from '$lib/server/db';
-	import { groupPlanetClasses, climateBadge } from '$lib/planets';
-	import { empire } from '$lib/empire.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import { compatChecker } from '$lib/compat';
-	import { conflictClass } from '$lib/conflict';
-	import CapitalContributions from '$lib/CapitalContributions.svelte';
-	import { completeDraft, contributionRows, isHomeworld, mentioned } from '$lib/startCapital';
+	import type { PlanetClass } from '#lib/server/db/index.ts';
+	import { groupPlanetClasses, climateBadge } from '#lib/planets.ts';
+	import { empire } from '#lib/empire.svelte.ts';
+	import Tip from '#lib/Tip.svelte';
+	import { compatChecker } from '#lib/compat.ts';
+	import { conflictClass } from '#lib/conflict.ts';
+	import CapitalContributions from '#lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows, isHomeworld, mentioned } from '#lib/startCapital.ts';
 
 	let { data }: { data: PageData } = $props();
 	const groups = $derived(groupPlanetClasses(data.planetClasses as PlanetClass[]));
@@ -15,7 +15,7 @@
 	const draft = $derived(empire.draft);
 	// Debug: render selectable cards as plain elements so their text can be copied.
 	const debug = $derived(data.debugDisableSelection);
-	// Cross-section conflicts (warn only — see $lib/compat): civic/origin/trait homeworld gates.
+	// Cross-section conflicts (warn only — see #lib/compat): civic/origin/trait homeworld gates.
 	const compat = $derived(compatChecker(empire.draft, data));
 	// What each homeworld the setup scripts test adds to the starting capital. An origin that
 	// forces another world is dropped for the row (the default origin stands in).

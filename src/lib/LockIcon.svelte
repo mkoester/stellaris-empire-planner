@@ -2,7 +2,7 @@
 	// The brass/metallic padlock marking civics that can't be added or removed after the
 	// game starts (`modification = no`). One source of truth — used on the Civics cards,
 	// the Empire summary and the floating overview. Tooltip via the shared Tip (Skeleton).
-	import Tip from '$lib/Tip.svelte';
+	import Tip from '#lib/Tip.svelte';
 	let {
 		class: cls = '',
 		size = 12,

@@ -1,6 +1,6 @@
 # stellaris-empire-planner
 
-SvelteKit 2 / Svelte 5 / SkeletonUI v4 / Tailwind v4 / TypeScript / pnpm. Reads the SQLite DB built
+SvelteKit 3 / Svelte 5 / SkeletonUI v4 / Tailwind v4 / TypeScript / pnpm. Reads the SQLite DB built
 by the sibling `stellaris-data-extraction` repo.
 
 Cross-project conventions come from the OKF vault; workspace rules from `../AGENTS.md`. **The full

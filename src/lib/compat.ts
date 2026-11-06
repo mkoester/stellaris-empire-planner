@@ -10,9 +10,9 @@
 //
 // A gate on something not chosen yet never fires — an unset species class can't violate
 // "needs an Infernal species" — so planning in any order doesn't drown in warnings.
-import type { CompatData, CompatRule } from '$lib/server/db';
-import type { EmpireDraft } from '$lib/empire.svelte';
-import { keyName } from '$lib/empireFile';
+import type { CompatData, CompatRule } from '#lib/server/db/index.ts';
+import type { EmpireDraft } from '#lib/empire.svelte.ts';
+import { keyName } from '#lib/empireFile.ts';
 
 export interface Picks {
 	ethics: string[];

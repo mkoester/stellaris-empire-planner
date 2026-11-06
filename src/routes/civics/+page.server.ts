@@ -1,4 +1,4 @@
-import { unlocksByPick } from '$lib/unlocks';
+import { unlocksByPick } from '#lib/unlocks.ts';
 import {
 	loadBuildingsByUnlock,
 	loadCouncilPositions,
@@ -7,7 +7,7 @@ import {
 	loadJobSwapsBySource,
 	loadOwnedBuildings,
 	loadPickUnlocks
-} from '$lib/server/db';
+} from '#lib/server/db/index.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => ({

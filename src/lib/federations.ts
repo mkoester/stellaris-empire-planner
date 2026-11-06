@@ -1,7 +1,7 @@
 // Pure helpers for federation types: the hover summary shown wherever one is linked, and
 // which types a civic or ethic opens up or rules out.
-import type { FederationPerk, FederationType, PerkScope } from '$lib/server/db';
-import { formatModifierValue, modifierLabel } from '$lib/civics';
+import type { FederationPerk, FederationType, PerkScope } from '#lib/server/db/index.ts';
+import { formatModifierValue, modifierLabel } from '#lib/civics.ts';
 
 export const SCOPE_LABELS: Record<PerkScope, string> = {
 	members: 'Members',

@@ -1,6 +1,6 @@
 // Parse a Stellaris empire file (user_empire_designs.txt, same format as the
 // prescripted empires) into Empire objects, and resolve raw keys to display names.
-import type { Empire, EmpireFlag } from '$lib/server/db';
+import type { Empire, EmpireFlag } from '#lib/server/db/index.ts';
 
 // ── Clausewitz-ish tokenizer + parser ────────────────────────────────────────
 function tokenize(text: string): string[] {

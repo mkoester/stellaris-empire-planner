@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { empire } from '$lib/empire.svelte';
-	import type { NameField } from '$lib/empire.svelte';
+	import { empire } from '#lib/empire.svelte.ts';
+	import type { NameField } from '#lib/empire.svelte.ts';
 
 	const draft = $derived(empire.draft);
 

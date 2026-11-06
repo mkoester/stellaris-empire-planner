@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { empire } from './empire.svelte';
-import type { Empire } from '$lib/server/db';
+import type { Empire } from '#lib/server/db/index.ts';
 
 const mk = (o: Partial<Empire>): Empire => ({
 	key: 'e',

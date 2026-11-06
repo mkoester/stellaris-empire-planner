@@ -1,9 +1,9 @@
 <script lang="ts">
 	// "Help me choose": the council agendas and edicts a civic, origin or authority opens, side by
 	// side, each pick a button that picks it. Folded by default.
-	import ConflictBadge from '$lib/ConflictBadge.svelte';
-	import UnlockChips from '$lib/UnlockChips.svelte';
-	import type { Pick, PickKind, Unlock } from '$lib/unlocks';
+	import ConflictBadge from '#lib/ConflictBadge.svelte';
+	import UnlockChips from '#lib/UnlockChips.svelte';
+	import type { Pick, PickKind, Unlock } from '#lib/unlocks.ts';
 
 	let {
 		unlocks,

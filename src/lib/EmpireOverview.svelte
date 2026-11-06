@@ -1,11 +1,11 @@
 <script lang="ts">
 	// Compact, always-visible summary of the current empire draft — rendered as a
 	// floating panel beside the builder pages so the running choices stay in view.
-	import { empire } from '$lib/empire.svelte';
-	import { keyName, shipTypeLabel } from '$lib/empireFile';
-	import type { OriginStart } from '$lib/server/db';
-	import LockIcon from '$lib/LockIcon.svelte';
-	import Tip from '$lib/Tip.svelte';
+	import { empire } from '#lib/empire.svelte.ts';
+	import { keyName, shipTypeLabel } from '#lib/empireFile.ts';
+	import type { OriginStart } from '#lib/server/db/index.ts';
+	import LockIcon from '#lib/LockIcon.svelte';
+	import Tip from '#lib/Tip.svelte';
 
 	let {
 		names,

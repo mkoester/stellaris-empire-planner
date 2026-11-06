@@ -1,10 +1,10 @@
 <script lang="ts">
 	// The branch office buildings a civic adds to, as a chip with a popup: per building, what the
 	// civic adds there. The full table is on "Help me choose".
-	import type { CivicBoost } from '$lib/branchOffices';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
-	import { jobCount } from '$lib/branchOffices';
-	import InfoPopup from '$lib/InfoPopup.svelte';
+	import type { CivicBoost } from '#lib/branchOffices.ts';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
+	import { jobCount } from '#lib/branchOffices.ts';
+	import InfoPopup from '#lib/InfoPopup.svelte';
 
 	let { boost }: { boost: CivicBoost } = $props();
 	const num = (n: number) => (Number.isInteger(n) ? n : parseFloat(n.toFixed(2)));
