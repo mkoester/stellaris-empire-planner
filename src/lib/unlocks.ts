@@ -2,9 +2,9 @@
 // `potential`/`allow` trigger (requirements only — a `not` is an exclusion, not an unlock).
 // Scripted triggers the extraction keeps as leaves are resolved here, after the game's
 // `common/scripted_triggers/00_scripted_triggers.txt` (4.5.2).
-import type { Trigger } from '$lib/server/db';
-import type { ConditionalModifier } from '$lib/server/db';
-import { positiveLeaves } from '$lib/triggers';
+import type { Trigger } from '#lib/server/db/index.ts';
+import type { ConditionalModifier } from '#lib/server/db/index.ts';
+import { positiveLeaves } from '#lib/triggers.ts';
 
 export type PickKind = 'civic' | 'origin' | 'authority';
 export type Pick = { kind: PickKind; key: string };

@@ -1,33 +1,33 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Empire, ModifierSource, Ethic, Civic, Origin } from '$lib/server/db';
-	import { empire } from '$lib/empire.svelte';
-	import { parseEmpireFile, serializeEmpire, keyName, shipTypeLabel } from '$lib/empireFile';
+	import type { Empire, ModifierSource, Ethic, Civic, Origin } from '#lib/server/db/index.ts';
+	import { empire } from '#lib/empire.svelte.ts';
+	import { parseEmpireFile, serializeEmpire, keyName, shipTypeLabel } from '#lib/empireFile.ts';
 	import {
 		collectEffects,
 		collectSpeciesEffects,
 		groupEffects,
 		type EffectEntry
-	} from '$lib/effects';
+	} from '#lib/effects.ts';
 	import {
 		formatModifierValue,
 		formatScalingModifier,
 		modifierColor,
 		modifierLabel
-	} from '$lib/civics';
-	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '$lib/ethics';
-	import RuleText from '$lib/RuleText.svelte';
-	import LockIcon from '$lib/LockIcon.svelte';
+	} from '#lib/civics.ts';
+	import { combineImplications, combinePolicyRestrictions, MONUMENT_BONUSES } from '#lib/ethics.ts';
+	import RuleText from '#lib/RuleText.svelte';
+	import LockIcon from '#lib/LockIcon.svelte';
 	import {
 		allowedAscensionPaths,
 		ascensionGates,
 		compatChecker,
 		grantedTraits,
 		ASCENSION_PATHS
-	} from '$lib/compat';
-	import { ethicLimits, traitLimits } from '$lib/limits';
-	import AscensionChips from '$lib/AscensionChips.svelte';
-	import StartingCapital from '$lib/StartingCapital.svelte';
+	} from '#lib/compat.ts';
+	import { ethicLimits, traitLimits } from '#lib/limits.ts';
+	import AscensionChips from '#lib/AscensionChips.svelte';
+	import StartingCapital from '#lib/StartingCapital.svelte';
 
 	let { data }: { data: PageData } = $props();
 	const predefined = $derived(data.predefined as Empire[]);
@@ -179,7 +179,7 @@
 	}
 
 	const draft = $derived(empire.draft);
-	// Rules the draft breaks across sections (warn only — see $lib/compat), and the traits
+	// Rules the draft breaks across sections (warn only — see #lib/compat), and the traits
 	// its civics/origin grant the founder species (shown with its traits and effects).
 	const compat = $derived(compatChecker(draft, data));
 	// Plus each section's own limits (ethic points/axes, trait picks/points/opposites), per

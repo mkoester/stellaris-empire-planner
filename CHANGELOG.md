@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.5] - 2026-11-06
+
+### Changed
+
+- Picks work from the keyboard: Tab reaches each card or chip (outlined while focused), Space or
+  Enter picks it, and screen readers announce its name and whether it is picked.
+- Runs on SvelteKit 3 and Node 26 (the current LTS). **Deployment:** the `ORIGIN` setting is gone —
+  the planner takes its origin from the request's `Host` header, so the reverse proxy must pass it
+  through (`DEPLOY.md`); an `ORIGIN` line left in `.override.env` is ignored.
+
+### Fixed
+
+- Invalid HTML on the builder pages: cards were buttons holding chips, popups and other buttons,
+  and tooltips sat inside paragraphs. The browser repaired that markup, so the page could differ
+  from what the app expected and shift while loading.
+
 ## [0.1.4] - 2026-11-04
 
 ### Added

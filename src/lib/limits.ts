@@ -1,9 +1,9 @@
 // A section's own limits — ethic points and axes, trait picks, points and opposites —
 // as conflicts, so the builder lets you pick past them and flags the result instead
-// (the cross-section rules are $lib/compat). Each check takes one section's picks and
+// (the cross-section rules are #lib/compat). Each check takes one section's picks and
 // returns what they break; `addedBy` turns that into the reasons for one option.
-import type { Conflict, NameFn } from '$lib/compat';
-import { ETHIC_AXES, ETHIC_BUDGET } from '$lib/ethics';
+import type { Conflict, NameFn } from '#lib/compat.ts';
+import { ETHIC_AXES, ETHIC_BUDGET } from '#lib/ethics.ts';
 
 export interface EthicInfo {
 	key: string;

@@ -1,13 +1,14 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Origin, Civic } from '$lib/server/db';
-	import { civicTypeLabel } from '$lib/civics';
-	import { empire } from '$lib/empire.svelte';
-	import { compatChecker } from '$lib/compat';
-	import { conflictClass } from '$lib/conflict';
-	import CapitalContributions from '$lib/CapitalContributions.svelte';
-	import { completeDraft, contributionRows } from '$lib/startCapital';
-	import ConflictBadge from '$lib/ConflictBadge.svelte';
+	import type { Origin, Civic } from '#lib/server/db/index.ts';
+	import { civicTypeLabel } from '#lib/civics.ts';
+	import { empire } from '#lib/empire.svelte.ts';
+	import { compatChecker } from '#lib/compat.ts';
+	import { conflictClass } from '#lib/conflict.ts';
+	import CapitalContributions from '#lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows } from '#lib/startCapital.ts';
+	import ConflictBadge from '#lib/ConflictBadge.svelte';
+	import PickCard from '#lib/PickCard.svelte';
 
 	let { data }: { data: PageData } = $props();
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -22,7 +23,7 @@
 				: 'regular'
 	);
 
-	// Cross-section conflicts (warn only — see $lib/compat): origin/civic ship-type gates.
+	// Cross-section conflicts (warn only — see #lib/compat): origin/civic ship-type gates.
 	const compat = $derived(compatChecker(empire.draft, data));
 
 	type Req = { kind: string; operator: string; value: string };
@@ -86,26 +87,23 @@
 		<div class="flex flex-wrap gap-2">
 			{#each [{ id: 'regular', label: 'Regular' }, { id: 'organic', label: 'Organic (bio-ships)' }] as opt (opt.id)}
 				{@const conflicts = compat.reasons('ship_type', opt.id)}
-				<!-- svelte-ignore a11y_no_static_element_interactions -->
-				<svelte:element
-					this={debug ? 'div' : 'button'}
-					type={debug ? undefined : 'button'}
-					aria-pressed={debug ? undefined : shipType === opt.id}
-					onclick={debug
-						? undefined
-						: () =>
-								empire.setShipType(shipType === opt.id ? null : (opt.id as 'regular' | 'organic'))}
+				<PickCard
 					class="flex items-center gap-2 rounded border px-3 py-1.5 text-sm transition-colors {shipType ===
 					opt.id
 						? 'border-primary-500 bg-primary-500/10'
 						: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflictClass(
 						conflicts,
 						shipType === opt.id
-					)} {debug ? 'cursor-text select-text' : ''}"
+					)}"
+					{debug}
+					selected={shipType === opt.id}
+					label={opt.label}
+					onToggle={() =>
+						empire.setShipType(shipType === opt.id ? null : (opt.id as 'regular' | 'organic'))}
 				>
 					{opt.label}
 					<ConflictBadge reasons={conflicts} />
-				</svelte:element>
+				</PickCard>
 			{/each}
 		</div>
 	</section>

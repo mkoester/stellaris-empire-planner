@@ -2,7 +2,7 @@
 	// Legend for the colour-coded requirement chips (one hue per gated kind). Uses the
 	// stronger "excl." shade as the swatch; the lighter shade means "needs". Defaults to
 	// the full set; a page can pass the subset of kinds it actually uses.
-	import { REQUIREMENT_KINDS, requirementChipClass } from '$lib/civics';
+	import { REQUIREMENT_KINDS, requirementChipClass } from '#lib/civics.ts';
 
 	let { kinds = REQUIREMENT_KINDS }: { kinds?: { kind: string; label: string }[] } = $props();
 </script>

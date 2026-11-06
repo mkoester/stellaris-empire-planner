@@ -1,7 +1,7 @@
 // Shared ethics helpers: the axes and point budget, the "Gameplay Implications" /
 // policy-restriction aggregation and the monument-bonus reference table. Used by both the Ethics page and the Empire
 // summary so the two stay in lockstep.
-import type { Ethic } from '$lib/server/db';
+import type { Ethic } from '#lib/server/db/index.ts';
 
 const ethicSource = (e: Ethic) => e.label ?? e.key;
 

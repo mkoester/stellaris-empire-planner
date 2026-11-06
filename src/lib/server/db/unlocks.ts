@@ -3,7 +3,7 @@
 import { db } from './client';
 import { loadModifiers } from './traditions';
 import type { Trigger } from './traditions';
-import { picksIn, type Unlock } from '$lib/unlocks';
+import { picksIn, type Unlock } from '#lib/unlocks.ts';
 
 const leafValues = (...ts: (Trigger | null)[]): string[] =>
 	ts.flatMap((t) => (t === null ? [] : 'leaf' in t ? [t.value] : leafValues(...t.args)));

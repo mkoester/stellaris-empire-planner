@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import { empire } from '$lib/empire.svelte';
+	import { empire } from '#lib/empire.svelte.ts';
 
 	let { data }: { data: PageData } = $props();
 	const flagAssets = $derived(data.flagAssets);

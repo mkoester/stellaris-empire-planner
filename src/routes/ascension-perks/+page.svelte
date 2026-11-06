@@ -1,13 +1,13 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { AscensionPerk } from '$lib/server/db';
-	import EmpireProfileBar from '$lib/EmpireProfileBar.svelte';
-	import RequirementChips from '$lib/RequirementChips.svelte';
-	import EffectList from '$lib/EffectList.svelte';
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import { settings } from '$lib/settings.svelte';
-	import { dlcBadge } from '$lib/precursors';
+	import type { AscensionPerk } from '#lib/server/db/index.ts';
+	import EmpireProfileBar from '#lib/EmpireProfileBar.svelte';
+	import RequirementChips from '#lib/RequirementChips.svelte';
+	import EffectList from '#lib/EffectList.svelte';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import { settings } from '#lib/settings.svelte.ts';
+	import { dlcBadge } from '#lib/precursors.ts';
 	import {
 		ANY_PROFILE,
 		evaluate,
@@ -16,8 +16,8 @@
 		requirementLines,
 		triggerText,
 		type RequirementLine
-	} from '$lib/triggers';
-	import { effective, matches, searchText, treeLinks, unlocksFor } from '$lib/traditions';
+	} from '#lib/triggers.ts';
+	import { effective, matches, searchText, treeLinks, unlocksFor } from '#lib/traditions.ts';
 
 	let { data }: { data: PageData } = $props();
 

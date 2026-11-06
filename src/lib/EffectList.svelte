@@ -4,11 +4,11 @@
 	// then the custom tooltip text. Edicts/agendas it unlocks get a hover tooltip (federation
 	// types also link to their card): where the text names them, on the name itself;
 	// otherwise on an extra "Unlocks …" line.
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
-	import FederationLink from '$lib/FederationLink.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import { linkify, type Effective, type Unlock } from '$lib/traditions';
-	import { triggerText } from '$lib/triggers';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
+	import FederationLink from '#lib/FederationLink.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import { linkify, type Effective, type Unlock } from '#lib/traditions.ts';
+	import { triggerText } from '#lib/triggers.ts';
 
 	let {
 		effect,
@@ -56,16 +56,16 @@
 	</ul>
 {/if}
 {#if effect.tooltip}
-	<p class="text-xs leading-relaxed whitespace-pre-line opacity-75">
+	<div class="text-xs leading-relaxed whitespace-pre-line opacity-75">
 		{#each parts as part, i (i)}{#if part.index === null}{part.text}{:else}{@render unlockName(
 					unlocks[part.index],
 					part.text
 				)}{/if}{/each}
-	</p>
+	</div>
 {/if}
 {#if unmentioned.length}
-	<p class="text-xs opacity-75">
+	<div class="text-xs opacity-75">
 		{#each unmentioned as u, i (u.key)}{i > 0 ? ', ' : ''}Unlocks {u.kind}:
 			{@render unlockName(u, u.name)}{/each}
-	</p>
+	</div>
 {/if}

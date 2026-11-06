@@ -1,8 +1,8 @@
 <script lang="ts">
 	// Warn-only marker for a builder option that clashes with the rest of the empire
-	// (see $lib/compat). Renders nothing when there's no conflict; the reasons are in the
+	// (see #lib/compat). Renders nothing when there's no conflict; the reasons are in the
 	// tooltip, one per line. The option itself stays clickable.
-	import Tip from '$lib/Tip.svelte';
+	import Tip from '#lib/Tip.svelte';
 	let { reasons, class: cls = '' }: { reasons: string[]; class?: string } = $props();
 </script>
 

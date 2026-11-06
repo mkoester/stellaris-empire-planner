@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Civic, OwnedBuilding, OwnedBuildingEffect } from '$lib/server/db';
+import type { Civic, OwnedBuilding, OwnedBuildingEffect } from '#lib/server/db/index.ts';
 import {
 	access,
 	boostingCivics,

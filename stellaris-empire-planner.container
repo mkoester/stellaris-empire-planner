@@ -19,7 +19,7 @@ Pull=never
 # container is read-only/stateless — no Volume mounts and no persistent dirs needed.
 # (Updating the game DB = rebuild + reship the image.)
 
-# Environment: committed defaults + per-deployment overrides (ORIGIN, etc.).
+# Environment: committed defaults + per-deployment overrides.
 EnvironmentFile=%h/.config/containers/systemd/stellaris-empire-planner.env
 EnvironmentFile=%h/.config/containers/systemd/stellaris-empire-planner.override.env
 

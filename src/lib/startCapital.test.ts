@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Trigger } from '$lib/server/db';
+import type { Trigger } from '#lib/server/db/index.ts';
 import {
 	completeDraft,
 	contributions,
@@ -9,7 +9,7 @@ import {
 	simulateStartCapital,
 	type CapitalInputs,
 	type Effect
-} from '$lib/startCapital';
+} from '#lib/startCapital.ts';
 
 const L = (leaf: string, value = 'yes', extra: Partial<Trigger> = {}): Trigger =>
 	({ leaf, value, ...extra }) as Trigger;

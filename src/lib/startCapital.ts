@@ -5,10 +5,16 @@
 // own (zones, flags, variables counting rural districts), so they are interpreted here in
 // order rather than looked up. A limit the planner can't decide counts as false, and its unknown
 // checks are reported, so the preview never claims more than it knows.
-import type { CivicRequirement, Trigger } from '$lib/server/db';
-import { prettyKey } from '$lib/civics';
-import { picksFromDraft, type DraftPicks } from '$lib/compat';
-import { evaluate, leafText, profileFromDraft, type EmpireProfile, type Tri } from '$lib/triggers';
+import type { CivicRequirement, Trigger } from '#lib/server/db/index.ts';
+import { prettyKey } from '#lib/civics.ts';
+import { picksFromDraft, type DraftPicks } from '#lib/compat.ts';
+import {
+	evaluate,
+	leafText,
+	profileFromDraft,
+	type EmpireProfile,
+	type Tri
+} from '#lib/triggers.ts';
 
 type Amount = number | string; // a number, or a script variable's name
 

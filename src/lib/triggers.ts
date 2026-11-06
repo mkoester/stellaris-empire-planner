@@ -3,8 +3,8 @@
 // (stellaris-data-extraction extractor/triggers.py normalize_trigger). Evaluation is
 // three-valued: `null` means the profile can't tell (a country flag, a tech, the number of
 // traditions taken…), so an item is only hidden when its trigger is definitely false.
-import type { Trigger } from '$lib/server/db';
-import { prettyKey } from '$lib/civics';
+import type { Trigger } from '#lib/server/db/index.ts';
+import { prettyKey } from '#lib/civics.ts';
 
 export type Tri = boolean | null;
 

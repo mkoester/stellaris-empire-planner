@@ -1,6 +1,6 @@
 // Cross-section compatibility rules: every civic / origin / authority / species-trait
 // eligibility row in one flat list, plus the traits civics and origins grant, the trait
-// opposites and the ascension-path gates. Evaluated against the draft by $lib/compat.
+// opposites and the ascension-path gates. Evaluated against the draft by #lib/compat.
 import { db } from './client';
 
 export type RuleOwnerKind = 'civic' | 'origin' | 'authority' | 'trait';

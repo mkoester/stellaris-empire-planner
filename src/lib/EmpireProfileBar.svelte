@@ -1,11 +1,11 @@
 <script lang="ts">
 	// The global filter bar of the Tradition Trees and Ascension Perks pages: an empire
 	// profile (shared via settings), "from planned empire", "show unavailable", and search.
-	import ProfileChips from '$lib/ProfileChips.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import { empire } from '$lib/empire.svelte';
-	import { settings } from '$lib/settings.svelte';
-	import { ANY_PROFILE, isActive, profileFromDraft } from '$lib/triggers';
+	import ProfileChips from '#lib/ProfileChips.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import { empire } from '#lib/empire.svelte.ts';
+	import { settings } from '#lib/settings.svelte.ts';
+	import { ANY_PROFILE, isActive, profileFromDraft } from '#lib/triggers.ts';
 
 	let {
 		query = $bindable(''),

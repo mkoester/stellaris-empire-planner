@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Trigger } from '$lib/server/db';
+import type { Trigger } from '#lib/server/db/index.ts';
 import { picksIn, unlocksByPick, type Unlock } from './unlocks';
 
 const leaf = (l: string, value: string): Trigger => ({ leaf: l, value });

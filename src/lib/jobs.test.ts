@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { workedOutput } from '$lib/jobs';
+import { workedOutput } from '#lib/jobs.ts';
 
 const job = (amount: number, resources: [string, string, number][]) => ({
 	job: 'x',

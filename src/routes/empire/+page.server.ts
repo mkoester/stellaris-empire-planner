@@ -7,7 +7,7 @@ import {
 	loadOrigins,
 	loadArchetypes,
 	loadHistoryTraitKeys
-} from '$lib/server/db';
+} from '#lib/server/db/index.ts';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = () => ({
@@ -17,7 +17,7 @@ export const load: PageServerLoad = () => ({
 	ethics: loadEthics(),
 	civics: loadCivics(),
 	origins: loadOrigins(),
-	// Trait-pick / point budgets, checked like the Species page does (see $lib/limits).
+	// Trait-pick / point budgets, checked like the Species page does (see #lib/limits).
 	archetypes: loadArchetypes(),
 	historyTraits: loadHistoryTraitKeys()
 });

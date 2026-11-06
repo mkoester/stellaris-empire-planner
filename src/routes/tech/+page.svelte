@@ -1,9 +1,9 @@
 <script lang="ts">
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import { sectionId, sectionLinks } from '$lib/sections';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '#lib/sections.ts';
 	import type { PageData } from './$types';
-	import type { RepeatableTech } from '$lib/server/db';
-	import { formatModifierValue, modifierLabel, modifierColor } from '$lib/civics';
+	import type { RepeatableTech } from '#lib/server/db/index.ts';
+	import { formatModifierValue, modifierLabel, modifierColor } from '#lib/civics.ts';
 
 	let { data }: { data: PageData } = $props();
 

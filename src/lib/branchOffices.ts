@@ -1,8 +1,8 @@
 // "Help me choose" for a MegaCorp: what each branch office building gives the host colony and
 // the corporation (its capital), and which civics add to which building. Holdings (an overlord's
 // buildings on a subject) read the same way. Data: `loadOwnedBuildings()`.
-import type { Civic, OwnedBuilding, OwnedBuildingEffect, Trigger } from '$lib/server/db';
-import { leafKeys, triggerText } from '$lib/triggers';
+import type { Civic, OwnedBuilding, OwnedBuildingEffect, Trigger } from '#lib/server/db/index.ts';
+import { leafKeys, triggerText } from '#lib/triggers.ts';
 
 export interface SplitEffects {
 	colony: OwnedBuildingEffect[]; // always, on the host colony

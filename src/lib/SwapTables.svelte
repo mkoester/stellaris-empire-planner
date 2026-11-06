@@ -4,9 +4,9 @@
 	// Default trigger is the orange "Replaces" badge; pass `children` to use custom trigger
 	// content (e.g. wrap a card's description text) — both surface the same tables.
 	import { Tooltip } from '@skeletonlabs/skeleton-svelte';
-	import type { JobSwap } from '$lib/server/db';
+	import type { JobSwap } from '#lib/server/db/index.ts';
 	import type { Snippet } from 'svelte';
-	import { swapTable } from '$lib/jobs';
+	import { swapTable } from '#lib/jobs.ts';
 
 	let {
 		swaps,

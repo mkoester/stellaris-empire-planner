@@ -1,4 +1,4 @@
-import { ANY_PROFILE, type EmpireProfile } from '$lib/triggers';
+import { ANY_PROFILE, type EmpireProfile } from '#lib/triggers.ts';
 
 // Small global UI preferences shared across pages. Module-level $state is fine here
 // (single-user local tool); pages read settings.* and it stays in sync.

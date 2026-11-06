@@ -1,7 +1,7 @@
 <script lang="ts">
 	// Authority + flag chips for an EmpireProfile. Used by the global filter bar (all axes)
 	// and by each tradition tree's own switcher (only the axes that tree branches on).
-	import Tip from '$lib/Tip.svelte';
+	import Tip from '#lib/Tip.svelte';
 	import {
 		AUTHORITIES,
 		FLAGS,
@@ -11,7 +11,7 @@
 		type Authority,
 		type EmpireProfile,
 		type ProfileFlag
-	} from '$lib/triggers';
+	} from '#lib/triggers.ts';
 
 	let {
 		profile,

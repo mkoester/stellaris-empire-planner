@@ -1,13 +1,13 @@
 <script lang="ts">
 	// The council agendas and edicts a pick opens, as chips with a popup: what each gives and
 	// what else it needs.
-	import type { ConditionalModifier } from '$lib/server/db';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
-	import { leafText, withAllDlc } from '$lib/triggers';
-	import type { Trigger } from '$lib/server/db';
-	import type { Unlock } from '$lib/unlocks';
-	import InfoPopup from '$lib/InfoPopup.svelte';
-	import RuleText from '$lib/RuleText.svelte';
+	import type { ConditionalModifier } from '#lib/server/db/index.ts';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
+	import { leafText, withAllDlc } from '#lib/triggers.ts';
+	import type { Trigger } from '#lib/server/db/index.ts';
+	import type { Unlock } from '#lib/unlocks.ts';
+	import InfoPopup from '#lib/InfoPopup.svelte';
+	import RuleText from '#lib/RuleText.svelte';
 
 	let { unlocks = [], names }: { unlocks?: Unlock[]; names: Record<string, string> } = $props();
 	const KIND = { agenda: 'Agenda', edict: 'Edict' };

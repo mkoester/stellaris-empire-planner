@@ -1,10 +1,10 @@
 <script lang="ts">
 	// The council seat a civic opens, as a chip with a popup: who can hold it and what it
 	// gives per level of the assigned leader.
-	import type { CouncilPosition } from '$lib/server/db';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
-	import InfoPopup from '$lib/InfoPopup.svelte';
-	import RuleText from '$lib/RuleText.svelte';
+	import type { CouncilPosition } from '#lib/server/db/index.ts';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
+	import InfoPopup from '#lib/InfoPopup.svelte';
+	import RuleText from '#lib/RuleText.svelte';
 
 	let { position: c }: { position: CouncilPosition } = $props();
 	const classes = $derived(

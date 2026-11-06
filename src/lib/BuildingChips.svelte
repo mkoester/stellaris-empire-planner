@@ -1,9 +1,9 @@
 <script lang="ts">
 	// "Unlocks" row for a civic / origin card: one chip per building it unlocks, each
 	// opening a popup with the building's numbers. Long lists (Wilderness) fold after a few.
-	import type { ReferenceBuilding } from '$lib/server/db';
-	import BuildingDetails from '$lib/BuildingDetails.svelte';
-	import InfoPopup from '$lib/InfoPopup.svelte';
+	import type { ReferenceBuilding } from '#lib/server/db/index.ts';
+	import BuildingDetails from '#lib/BuildingDetails.svelte';
+	import InfoPopup from '#lib/InfoPopup.svelte';
 
 	let { buildings }: { buildings: ReferenceBuilding[] } = $props();
 	const FOLD = 4;

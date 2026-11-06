@@ -2,8 +2,8 @@
 	// "Help me choose" for a MegaCorp (and overlords): the branch office buildings — or holdings —
 	// with what each gives the host colony and the owner, and the civics that add to them, each
 	// civic a button that picks it. Folded by default.
-	import type { Civic, OwnedBuilding, OwnedBuildingEffect } from '$lib/server/db';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
+	import type { Civic, OwnedBuilding, OwnedBuildingEffect } from '#lib/server/db/index.ts';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
 	import {
 		access,
 		boostingCivics,
@@ -13,8 +13,8 @@
 		jobCount,
 		jobNames,
 		splitEffects
-	} from '$lib/branchOffices';
-	import ConflictBadge from '$lib/ConflictBadge.svelte';
+	} from '#lib/branchOffices.ts';
+	import ConflictBadge from '#lib/ConflictBadge.svelte';
 
 	let {
 		title,

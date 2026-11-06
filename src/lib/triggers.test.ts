@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import type { Trigger } from '$lib/server/db';
+import type { Trigger } from '#lib/server/db/index.ts';
 import {
 	ANY_PROFILE,
 	evaluate,
@@ -13,7 +13,7 @@ import {
 	triggerText,
 	withAuthority,
 	type EmpireProfile
-} from '$lib/triggers';
+} from '#lib/triggers.ts';
 
 const L = (leaf: string, value = 'yes', cmp?: string): Trigger =>
 	cmp ? { leaf, value, cmp } : { leaf, value };

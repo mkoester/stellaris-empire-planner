@@ -1,11 +1,11 @@
 <script lang="ts">
 	// "Help me choose": the council seats civics open, side by side — what each gives per level of
 	// its leader, who can hold it — to pick a civic by its seat. Folded by default.
-	import type { Civic, CouncilPosition } from '$lib/server/db';
-	import { formatModifierValue, modifierColor, modifierLabel } from '$lib/civics';
-	import { councilSeatRows, seatClasses, type SeatSort } from '$lib/council';
-	import ConflictBadge from '$lib/ConflictBadge.svelte';
-	import RuleText from '$lib/RuleText.svelte';
+	import type { Civic, CouncilPosition } from '#lib/server/db/index.ts';
+	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
+	import { councilSeatRows, seatClasses, type SeatSort } from '#lib/council.ts';
+	import ConflictBadge from '#lib/ConflictBadge.svelte';
+	import RuleText from '#lib/RuleText.svelte';
 
 	let {
 		civics,

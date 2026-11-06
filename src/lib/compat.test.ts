@@ -7,7 +7,7 @@ import {
 	violations,
 	type Picks
 } from './compat';
-import type { CompatData, CompatRule } from '$lib/server/db';
+import type { CompatData, CompatRule } from '#lib/server/db/index.ts';
 
 // Rule rows shaped like the extracted game data (origin_requirement / civic_requirement /
 // trait_requirement, granted_trait, trait_opposite) for the cases under test.

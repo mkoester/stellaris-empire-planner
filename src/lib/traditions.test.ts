@@ -8,7 +8,7 @@ import type {
 	Tradition,
 	TraditionTree,
 	Trigger
-} from '$lib/server/db';
+} from '#lib/server/db/index.ts';
 import {
 	effective,
 	isAscensionTree,
@@ -24,8 +24,8 @@ import {
 	agendaTip,
 	durationText,
 	linkify
-} from '$lib/traditions';
-import { ANY_PROFILE, type EmpireProfile } from '$lib/triggers';
+} from '#lib/traditions.ts';
+import { ANY_PROFILE, type EmpireProfile } from '#lib/triggers.ts';
 
 const L = (leaf: string, value = 'yes'): Trigger => ({ leaf, value });
 const mod = (

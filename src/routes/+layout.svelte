@@ -1,12 +1,12 @@
 <script lang="ts">
 	import './layout.css';
-	import favicon from '$lib/assets/favicon.svg';
+	import favicon from '#lib/assets/favicon.svg';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
-	import BackToTop from '$lib/BackToTop.svelte';
-	import EmpireOverview from '$lib/EmpireOverview.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import { settings } from '$lib/settings.svelte';
+	import BackToTop from '#lib/BackToTop.svelte';
+	import EmpireOverview from '#lib/EmpireOverview.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import { settings } from '#lib/settings.svelte.ts';
 
 	let { children, data } = $props();
 

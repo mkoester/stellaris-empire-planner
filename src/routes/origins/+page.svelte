@@ -1,36 +1,37 @@
 <script lang="ts">
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import { sectionId, sectionLinks } from '$lib/sections';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '#lib/sections.ts';
 	import type { PageData } from './$types';
-	import type { Origin } from '$lib/server/db';
-	import { dlcBadge } from '$lib/precursors';
+	import type { Origin } from '#lib/server/db/index.ts';
+	import { dlcBadge } from '#lib/precursors.ts';
 	import {
 		formatModifierValue,
 		modifierColor,
 		modifierLabel,
 		sortModifiers,
 		civicRequirementLines
-	} from '$lib/civics';
-	import SwapTables from '$lib/SwapTables.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import RequirementRow from '$lib/RequirementRow.svelte';
-	import RuleText from '$lib/RuleText.svelte';
-	import RequirementLegend from '$lib/RequirementLegend.svelte';
-	import { keyName } from '$lib/empireFile';
-	import { empire } from '$lib/empire.svelte';
-	import { settings } from '$lib/settings.svelte';
-	import ConflictBadge from '$lib/ConflictBadge.svelte';
-	import AscensionChips from '$lib/AscensionChips.svelte';
-	import BuildingChips from '$lib/BuildingChips.svelte';
-	import UnlockChips from '$lib/UnlockChips.svelte';
-	import { compatChecker } from '$lib/compat';
-	import { conflictClass } from '$lib/conflict';
-	import CapitalContributions from '$lib/CapitalContributions.svelte';
-	import { completeDraft, contributionRows, fitAuthority, mentioned } from '$lib/startCapital';
-	import type { JobSwap } from '$lib/server/db';
+	} from '#lib/civics.ts';
+	import SwapTables from '#lib/SwapTables.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import PickCard from '#lib/PickCard.svelte';
+	import RequirementRow from '#lib/RequirementRow.svelte';
+	import RuleText from '#lib/RuleText.svelte';
+	import RequirementLegend from '#lib/RequirementLegend.svelte';
+	import { keyName } from '#lib/empireFile.ts';
+	import { empire } from '#lib/empire.svelte.ts';
+	import { settings } from '#lib/settings.svelte.ts';
+	import ConflictBadge from '#lib/ConflictBadge.svelte';
+	import AscensionChips from '#lib/AscensionChips.svelte';
+	import BuildingChips from '#lib/BuildingChips.svelte';
+	import UnlockChips from '#lib/UnlockChips.svelte';
+	import { compatChecker } from '#lib/compat.ts';
+	import { conflictClass } from '#lib/conflict.ts';
+	import CapitalContributions from '#lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows, fitAuthority, mentioned } from '#lib/startCapital.ts';
+	import type { JobSwap } from '#lib/server/db/index.ts';
 
 	let { data }: { data: PageData } = $props();
-	// Cross-section conflicts (warn only — see $lib/compat).
+	// Cross-section conflicts (warn only — see #lib/compat).
 	const compat = $derived(compatChecker(empire.draft, data));
 	const origins = $derived(data.origins as Origin[]);
 	const names = $derived((data.names ?? {}) as Record<string, string>);
@@ -125,18 +126,17 @@
 					{@const conflicts = compat.reasons('origin', origin.key)}
 					{@const mods = sortModifiers(origin.modifiers)}
 					{@const swaps = jobSwaps[origin.key] ?? []}
-					<!-- svelte-ignore a11y_no_static_element_interactions -->
-					<svelte:element
-						this={debug ? 'div' : 'button'}
-						type={debug ? undefined : 'button'}
-						aria-pressed={debug ? undefined : selected}
-						onclick={debug ? undefined : () => empire.setOrigin(selected ? null : origin.key)}
+					<PickCard
 						class="flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 							? 'border-primary-500 bg-primary-500/10'
 							: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflictClass(
 							conflicts,
 							selected
-						)} {debug ? 'cursor-text select-text' : ''}"
+						)}"
+						{debug}
+						{selected}
+						label={origin.name ?? origin.key}
+						onToggle={() => empire.setOrigin(selected ? null : origin.key)}
 					>
 						<div class="flex items-start justify-between gap-2">
 							<h3 class="font-semibold">{origin.name ?? origin.key}</h3>
@@ -206,11 +206,11 @@
 							{/if}
 						{/if}
 
-						{#snippet descBody()}
-							{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
-							<RuleText text={origin.description!} class="text-xs opacity-55" />
-						{/snippet}
 						{#if origin.description}
+							{#snippet descBody()}
+								{#if mods.attunement.length}<hr class="my-1 border-current opacity-45" />{/if}
+								<RuleText text={origin.description!} class="text-xs opacity-55" />
+							{/snippet}
 							{#if swaps.length}
 								<SwapTables {swaps} placement="top-start" triggerClass="mt-auto block cursor-help">
 									{@render descBody()}
@@ -219,7 +219,7 @@
 								<div class="mt-auto">{@render descBody()}</div>
 							{/if}
 						{/if}
-					</svelte:element>
+					</PickCard>
 				{/each}
 			</div>
 		</section>

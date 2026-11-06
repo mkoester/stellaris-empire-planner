@@ -1,6 +1,6 @@
 // Pure helpers for the Species builder's trait cards.
-import type { CompatRule, Trait } from '$lib/server/db';
-import { civicRequirementLines, type CivicRequirementLine } from '$lib/civics';
+import type { CompatRule, Trait } from '#lib/server/db/index.ts';
+import { civicRequirementLines, type CivicRequirementLine } from '#lib/civics.ts';
 
 type TraitLike = Pick<Trait, 'key' | 'cost' | 'category' | 'archetypes' | 'modifiers' | 'tags'>;
 

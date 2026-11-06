@@ -1,6 +1,6 @@
 // Structured diff for the civic/origin job-swap table tooltips (and shared num/titleCase).
-import type { JobResource, JobSwap, Modifier, WorkedJobRow } from '$lib/server/db';
-import { formatModifierValue, modifierLabel, modifierColor } from '$lib/civics';
+import type { JobResource, JobSwap, Modifier, WorkedJobRow } from '#lib/server/db/index.ts';
+import { formatModifierValue, modifierLabel, modifierColor } from '#lib/civics.ts';
 
 const titleCase = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 const num = (n: number) => (Number.isInteger(n) ? n : parseFloat(n.toFixed(2)));

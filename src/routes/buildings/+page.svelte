@@ -1,10 +1,10 @@
 <script lang="ts">
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import { sectionId, sectionLinks } from '$lib/sections';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import { sectionId, sectionLinks } from '#lib/sections.ts';
 	import type { PageData } from './$types';
-	import type { ReferenceBuilding } from '$lib/server/db';
-	import BuildingDetails from '$lib/BuildingDetails.svelte';
-	import { keyName } from '$lib/empireFile';
+	import type { ReferenceBuilding } from '#lib/server/db/index.ts';
+	import BuildingDetails from '#lib/BuildingDetails.svelte';
+	import { keyName } from '#lib/empireFile.ts';
 
 	let { data }: { data: PageData } = $props();
 	const buildings = $derived(data.buildings as ReferenceBuilding[]);

@@ -1,15 +1,15 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { Tradition, TraditionTree } from '$lib/server/db';
-	import EmpireProfileBar from '$lib/EmpireProfileBar.svelte';
-	import ProfileChips from '$lib/ProfileChips.svelte';
-	import RequirementChips from '$lib/RequirementChips.svelte';
-	import EffectList from '$lib/EffectList.svelte';
-	import JumpLinks from '$lib/JumpLinks.svelte';
-	import Tip from '$lib/Tip.svelte';
-	import { settings } from '$lib/settings.svelte';
-	import { formatModifierValue, modifierLabel } from '$lib/civics';
-	import { dlcBadge } from '$lib/precursors';
+	import type { Tradition, TraditionTree } from '#lib/server/db/index.ts';
+	import EmpireProfileBar from '#lib/EmpireProfileBar.svelte';
+	import ProfileChips from '#lib/ProfileChips.svelte';
+	import RequirementChips from '#lib/RequirementChips.svelte';
+	import EffectList from '#lib/EffectList.svelte';
+	import JumpLinks from '#lib/JumpLinks.svelte';
+	import Tip from '#lib/Tip.svelte';
+	import { settings } from '#lib/settings.svelte.ts';
+	import { formatModifierValue, modifierLabel } from '#lib/civics.ts';
+	import { dlcBadge } from '#lib/precursors.ts';
 	import {
 		ANY_PROFILE,
 		evaluate,
@@ -17,7 +17,7 @@
 		requirementLines,
 		triggerText,
 		type EmpireProfile
-	} from '$lib/triggers';
+	} from '#lib/triggers.ts';
 	import {
 		effective,
 		isAscensionTree,
@@ -30,7 +30,7 @@
 		treeLinks,
 		unlocksFor,
 		type Effective
-	} from '$lib/traditions';
+	} from '#lib/traditions.ts';
 
 	let { data }: { data: PageData } = $props();
 

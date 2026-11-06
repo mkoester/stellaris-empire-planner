@@ -1,9 +1,10 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import UnlockChips from '$lib/UnlockChips.svelte';
-	import type { Authority } from '$lib/server/db';
-	import { dlcBadge } from '$lib/precursors';
-	import Tip from '$lib/Tip.svelte';
+	import UnlockChips from '#lib/UnlockChips.svelte';
+	import type { Authority } from '#lib/server/db/index.ts';
+	import { dlcBadge } from '#lib/precursors.ts';
+	import Tip from '#lib/Tip.svelte';
+	import PickCard from '#lib/PickCard.svelte';
 	import {
 		formatModifierValue,
 		modifierColor,
@@ -11,18 +12,18 @@
 		civicRequirementLines,
 		requirementChipClass,
 		AUTHORITY_REQUIREMENT_KINDS
-	} from '$lib/civics';
-	import RuleText from '$lib/RuleText.svelte';
-	import RequirementLegend from '$lib/RequirementLegend.svelte';
-	import { empire } from '$lib/empire.svelte';
-	import ConflictBadge from '$lib/ConflictBadge.svelte';
-	import { compatChecker } from '$lib/compat';
-	import { conflictClass } from '$lib/conflict';
-	import CapitalContributions from '$lib/CapitalContributions.svelte';
-	import { completeDraft, contributionRows } from '$lib/startCapital';
+	} from '#lib/civics.ts';
+	import RuleText from '#lib/RuleText.svelte';
+	import RequirementLegend from '#lib/RequirementLegend.svelte';
+	import { empire } from '#lib/empire.svelte.ts';
+	import ConflictBadge from '#lib/ConflictBadge.svelte';
+	import { compatChecker } from '#lib/compat.ts';
+	import { conflictClass } from '#lib/conflict.ts';
+	import CapitalContributions from '#lib/CapitalContributions.svelte';
+	import { completeDraft, contributionRows } from '#lib/startCapital.ts';
 
 	let { data }: { data: PageData } = $props();
-	// Cross-section conflicts (warn only — see $lib/compat).
+	// Cross-section conflicts (warn only — see #lib/compat).
 	const compat = $derived(compatChecker(empire.draft, data));
 	const authorities = $derived(data.authorities as Authority[]);
 	// Debug: render selectable cards as plain elements so their text can be copied.
@@ -69,18 +70,17 @@
 			{@const reqs = civicRequirementLines(authority.requirements)}
 			{@const selected = empire.draft.authority === authority.key}
 			{@const conflicts = compat.reasons('authority', authority.key)}
-			<!-- svelte-ignore a11y_no_static_element_interactions -->
-			<svelte:element
-				this={debug ? 'div' : 'button'}
-				type={debug ? undefined : 'button'}
-				aria-pressed={debug ? undefined : selected}
-				onclick={debug ? undefined : () => toggle(authority.key)}
+			<PickCard
 				class="relative flex h-full flex-col gap-2 rounded-lg border p-3 text-left transition-colors {selected
 					? 'border-primary-500 bg-primary-500/10'
 					: 'border-surface-400-500/30 hover:border-surface-400-500/60'} {conflictClass(
 					conflicts,
 					selected
-				)} {debug ? 'cursor-text select-text' : ''}"
+				)}"
+				{debug}
+				{selected}
+				label={authority.name ?? authority.key}
+				onToggle={() => toggle(authority.key)}
 			>
 				<header class="flex flex-wrap items-baseline gap-2">
 					<h3 class="font-semibold">{authority.name ?? authority.key}</h3>
@@ -131,7 +131,7 @@
 						<RuleText text={authority.description} class="text-xs opacity-55" />
 					</div>
 				{/if}
-			</svelte:element>
+			</PickCard>
 		{/each}
 	</div>
 	<CapitalContributions

@@ -1,7 +1,12 @@
 import { describe, it, expect } from 'vitest';
-import type { FederationPerk, FederationType, Swap, Trigger } from '$lib/server/db';
-import { federationSearchText, federationsFor, federationTip, perkLines } from '$lib/federations';
-import { unlocksFor } from '$lib/traditions';
+import type { FederationPerk, FederationType, Swap, Trigger } from '#lib/server/db/index.ts';
+import {
+	federationSearchText,
+	federationsFor,
+	federationTip,
+	perkLines
+} from '#lib/federations.ts';
+import { unlocksFor } from '#lib/traditions.ts';
 import {
 	ANY_PROFILE,
 	evaluate,
@@ -9,7 +14,7 @@ import {
 	triggerText,
 	withAllDlc,
 	type EmpireProfile
-} from '$lib/triggers';
+} from '#lib/triggers.ts';
 
 const perk = (key: string, extra: Partial<FederationPerk> = {}): FederationPerk => ({
 	key,

@@ -1,8 +1,8 @@
 // The game's capital setup scripts (planner: starting capital) and the names they show.
-import type { Effect } from '$lib/startCapital';
+import type { Effect } from '#lib/startCapital.ts';
 import { db } from './client';
 
-// Setup script name → its effect list (see $lib/startCapital).
+// Setup script name → its effect list (see #lib/startCapital).
 export function loadGameStartScripts(): Record<string, Effect[]> {
 	const rows = db().prepare(`SELECT key, effects_json FROM game_start_script`).all() as Array<{
 		key: string;

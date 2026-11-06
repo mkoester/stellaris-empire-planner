@@ -1,4 +1,4 @@
-// Re-exports: keeps existing `$lib/server/db` import paths working.
+// Re-exports: keeps existing `#lib/server/db` import paths working.
 export * from './client';
 export * from './types';
 export * from './species';

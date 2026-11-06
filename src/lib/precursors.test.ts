@@ -8,7 +8,7 @@ import type {
 	PlanetDeposit,
 	PrecursorPlanet,
 	PrecursorMegastructure
-} from '$lib/server/db';
+} from '#lib/server/db/index.ts';
 import {
 	conditionApplies,
 	applicableTypes,
