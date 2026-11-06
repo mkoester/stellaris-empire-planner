@@ -29,6 +29,11 @@ Two consequences when driving the app this way, both harmless and both easy to m
 Start the server and make the requests **in one Bash command**; that is general sandbox behaviour
 covered by the vault's `claude-sandbox` skill, not a planner quirk.
 
+**A worktree has no `.env`, so there is no stub and no loop:** `pnpm dev` there (with
+`STELLARIS_DB` passed) answers normally — the easy way to check dev-only output such as Svelte's
+`node_invalid_placement_ssr` warnings. Don't symlink `node_modules` into a worktree for checks:
+`$app/tsconfig` then resolves into the other checkout and `svelte-check` reports missing `./$types`.
+
 When the restart loop makes the dev server answer 500/504, smoke-test a production build
 instead (in one command): `STELLARIS_DB=… pnpm build`, then `STELLARIS_DB=… PORT=5202 node build`
 and `curl` the routes. That needs no `.env`.
