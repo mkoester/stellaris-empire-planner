@@ -102,7 +102,8 @@ precursor_planet        — id "<init>#<idx>", precursor_key, initializer, name,
 precursor_planet_deposit — planet_id, deposit_key (FK→deposit), sort_order
 precursor_planet_modifier — planet_id, static_modifier, modifier_key, modifier_value
 precursor_megastructure — precursor_key, initializer, type, type_label, count (e.g. 4 ruined ring sections)
-tech_repeatable         — key, label, description, area, area_label, category, category_label, levels (-1 = unlimited), sort_order
+tech_repeatable         — key, label, description, area, area_label, category, category_label, levels (-1 = unlimited), sort_order, prerequisites_json, prerequisites_any_json
+technology_unlock       — tech_key, kind (building/district/component/ship/army/feature, or line: the tech's own card line, prefix included), item_key, label, detail, sort_order — the research card's "Unlocks …" lines
 tech_repeatable_modifier — tech_key, modifier_key, modifier_value, sort_order
 tech_fallen_empire      — key, label, description, area, area_label, category, category_label, building_key (FK→building), sort_order
 game_define             — key, value (tradition cost formula + slot limits)
@@ -142,7 +143,7 @@ empires.ts     planet classes, prescripted empires, initializers, rooms, flag as
 jobs.ts        jobs, job swaps, reference buildings (+ modifiers, civic/origin unlocks)
 labels.ts      loadEntityNames, loadModifierIndex, loadOverviewTooltips
 precursors.ts  the whole precursor graph (loadPrecursors)
-tech.ts        repeatable + fallen-empire techs (loadRepeatableTechs, loadFallenEmpireTechs)
+tech.ts        one tech's card (loadTechCard, for /api/tech/[key]), repeatable + fallen-empire techs (loadRepeatableTechs, loadFallenEmpireTechs)
 traditions.ts  tradition trees, ascension perks, defines, profile inputs (loadTraditionTrees,
                loadAscensionPerks, loadGameDefines, loadProfileInputs) + the Trigger type
 federations.ts federation types with their level perks, law categories + laws (loadFederations)
@@ -324,7 +325,9 @@ Text inputs for the empire/species name fields (grouped Empire / Species / …),
 
 ### `/tech` + `/fallen-empire-tech` — Technology reference tables
 
-`{ techs }` from `loadRepeatableTechs()` / `loadFallenEmpireTechs()`. Repeatable techs group by research area (Physics/Society/Engineering) and category, showing their modifiers and level cap (`levels = -1` = unlimited). Fallen-empire techs show the building each unlocks (`building` — name, description, resources, jobs — pre-joined via `building_key`; null for the ship-component techs).
+`{ techs }` from `loadRepeatableTechs()` / `loadFallenEmpireTechs()`. Repeatable techs group by research area (Physics/Society/Engineering) and category, showing their modifiers, level cap (`levels = -1` = unlimited) and the tech each needs, with its card.
+
+**Tech cards** (`TechPopup.svelte`, 2026-11-06): a tech's name with the game's research card as a popup — tier, base cost, rare/dangerous, needs and leads to, modifiers, the "Unlocks …" lines of `technology_unlock`, the flavour text. Built by `src/lib/techCard.ts`, a copy of the empire dashboard's (keep the two in step), served by `GET /api/tech/[key]` (`loadTechCard()`; 404 for a key not in `technology`) and fetched on first hover, so no page carries every card. Shown on every requirement chip naming a tech (`RequirementChips`: `has_technology`) and on the repeatables' "needs". Fallen-empire techs show the building each unlocks (`building` — name, description, resources, jobs — pre-joined via `building_key`; null for the ship-component techs).
 
 ### `/traditions` + `/ascension-perks` — Tradition Trees, Ascension Perks
 

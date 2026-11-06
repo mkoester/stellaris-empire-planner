@@ -1,7 +1,103 @@
-// Repeatable and fallen-empire technologies.
+// Technologies: one tech's card (the tooltip), repeatable and fallen-empire techs.
+import { techCard, type TechUnlock } from '#lib/techCard.ts';
 import { db } from './client';
 import type { BuildingJobRow, BuildingResourceRow } from './jobs';
 import type { Modifier } from './types';
+
+/** A tech's tooltip: what the game's research card shows (`#lib/techCard.ts`). */
+export interface TechCard {
+	key: string;
+	title: string;
+	description: string | null;
+	modifiers: Modifier[];
+	facts: string[];
+	unlocks: string[];
+}
+
+const nameOfTech = (key: string): string =>
+	(
+		db().prepare('SELECT label FROM technology WHERE key = ?').get(key) as
+			{ label: string | null } | undefined
+	)?.label ?? key;
+
+/** One tech's card, or null for a key the DB does not know (repeatables have their own page). */
+export function loadTechCard(key: string): TechCard | null {
+	const t = db()
+		.prepare(
+			`SELECT t.key, t.label, t.description, t.area, t.tier, t.cost, r.prerequisites_json,
+			        r.prerequisites_any_json, r.is_rare, r.is_dangerous
+			 FROM technology t LEFT JOIN technology_requirement r ON r.tech_key = t.key
+			 WHERE t.key = ?`
+		)
+		.get(key) as
+		| {
+				key: string;
+				label: string | null;
+				description: string | null;
+				area: string;
+				tier: number | null;
+				cost: number | null;
+				prerequisites_json: string | null;
+				prerequisites_any_json: string | null;
+				is_rare: number | null;
+				is_dangerous: number | null;
+		  }
+		| undefined;
+	if (!t) return null;
+	const modifiers = (
+		db()
+			.prepare(
+				`SELECT m.modifier_key, m.modifier_value, ml.label, ml.positive_is_good
+				 FROM technology_modifier m LEFT JOIN modifier_label ml ON ml.modifier_key = m.modifier_key
+				 WHERE m.tech_key = ? ORDER BY m.sort_order`
+			)
+			.all(key) as Array<{
+			modifier_key: string;
+			modifier_value: number;
+			label: string | null;
+			positive_is_good: number | null;
+		}>
+	).map((m) => ({
+		key: m.modifier_key,
+		value: m.modifier_value,
+		label: m.label,
+		positiveIsGood: m.positive_is_good !== 0
+	}));
+	const unlocks = db()
+		.prepare(
+			'SELECT kind, label, detail FROM technology_unlock WHERE tech_key = ? ORDER BY sort_order'
+		)
+		.all(key) as TechUnlock[];
+	// the techs naming it as a prerequisite (the JSON lists keys in quotes)
+	const leadsTo = (
+		db()
+			.prepare(
+				`SELECT t.label, t.key FROM technology_requirement r JOIN technology t ON t.key = r.tech_key
+				 WHERE r.prerequisites_json LIKE ? ORDER BY t.label`
+			)
+			.all(`%"${key}"%`) as Array<{ label: string | null; key: string }>
+	).map((x) => x.label ?? x.key);
+	const card = techCard({
+		area: t.area,
+		tier: t.tier,
+		cost: t.cost,
+		rare: t.is_rare === 1,
+		dangerous: t.is_dangerous === 1,
+		unlocks,
+		needs: (JSON.parse(t.prerequisites_json ?? '[]') as string[]).map(nameOfTech),
+		needsAny: (JSON.parse(t.prerequisites_any_json ?? '[]') as string[][]).map((g) =>
+			g.map(nameOfTech)
+		),
+		leadsTo
+	});
+	return {
+		key,
+		title: t.label ?? key,
+		description: t.description,
+		modifiers,
+		...card
+	};
+}
 
 export interface RepeatableTech {
 	key: string;
@@ -13,12 +109,15 @@ export interface RepeatableTech {
 	categoryLabel: string | null;
 	levels: number | null; // -1 = unlimited
 	modifiers: Modifier[];
+	needs: { key: string; name: string }[]; // researched first: every plain one, and one of each OR group
+	needsAny: { key: string; name: string }[][];
 }
 
 export function loadRepeatableTechs(): RepeatableTech[] {
 	const rows = db()
 		.prepare(
-			`SELECT key, label, description, area, area_label, category, category_label, levels
+			`SELECT key, label, description, area, area_label, category, category_label, levels,
+			        prerequisites_json, prerequisites_any_json
 			 FROM tech_repeatable
 			 ORDER BY sort_order`
 		)
@@ -31,7 +130,10 @@ export function loadRepeatableTechs(): RepeatableTech[] {
 		category: string | null;
 		category_label: string | null;
 		levels: number | null;
+		prerequisites_json: string;
+		prerequisites_any_json: string;
 	}>;
+	const named = (k: string) => ({ key: k, name: nameOfTech(k) });
 
 	const modRows = db()
 		.prepare(
@@ -68,7 +170,9 @@ export function loadRepeatableTechs(): RepeatableTech[] {
 		category: r.category,
 		categoryLabel: r.category_label,
 		levels: r.levels,
-		modifiers: modByTech.get(r.key) ?? []
+		modifiers: modByTech.get(r.key) ?? [],
+		needs: (JSON.parse(r.prerequisites_json) as string[]).map(named),
+		needsAny: (JSON.parse(r.prerequisites_any_json) as string[][]).map((g) => g.map(named))
 	}));
 }
 

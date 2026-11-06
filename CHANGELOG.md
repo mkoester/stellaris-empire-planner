@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Every tech named in a requirement (and each repeatable tech's prerequisite) shows the game's
+  research card on hover: tier, cost, what it needs and leads to, its effects and what it unlocks.
+  Needs the data from stellaris-data-extraction's next release.
+
 ## [0.1.5] - 2026-11-06
 
 ### Changed

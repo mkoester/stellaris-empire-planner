@@ -4,6 +4,7 @@
 	import type { PageData } from './$types';
 	import type { RepeatableTech } from '#lib/server/db/index.ts';
 	import { formatModifierValue, modifierLabel, modifierColor } from '#lib/civics.ts';
+	import TechPopup from '#lib/TechPopup.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -95,6 +96,21 @@
 											</li>
 										{/each}
 									</ul>
+								{/if}
+
+								{#if tech.needs.length || tech.needsAny.length}
+									<p class="text-xs opacity-75">
+										<span class="opacity-60">needs</span>
+										{#each tech.needs as n, i (n.key)}{i ? ', ' : ''}<TechPopup
+												tech={n.key}
+												class="underline decoration-dotted underline-offset-2">{n.name}</TechPopup
+											>{/each}{#each tech.needsAny as group, gi (gi)}{tech.needs.length || gi
+												? ', '
+												: ''}{#each group as n, i (n.key)}{i ? ' or ' : ''}<TechPopup
+													tech={n.key}
+													class="underline decoration-dotted underline-offset-2">{n.name}</TechPopup
+												>{/each}{/each}
+									</p>
 								{/if}
 
 								{#if tech.description}
