@@ -3,12 +3,14 @@
 # Multi-stage build for the Stellaris Empire Planner (SvelteKit + adapter-node).
 #
 # better-sqlite3 (13+) ships Node-API binaries for glibc and musl inside its npm
-# package, so no toolchain is needed in any stage; we stay on node:24-slim throughout.
+# package, so no toolchain is needed in any stage; we stay on node:26-slim throughout
+# (the current Node LTS).
 
-FROM node:24-slim AS base
+FROM node:26-slim AS base
 ENV PNPM_HOME=/pnpm \
     PATH=/pnpm:$PATH
-RUN corepack enable
+# Node 25+ no longer ships corepack, so install it from npm before enabling it.
+RUN npm install -g corepack@0.36.0 && corepack enable
 
 # ── Build stage: full install (incl. dev deps) + production build ──────────────
 FROM base AS build
