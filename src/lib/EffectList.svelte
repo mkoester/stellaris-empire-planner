@@ -56,16 +56,16 @@
 	</ul>
 {/if}
 {#if effect.tooltip}
-	<p class="text-xs leading-relaxed whitespace-pre-line opacity-75">
+	<div class="text-xs leading-relaxed whitespace-pre-line opacity-75">
 		{#each parts as part, i (i)}{#if part.index === null}{part.text}{:else}{@render unlockName(
 					unlocks[part.index],
 					part.text
 				)}{/if}{/each}
-	</p>
+	</div>
 {/if}
 {#if unmentioned.length}
-	<p class="text-xs opacity-75">
+	<div class="text-xs opacity-75">
 		{#each unmentioned as u, i (u.key)}{i > 0 ? ', ' : ''}Unlocks {u.kind}:
 			{@render unlockName(u, u.name)}{/each}
-	</p>
+	</div>
 {/if}

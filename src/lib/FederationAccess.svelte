@@ -9,14 +9,14 @@
 </script>
 
 {#snippet line(label: string, list: FederationType[])}
-	<p class="text-xs opacity-75">
+	<div class="text-xs opacity-75">
 		{label}
 		{#each list as f, i (f.key)}{i > 0 ? ', ' : ''}<FederationLink
 				key={f.key}
 				name={f.name ?? f.key}
 				tip={federationTip(f)}
 			/>{/each}
-	</p>
+	</div>
 {/snippet}
 
 {#if access.forms.length}{@render line('Can form federation:', access.forms)}{/if}
