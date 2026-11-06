@@ -8,8 +8,9 @@ All notable changes to this project are documented here. The format follows
 
 ### Added
 
-- Every tech named in a requirement (and each repeatable tech's prerequisite) shows the game's
-  research card on hover: tier, cost, what it needs and leads to, its effects and what it unlocks.
+- Every tech named in a requirement, each repeatable tech's prerequisite, the precursor and
+  fallen-empire techs and the techs a branch-office building needs show the game's research card
+  on hover: tier, cost, what it needs and leads to, its effects and what it unlocks.
   Needs the data from stellaris-data-extraction's next release.
 
 ## [0.1.5] - 2026-11-06

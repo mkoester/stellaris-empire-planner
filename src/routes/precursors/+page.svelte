@@ -1,5 +1,6 @@
 <script lang="ts">
 	import JumpLinks from '#lib/JumpLinks.svelte';
+	import TechPopup from '#lib/TechPopup.svelte';
 	import { sectionId, sectionLinks } from '#lib/sections.ts';
 	import type { PageData } from './$types';
 	import type { Precursor, PrecursorPlanet, PrecursorBuilding } from '#lib/server/db/index.ts';
@@ -464,7 +465,11 @@
 										> discovery project (can't appear in normal research draws), unlocking:
 									</p>
 									<div class="mb-2 flex flex-wrap items-baseline gap-x-2 text-sm">
-										<span class="font-medium">{tech.name ?? tech.techKey}</span>
+										<TechPopup
+											tech={tech.techKey}
+											class="font-medium underline decoration-dotted underline-offset-2"
+											>{tech.name ?? tech.techKey}</TechPopup
+										>
 										<span class="text-[10px] opacity-40">
 											{#if tech.cost != null}{tech.cost.toLocaleString('en-US')} research{/if}{#if tech.tier != null}
 												· tier {tech.tier}{/if}

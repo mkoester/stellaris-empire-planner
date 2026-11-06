@@ -15,6 +15,7 @@
 		splitEffects
 	} from '#lib/branchOffices.ts';
 	import ConflictBadge from '#lib/ConflictBadge.svelte';
+	import TechPopup from '#lib/TechPopup.svelte';
 
 	let {
 		title,
@@ -215,7 +216,12 @@
 				{#if a.needs.length}
 					<div class="opacity-70">
 						<span class="text-[10px] uppercase opacity-60">Needs</span>
-						{a.needs.join(' · ')}
+						{#each a.needs as n, i (i)}{@const tech = b.techs.find(
+								(t) => (t.name ?? t.key) === n
+							)}{i ? ' · ' : ''}{#if tech}<TechPopup
+									tech={tech.key}
+									class="underline decoration-dotted underline-offset-2">{n}</TechPopup
+								>{:else}{n}{/if}{/each}
 					</div>
 				{/if}
 				{#if boostedBy.length}
