@@ -12,6 +12,8 @@ All notable changes to this project are documented here. The format follows
   fallen-empire techs and the techs a branch-office building needs show the game's research card
   on hover: tier, cost, what it needs and leads to, its effects and what it unlocks.
   Needs the data from stellaris-data-extraction's next release.
+- Each tradition tree's card carries the tree's colour from the game on its left edge.
+  Needs the data from stellaris-data-extraction's next release.
 
 ## [0.1.5] - 2026-11-06
 

@@ -107,7 +107,7 @@ technology_unlock       — tech_key, kind (building/district/component/ship/arm
 tech_repeatable_modifier — tech_key, modifier_key, modifier_value, sort_order
 tech_fallen_empire      — key, label, description, area, area_label, category, category_label, building_key (FK→building), sort_order
 game_define             — key, value (tradition cost formula + slot limits)
-tradition_category      — key, name, potential_json, required_dlc, adopt_key, finish_key, sort_order
+tradition_category      — key, name, potential_json, required_dlc, adopt_key, finish_key, sort_order, color (#rrggbb)
 tradition_category_desc — category_key, trigger_json, description (per-empire-type variants, first match)
 tradition               — key, category_key, role (adopt/finish/normal), name, description, possible_json, unlocks_agenda, tooltip
 tradition_prereq        — tradition_key, requires_key (tree edges)

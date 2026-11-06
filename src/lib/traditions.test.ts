@@ -69,6 +69,7 @@ const tree = (traditions: Tradition[], extra: Partial<TraditionTree> = {}): Trad
 	name: 'X',
 	potential: null,
 	requiredDlc: null,
+	color: null,
 	descs: [],
 	adopt: trad('tr_x_adopt', [], { role: 'adopt' }),
 	finish: trad('tr_x_finish', [], { role: 'finish' }),
