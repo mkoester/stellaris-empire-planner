@@ -1,7 +1,9 @@
 import { ANY_PROFILE, type EmpireProfile } from '#lib/triggers.ts';
 
-// Small global UI preferences shared across pages. Module-level $state is fine here
-// (single-user local tool); pages read settings.* and it stays in sync.
+// Small global UI preferences shared across pages; pages read settings.* and it stays in sync.
+// Module-level $state: one copy per browser tab, but on the server ONE copy for every visitor.
+// So it is only ever written from event handlers and effects, which do not run during SSR — a
+// write while a component initialises or in a `load` would show one visitor's choice to the next.
 
 // How multi-rule effect descriptions are laid out: one rule per line (default), or
 // inline with " | " separators.
