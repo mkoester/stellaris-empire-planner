@@ -120,7 +120,12 @@ console.log(`  data: ${tables.length} tables + stellaris.sql (${(sqlBytes / 1e6)
 // ── 2. Build + serve the planner, snapshot every static route ──────────────────
 const routes = discoverRoutes(join(PLANNER, 'src', 'routes'));
 console.log('  building planner…');
-execFileSync('pnpm', ['build'], { cwd: PLANNER, stdio: 'inherit' });
+// `pnpm build` runs the checks first; the DB smoke test among them needs the DB
+execFileSync('pnpm', ['build'], {
+	cwd: PLANNER,
+	env: { ...process.env, STELLARIS_DB: DB },
+	stdio: 'inherit'
+});
 
 const server = spawn('node', ['build'], {
 	cwd: PLANNER,

@@ -43,6 +43,7 @@ export interface TraditionTree {
 	name: string | null;
 	potential: Trigger | null;
 	requiredDlc: string | null;
+	color: string | null; // '#rrggbb', the tree's colour in game; null on a data DB from before it
 	descs: { trigger: Trigger | null; description: string | null }[];
 	adopt: Tradition;
 	finish: Tradition;
@@ -186,9 +187,14 @@ export function loadTraditionTrees(): TraditionTree[] {
 		description: string | null;
 	}>;
 
+	// the tree's colour since extractor 2026-11-06; an older data DB has none
+	const hasColor = (
+		db().prepare('PRAGMA table_info(tradition_category)').all() as Array<{ name: string }>
+	).some((c) => c.name === 'color');
 	const cats = db()
 		.prepare(
-			`SELECT key, name, potential_json, required_dlc, adopt_key, finish_key
+			`SELECT key, name, potential_json, required_dlc, adopt_key, finish_key,
+			        ${hasColor ? 'color' : 'NULL AS color'}
 			 FROM tradition_category ORDER BY sort_order`
 		)
 		.all() as Array<{
@@ -198,6 +204,7 @@ export function loadTraditionTrees(): TraditionTree[] {
 		required_dlc: string | null;
 		adopt_key: string;
 		finish_key: string;
+		color: string | null;
 	}>;
 
 	return cats.flatMap((c) => {
@@ -211,6 +218,7 @@ export function loadTraditionTrees(): TraditionTree[] {
 				name: c.name,
 				potential: parse(c.potential_json),
 				requiredDlc: c.required_dlc,
+				color: c.color,
 				descs: descRows
 					.filter((d) => d.category_key === c.key)
 					.map((d) => ({ trigger: parse(d.trigger_json), description: d.description })),

@@ -1,5 +1,6 @@
 <script lang="ts">
 	import JumpLinks from '#lib/JumpLinks.svelte';
+	import TechPopup from '#lib/TechPopup.svelte';
 	import { sectionId, sectionLinks } from '#lib/sections.ts';
 	import type { PageData } from './$types';
 	import type { FallenEmpireTech } from '#lib/server/db/index.ts';
@@ -92,7 +93,13 @@
 						{#each cat.techs as tech (tech.key)}
 							<div class="border-surface-400-500/30 flex flex-col gap-2 rounded-lg border p-3">
 								<div class="flex items-start justify-between gap-2">
-									<h4 class="leading-tight font-semibold">{tech.label ?? tech.key}</h4>
+									<h4 class="leading-tight font-semibold">
+										<TechPopup
+											tech={tech.key}
+											class="underline decoration-dotted underline-offset-2"
+											>{tech.label ?? tech.key}</TechPopup
+										>
+									</h4>
 									<span
 										class="shrink-0 rounded px-1.5 py-0.5 text-[11px] {AREA_BADGE[tech.area] ??
 											'bg-surface-500/20'}"

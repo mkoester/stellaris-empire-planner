@@ -4,6 +4,34 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.6] - 2026-11-15
+
+### Added
+
+- Every tech named in a requirement, each repeatable tech's prerequisite, the precursor and
+  fallen-empire techs and the techs a branch-office building needs show the game's research card
+  on hover: tier, cost, what it needs and leads to, its effects and what it unlocks.
+  Needs the data from stellaris-data-extraction's next release.
+- Each tradition tree's card carries the tree's colour from the game on its left edge.
+  Needs the data from stellaris-data-extraction's next release.
+
+### Changed
+
+- Pages answer faster: the game data every page shares is read from the DB once per server start
+  instead of on every request.
+- `pnpm build` type-checks, lints and tests before it builds, and the tests now run every DB query
+  against the real DB. **Deployment:** an image is no longer built from a tree that fails its
+  checks, or with a game DB older than the code expects — release stellaris-data-extraction first.
+
+### Fixed
+
+- A tech card that failed to load said "No card for this tech" until the page was reloaded. It now
+  says it could not load, and hovering again retries.
+- The starting capital lists a setup-script effect the planner does not know under "Not modelled"
+  instead of leaving it out silently.
+- `scripts/build-container.sh` names the missing DB path when `.env` has no `STELLARIS_DB` line,
+  instead of exiting without a message.
+
 ## [0.1.5] - 2026-11-06
 
 ### Changed

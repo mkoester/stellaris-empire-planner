@@ -326,6 +326,10 @@ export function simulateStartCapital(effects: Effect[], inp: CapitalInputs): Cap
 				case 'unknown':
 					unknownEffects.add(x.key);
 					break;
+				default:
+					// An effect kind this planner does not know (a newer extractor's): the type says
+					// there is none, the data may. Listed under the card rather than skipped.
+					unknownEffects.add((x satisfies never as { e: string }).e);
 			}
 		}
 	}

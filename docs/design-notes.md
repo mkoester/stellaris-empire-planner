@@ -19,7 +19,7 @@ new rules there and new evidence here.
 
 Two repos that work together:
 
-- **`stellaris-empire-planner`** — SvelteKit 2 / Svelte 5 / SkeletonUI v4 / Tailwind v4 / `pnpm` / TypeScript. The web app.
+- **`stellaris-empire-planner`** — SvelteKit 3 / Svelte 5 / SkeletonUI v4 / Tailwind v4 / `pnpm` / TypeScript. The web app.
 - **`stellaris-data-extraction`** — Python extraction pipeline. Parses Stellaris game files → SQLite DB.
 
 DB path: `STELLARIS_DB` in the gitignored `.env`, pointing at the sibling checkout's `../stellaris-data-extraction/sqlite/stellaris.sqlite` (absolute path).
@@ -34,7 +34,7 @@ STELLARIS_DB=<abs path>/stellaris-data-extraction/sqlite/stellaris.sqlite pnpm d
 
 Further effects when driving the app this way (verified 2026-07-27):
 
-- **Start the server and make the requests in one Bash command** — a server left running by an earlier call is unreachable from a later one, and `curl` returns `000` while the server logs look healthy. This is general sandbox behaviour, not a planner quirk; the OKF vault's `practices/claude-code-sandbox.md` gotcha #13 has the details, including waiting via `curl --retry-connrefused` (foreground `sleep` is blocked).
+- **Start the server and make the requests in one Bash command** — a server left running by an earlier call is unreachable from a later one, and `curl` returns `000` while the server logs look healthy. This is general sandbox behaviour, not a planner quirk; the OKF vault's `claude-sandbox` skill has the details, including waiting via `curl --retry-connrefused` (foreground `sleep` is blocked).
 - Vite logs a `.env changed, restarting server...` loop against the stub. Harmless.
 - Prettier reports `EACCES` on `.mcp.json` (another stub), so `pnpm lint` exits non-zero for a reason unrelated to the code. Check the file list it prints.
 
@@ -102,11 +102,12 @@ precursor_planet        — id "<init>#<idx>", precursor_key, initializer, name,
 precursor_planet_deposit — planet_id, deposit_key (FK→deposit), sort_order
 precursor_planet_modifier — planet_id, static_modifier, modifier_key, modifier_value
 precursor_megastructure — precursor_key, initializer, type, type_label, count (e.g. 4 ruined ring sections)
-tech_repeatable         — key, label, description, area, area_label, category, category_label, levels (-1 = unlimited), sort_order
+tech_repeatable         — key, label, description, area, area_label, category, category_label, levels (-1 = unlimited), sort_order, prerequisites_json, prerequisites_any_json
+technology_unlock       — tech_key, kind (building/district/component/ship/army/feature, or line: the tech's own card line, prefix included), item_key, label, detail, sort_order — the research card's "Unlocks …" lines
 tech_repeatable_modifier — tech_key, modifier_key, modifier_value, sort_order
 tech_fallen_empire      — key, label, description, area, area_label, category, category_label, building_key (FK→building), sort_order
 game_define             — key, value (tradition cost formula + slot limits)
-tradition_category      — key, name, potential_json, required_dlc, adopt_key, finish_key, sort_order
+tradition_category      — key, name, potential_json, required_dlc, adopt_key, finish_key, sort_order, color (#rrggbb)
 tradition_category_desc — category_key, trigger_json, description (per-empire-type variants, first match)
 tradition               — key, category_key, role (adopt/finish/normal), name, description, possible_json, unlocks_agenda, tooltip
 tradition_prereq        — tradition_key, requires_key (tree edges)
@@ -142,7 +143,7 @@ empires.ts     planet classes, prescripted empires, initializers, rooms, flag as
 jobs.ts        jobs, job swaps, reference buildings (+ modifiers, civic/origin unlocks)
 labels.ts      loadEntityNames, loadModifierIndex, loadOverviewTooltips
 precursors.ts  the whole precursor graph (loadPrecursors)
-tech.ts        repeatable + fallen-empire techs (loadRepeatableTechs, loadFallenEmpireTechs)
+tech.ts        one tech's card (loadTechCard, for /api/tech/[key]), repeatable + fallen-empire techs (loadRepeatableTechs, loadFallenEmpireTechs)
 traditions.ts  tradition trees, ascension perks, defines, profile inputs (loadTraditionTrees,
                loadAscensionPerks, loadGameDefines, loadProfileInputs) + the Trigger type
 federations.ts federation types with their level perks, law categories + laws (loadFederations)
@@ -261,7 +262,7 @@ Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder �
 
 The central empire hub. A shared runes store [`src/lib/empire.svelte.ts`](src/lib/empire.svelte.ts) holds the single empire `draft` (species/traits/ethics/civics/origin/planet/ship). **All builder pages bind to it** — Species Builder traits (`empire.setTraits`), Ethics (`empire.setEthics`), Civics (`empire.toggleCivic`), Origins (`empire.setOrigin`), Planets/homeworld (`empire.setPlanetClass`), Ships (`empire.setShipType`). Each page's selected state is `$derived` from `empire.draft`, so a load populates every page and edits flow back. Import a predefined empire (from `loadPrescriptedEmpires()`) or upload a `user_empire_designs.txt` (parsed client-side by [`src/lib/empireFile.ts`](src/lib/empireFile.ts) `parseEmpireFile`).
 
-**Conflict resolution:** the store defines composable **sections** (species/traits/ ethics/civics/origin/homeworld/ship). `empire.apply(e, 'all' | 'partial')` overrides everything, or fills only the currently-unset sections; loading prompts (override everything / only fill empty / cancel) **only when `empire.anySet()`**. A `generation` counter (bumped on load, not on edits) lets the Species Builder re-sync its archetype when an empire is loaded, without feedback loops. Note: the store is module-level `$state` → shared on the server, fine for this single-user local tool.
+**Conflict resolution:** the store defines composable **sections** (species/traits/ ethics/civics/origin/homeworld/ship). `empire.apply(e, 'all' | 'partial')` overrides everything, or fills only the currently-unset sections; loading prompts (override everything / only fill empty / cancel) **only when `empire.anySet()`**. A `generation` counter (bumped on load, not on edits) lets the Species Builder re-sync its archetype when an empire is loaded, without feedback loops. Note: the store is module-level `$state` → on the server one copy for every visitor. It stays empty there because only event handlers and effects write to it; the app is hosted, so that is a rule, not a convenience (`../AGENTS.md`, Conventions).
 
 **Starting capital** ([`src/lib/StartingCapital.svelte`](src/lib/StartingCapital.svelte), [`src/lib/startCapital.ts`](src/lib/startCapital.ts)): the districts, zones and buildings the empire starts with. The extraction stores the game's start-of-game setup scripts as ordered effect lists (`game_start_script`, loaded by `loadGameStartScripts()`), and `simulateStartCapital` runs them in order against the draft: the profile (`profileFromDraft`), government, founder traits (base + granted), archetype, homeworld (forced by origin; `pc_ark` when nomadic) and ship set (organic = bio ships). The scripts keep their own state (variables counting rural districts, carrier flags, zones), and the interpreter keeps it too; the planet's checks reach `evaluate` through its `leaf` hook. An undecidable limit counts as false and is listed under the card. **Provenance:** each building and zone carries the explaining checks that held on the way to it (`why()`: through an `and` all of them, through an `or` the first that holds; a carrier flag stands for why it was set; scripts' bookkeeping — variables, zones, country type — explains nothing), and each count is kept as parts per set of reasons, so a district reads "3 base · +1 from Prosperous Unification (origin) + Organic (trait)". `reasonText` words a reason by kind (ethic, civic, origin, homeworld, …). No reasons = the base setup every empire of that kind gets. **Per pick, on the builder pages** ([`src/lib/CapitalContributions.svelte`](src/lib/CapitalContributions.svelte)): Ethics, Government, Civics, Origins, Species, Planets and Ships each end with a "Starting Capital" table — per pick the scripts test (`mentioned`), what it adds. `contributionRows` changes the draft to include the pick (a civic or origin also gets a government it allows, `fitAuthority`), fills unpicked fields from `CAPITAL_DEFAULTS` via `completeDraft` (named in the table's intro; a gestalt government brings its ethic, Machine Intelligence a machine species), runs `capitalOf`, and keeps the items whose reasons are that pick (`contributions`), with the other conditions they needed as "with …". The scripts and profile inputs load once in `+layout.server.ts`. Building names there and on the Empire card open `BuildingDetails` on hover (`BuildingName`, data from `loadCapitalBuildings()`, the buildings the scripts can place): cost, upkeep, jobs and, via `workedOutput` in `#lib/jobs`, their base output (jobs shown as workforce, e.g. "Artisan 200") when filled — a building's job amount is workforce, a job's output per 100 (`JOB_WORKFORCE`), so `job_artisan_add = 200` is two Artisans, +12 Consumer Goods. Void Dwellers run `void_dweller_home_planet_setup` instead. **Not modelled:** the planet's district caps (planet size, blockers), which the game applies to rural districts; pops, deposits, resources.
 
@@ -324,7 +325,9 @@ Text inputs for the empire/species name fields (grouped Empire / Species / …),
 
 ### `/tech` + `/fallen-empire-tech` — Technology reference tables
 
-`{ techs }` from `loadRepeatableTechs()` / `loadFallenEmpireTechs()`. Repeatable techs group by research area (Physics/Society/Engineering) and category, showing their modifiers and level cap (`levels = -1` = unlimited). Fallen-empire techs show the building each unlocks (`building` — name, description, resources, jobs — pre-joined via `building_key`; null for the ship-component techs).
+`{ techs }` from `loadRepeatableTechs()` / `loadFallenEmpireTechs()`. Repeatable techs group by research area (Physics/Society/Engineering) and category, showing their modifiers, level cap (`levels = -1` = unlimited) and the tech each needs, with its card.
+
+**Tech cards** (`TechPopup.svelte`, 2026-11-06): a tech's name with the game's research card as a popup — tier, base cost, rare/dangerous, needs and leads to, modifiers, the "Unlocks …" lines of `technology_unlock`, the flavour text. Built by `src/lib/techCard.ts`, a copy of the empire dashboard's (keep the two in step), served by `GET /api/tech/[key]` (`loadTechCard()`; 404 for a key not in `technology`) and fetched on first hover, so no page carries every card. Shown on every requirement chip naming a tech (`RequirementChips`: `has_technology`), the repeatables' "needs", the precursor and fallen-empire techs' names and the branch-office buildings' "Needs" (a need that is one of `b.techs`). Left as text: techs inside condition sentences ("Only if: …", a swap's "— if …"). Fallen-empire techs show the building each unlocks (`building` — name, description, resources, jobs — pre-joined via `building_key`; null for the ship-component techs).
 
 ### `/traditions` + `/ascension-perks` — Tradition Trees, Ascension Perks
 
@@ -362,6 +365,12 @@ Tooltips across the app use the Skeleton/Zag tooltip via [Tip.svelte](src/lib/Ti
 **Vitest** (`pnpm test`, `pnpm test:watch`). Config: `test` block in [vite.config.ts](vite.config.ts) (`defineConfig` from `vitest/config`); specs are `src/**/*.{test,spec}.ts`.
 
 [`src/lib/precursors.test.ts`](src/lib/precursors.test.ts) covers the pure helpers — the empire-type truth table is the high-value part (e.g. Baol's AND/OR `potential` branches → which empire types each relic passive applies to; Vultaum/Inetian reward variants; plus formatting helpers like `relicCostLabel`, `cooldownLabel`, `groupByDlc`, `megaLabel`). Tests import the module **relatively** (`./precursors`) and build fixtures from the `#lib/server/db` types, so they need no `#lib` alias or DB at runtime. Pure presentation logic only — no component rendering, no DB. Add cases here when extending `precursors.ts`.
+
+**DB smoke test** (2026-11-15, [`src/lib/server/db/db.smoke.test.ts`](src/lib/server/db/db.smoke.test.ts)): the one test that opens the DB. It calls every zero-argument `load*` export and expects data, plus `loadTechCard`, `loadTraitsForKeys` and a check that every precursor reward variant in the DB is in `REWARD_VARIANTS`. Controls run when it was written: without `STELLARIS_DB` 49 of 50 fail (`STELLARIS_DB is not set`), against the v4.4.6 DB 22 fail (`no such table: game_start_script`, …).
+
+**Checks gate the build** (2026-11-15): `pnpm build` = `pnpm verify && vite build`. ESLint runs two type-aware rules on `src/` (`no-floating-promises`, `switch-exhaustiveness-check`).
+
+**Layout data is read once per server process** (2026-11-15): the 12 layout queries took 20–150 ms of every request (measured on `/names`, production build: 0.07–0.15 s before, 0.02 s after). The HTML of all 22 pages, the tech API and a 404 was byte-identical before and after, first and cached request alike, apart from the build's own `version` stamp. Considered and dropped: moving the starting-capital data (about 150 KB of the layout's 660 KB) into a route group for the eight builder pages — a quarter saved on the other pages, for moving eight routes.
 
 ---
 

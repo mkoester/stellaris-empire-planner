@@ -208,6 +208,10 @@ const SECTIONS: Section[] = [
 	}
 ];
 
+// Module-level $state: on the server this is ONE draft for every visitor, and it stays empty
+// there because only event handlers and effects write to it (neither runs during SSR). Keep it
+// so: a write while a component initialises or in a `load` would leak one visitor's empire to
+// the next.
 let draft = $state<EmpireDraft>(empty());
 // Bumped only on a load/reset (not on in-section edits), so builder pages can detect
 // an external change and re-sync (e.g. switch archetype) without feedback loops.

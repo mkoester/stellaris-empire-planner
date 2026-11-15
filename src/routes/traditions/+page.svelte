@@ -232,6 +232,7 @@
 							v.avail === false
 								? 'opacity-40'
 								: ''}"
+							style={tree.color ? `border-left: 4px solid ${tree.color}` : undefined}
 						>
 							<header class="flex flex-wrap items-start justify-between gap-2">
 								<div class="flex flex-wrap items-center gap-1.5">
