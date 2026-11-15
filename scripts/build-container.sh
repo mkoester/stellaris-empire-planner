@@ -38,7 +38,8 @@ if [[ -z "$DB_SRC" ]]; then
 	DB_SRC="${STELLARIS_DB:-}"
 fi
 if [[ -z "$DB_SRC" && -f .env ]]; then
-	DB_SRC="$(grep -E '^STELLARIS_DB=' .env | tail -1 | cut -d= -f2-)"
+	# `|| true`: under pipefail a .env without the line would exit here, before the error below
+	DB_SRC="$(grep -E '^STELLARIS_DB=' .env | tail -1 | cut -d= -f2- || true)"
 fi
 if [[ -z "$DB_SRC" ]]; then
 	echo "error: no DB path given. Use --db PATH, set STELLARIS_DB, or add it to .env." >&2

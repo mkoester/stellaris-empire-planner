@@ -14,14 +14,17 @@
 		class: cls = ''
 	}: { tech: string; children: Snippet; class?: string } = $props();
 
-	let card = $state<TechCard | null | 'missing'>(null);
+	// null: not asked yet · 'missing': the DB has no such tech (404) · 'failed': the request did
+	// not get through, so the next hover asks again
+	let card = $state<TechCard | null | 'loading' | 'missing' | 'failed'>(null);
 	const load = async () => {
-		if (card !== null) return;
+		if (card !== null && card !== 'failed') return;
+		card = 'loading';
 		try {
 			const r = await fetch(`/api/tech/${encodeURIComponent(tech)}`);
-			card = r.ok ? ((await r.json()) as TechCard) : 'missing';
+			card = r.ok ? ((await r.json()) as TechCard) : r.status === 404 ? 'missing' : 'failed';
 		} catch {
-			card = 'missing';
+			card = 'failed';
 		}
 	};
 </script>
@@ -30,10 +33,12 @@
 	><InfoPopup class={cls}>
 		{@render children()}
 		{#snippet content()}
-			{#if card === null}
+			{#if card === null || card === 'loading'}
 				<p class="opacity-60">Loading…</p>
 			{:else if card === 'missing'}
 				<p class="opacity-60">No card for this tech.</p>
+			{:else if card === 'failed'}
+				<p class="opacity-60">Could not load this tech's card. Hover again to retry.</p>
 			{:else}
 				<p class="text-sm font-semibold">{card.title}</p>
 				{#if card.facts.length}<p class="opacity-60">{card.facts.join(' · ')}</p>{/if}

@@ -215,6 +215,14 @@ describe('simulateStartCapital', () => {
 		expect(c.unknownEffects).toEqual(['odd_effect']);
 	});
 
+	it('lists an effect kind it does not know instead of skipping it', () => {
+		// what a newer extractor's DB could hold: the Effect type has no such member
+		const newer = { e: 'add_deposit', deposit: 'd_x' } as unknown as Effect;
+		const c = simulateStartCapital([newer, { e: 'add_building', building: 'after' }], materialist);
+		expect(c.unknownEffects).toEqual(['add_deposit']);
+		expect(c.buildings.map((b) => b.building)).toEqual(['after']);
+	});
+
 	it('derives archetype traits, removes buildings and zones', () => {
 		const c = simulateStartCapital(
 			[
