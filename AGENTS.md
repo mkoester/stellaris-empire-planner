@@ -55,6 +55,23 @@ not skip — without `STELLARIS_DB`. `.env` supplies it on the desktop (`vite.co
 sandbox pass it, as for `pnpm dev`. A loader that reads a new table or column fails there against
 a DB from an older extraction: that is the "release the extraction first" rule, enforced.
 
+**Verify a refactor by comparing two builds' pages:** `git archive <ref>` into `$TMPDIR`, symlink
+`node_modules`, `vite build` there (a build, unlike `svelte-check`, works with the symlink), serve
+both with the same `APP_VERSION` and `STELLARIS_DB`, and diff every route. Normalise what
+`scripts/snapshot.mjs` normalises **plus the build's own `version: "<timestamp>"` stamp**, which
+differs between any two builds.
+
+**Open checks (2026-11-15), none of them possible in the sandbox:**
+
+- The podman build with the gate in it (`RUN STELLARIS_DB=… pnpm build` in the `Containerfile`).
+- `pnpm test` on the desktop picking `STELLARIS_DB` up from `.env` (`loadEnv` in `vite.config.ts`).
+- `pnpm dev`, where the layout data is deliberately not cached.
+- The tech popup's "could not load, hover again" state in a browser.
+
+**Open decision (2026-11-15):** `scripts/update-deployment.sh` is started with `sudo` from the
+service user's own clone, so that account can change what root runs at the next deploy. Proposed,
+not done: a root-owned copy outside the clone. It changes the server layout in `DEPLOY.md`.
+
 ## Conventions
 
 - **Game version comes from the `meta` table** (`game_version` / `game_version_raw`, read from the
