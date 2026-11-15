@@ -44,8 +44,18 @@ export default defineConfig(
 		}
 	},
 	{
-		// Override or add rule settings here, such as:
-		// 'svelte/button-has-type': 'error'
-		rules: {}
+		// The two rules that need type information, on everything under src/: a promise nobody
+		// awaits or catches, and a switch over a union that misses a member and has no default
+		// (a new member then falls through silently — see startCapital.ts's effect dispatch).
+		files: ['src/**/*.ts', 'src/**/*.svelte'],
+		languageOptions: { parserOptions: { projectService: true } },
+		rules: {
+			'@typescript-eslint/no-floating-promises': 'error',
+			// an explicit `default:` is an explicit last branch (planets.ts's climate chip)
+			'@typescript-eslint/switch-exhaustiveness-check': [
+				'error',
+				{ considerDefaultExhaustiveForUnions: true }
+			]
+		}
 	}
 );

@@ -22,7 +22,9 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm install --frozen-lockfile
 COPY . .
-RUN pnpm build
+# `pnpm build` type-checks, lints and tests before it builds; the DB smoke test reads the
+# staged DB, so an image whose DB does not fit the code is never built.
+RUN STELLARIS_DB=/app/data/stellaris.sqlite pnpm build
 # Drop dev dependencies; better-sqlite3 and its bundled binary are a prod dependency.
 RUN --mount=type=cache,id=pnpm,target=/pnpm/store \
     pnpm prune --prod

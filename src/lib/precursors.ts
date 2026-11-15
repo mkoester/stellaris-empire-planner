@@ -86,6 +86,17 @@ export function conditionApplies(condition: string | null, type: EmpireType): bo
 	});
 }
 
+// The reward variants the extraction emits. One this list lacks falls to `default: true` below
+// and reads as "applies to everyone" — the DB smoke test fails on it first.
+export const REWARD_VARIANTS = [
+	'default',
+	'suppressed',
+	'public',
+	'machine',
+	'hive',
+	'hive_machine'
+] as const;
+
 // Which empire types a reward variant applies to (Vultaum splits by type/choice).
 export function variantApplies(variant: string, type: EmpireType): boolean {
 	switch (variant) {
