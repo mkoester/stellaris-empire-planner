@@ -46,6 +46,15 @@ card. Nomads come out with no capital building: confirm that in game.
 After changing the extraction script, regenerate the DB from the sibling repo — the two are only
 consistent if you do.
 
+## Checks
+
+`pnpm build` runs `pnpm verify` first (type check, lint, tests), so the container build and the
+server's deployment cannot build a tree that fails them. The tests include a **DB smoke test**
+(`src/lib/server/db/db.smoke.test.ts`): every loader against the real DB, which fails — it does
+not skip — without `STELLARIS_DB`. `.env` supplies it on the desktop (`vite.config.ts`); in the
+sandbox pass it, as for `pnpm dev`. A loader that reads a new table or column fails there against
+a DB from an older extraction: that is the "release the extraction first" rule, enforced.
+
 ## Conventions
 
 - **Game version comes from the `meta` table** (`game_version` / `game_version_raw`, read from the
@@ -53,6 +62,10 @@ consistent if you do.
   hardcode a version string.
 - DB access stays inside `src/lib/server/db/`; routes consume its functions rather than issuing
   their own SQL.
+- **The stores (`empire.svelte.ts`, `settings.svelte.ts`) are module-level `$state`: on the server
+  one copy for every visitor.** Write to them only from event handlers and effects, never while a
+  component initialises or in a `load`. The layout's game data is likewise read once per server
+  process and shared, deep-frozen (`+layout.server.ts`): copy before sorting or changing it.
 - **Helpers that compare picks side by side live on "Help me choose"** (`src/routes/help`):
   council seats, branch offices, agendas and edicts — one folded table each, picking from it
   picking for the empire. What a helper shows about one pick goes on that pick's card too (a chip

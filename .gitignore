@@ -1,4 +1,4 @@
-node_modules
+/node_modules
 
 # Container build: staged DB copy + exported image tarballs
 /data
