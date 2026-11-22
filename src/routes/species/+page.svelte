@@ -521,8 +521,10 @@
 							trait.cost !== null &&
 							trait.cost < 0
 								? 'text-red-400'
-								: ''}">{formatKey(trait.key)}</span
+								: ''}"
 						>
+							{formatKey(trait.key)}
+						</span>
 						{#if !isBase}
 							{@const versions = better(trait)}
 							<RequirementRow lines={reqLines(trait)} />
@@ -546,11 +548,11 @@
 												>
 													<span class="flex items-baseline justify-between gap-2">
 														<span class="font-medium">{formatKey(v.key)}</span>
-														<span class="font-mono opacity-70"
-															>{costLabel(v.cost)} · {data.traitCategories.find(
+														<span class="font-mono opacity-70">
+															{costLabel(v.cost)} · {data.traitCategories.find(
 																(c) => c.key === v.category
-															)?.label ?? v.category}</span
-														>
+															)?.label ?? v.category}
+														</span>
 													</span>
 													{#each v.modifiers as m (m.key)}
 														<span class="flex justify-between gap-2 text-[10px]">
@@ -570,9 +572,9 @@
 								{#each trait.modifiers as mod (mod.key)}
 									<li class="flex items-baseline justify-between gap-1 text-[10px]">
 										<span class="leading-tight opacity-60">{modifierLabel(mod)}</span>
-										<span class="shrink-0 font-mono {modifierColor(mod)}"
-											>{formatModifier(mod)}</span
-										>
+										<span class="shrink-0 font-mono {modifierColor(mod)}">
+											{formatModifier(mod)}
+										</span>
 									</li>
 								{/each}
 							</ul>
@@ -875,9 +877,9 @@
 										{#each trait.modifiers as mod (mod.key)}
 											<li class="flex items-baseline justify-between gap-1 text-[10px]">
 												<span class="leading-tight opacity-60">{modifierLabel(mod)}</span>
-												<span class="shrink-0 font-mono {modifierColor(mod)}"
-													>{formatModifier(mod)}</span
-												>
+												<span class="shrink-0 font-mono {modifierColor(mod)}">
+													{formatModifier(mod)}
+												</span>
 											</li>
 										{/each}
 									</ul>

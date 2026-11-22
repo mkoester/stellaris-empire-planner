@@ -97,8 +97,9 @@
 										<TechPopup
 											tech={tech.key}
 											class="underline decoration-dotted underline-offset-2"
-											>{tech.label ?? tech.key}</TechPopup
 										>
+											{tech.label ?? tech.key}
+										</TechPopup>
 									</h4>
 									<span
 										class="shrink-0 rounded px-1.5 py-0.5 text-[11px] {AREA_BADGE[tech.area] ??

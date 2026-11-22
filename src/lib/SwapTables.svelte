@@ -72,7 +72,8 @@
 		<span
 			{...attrs}
 			class="cursor-help rounded bg-orange-500/20 px-1.5 py-0.5 text-[10px] font-medium text-orange-200"
-			>Replaces</span
 		>
+			Replaces
+		</span>
 	{/if}
 {/snippet}

@@ -88,17 +88,18 @@
 {#snippet effect(e: OwnedBuildingEffect, showWhere: boolean)}
 	{@const jobs = jobCount(e)}
 	<li class="flex items-baseline justify-between gap-3">
-		<span class="opacity-70"
-			>{#if showWhere}<span class="opacity-60">{where(e)}:</span>
-			{/if}{modifierLabel(e.modifier)}</span
-		>
+		<span class="opacity-70">
+			{#if showWhere}<span class="opacity-60">{where(e)}:</span>
+			{/if}{modifierLabel(e.modifier)}
+		</span>
 		<span
 			class="shrink-0 font-mono {modifierColor(e.modifier)}"
 			title={jobs === null
 				? undefined
 				: `${num(e.modifier.value)} workforce: ${num(jobs)} job${jobs === 1 ? '' : 's'}`}
-			>{formatModifierValue(e.modifier)}</span
 		>
+			{formatModifierValue(e.modifier)}
+		</span>
 	</li>
 {/snippet}
 
@@ -107,15 +108,17 @@
 		{@const a = access(b, names)}
 		<span
 			class="rounded px-1.5 text-[10px] {ACCESS[a.kind][2]}"
-			title={[ACCESS[a.kind][1], ...a.needs].join(' · ')}>{ACCESS[a.kind][0]}</span
+			title={[ACCESS[a.kind][1], ...a.needs].join(' · ')}
 		>
+			{ACCESS[a.kind][0]}
+		</span>
 	{/if}
 {/snippet}
 
 {#snippet civicButton(key: string)}
-	{#if civicKeys.has(key)}{@render pickButton(key)}{:else}<span class="px-1.5"
-			>{names[key] ?? key}</span
-		>{/if}
+	{#if civicKeys.has(key)}{@render pickButton(key)}{:else}<span class="px-1.5">
+			{names[key] ?? key}
+		</span>{/if}
 {/snippet}
 
 {#snippet pickButton(key: string)}
@@ -126,8 +129,10 @@
 		class="rounded px-1.5 py-0.5 text-left {on
 			? 'preset-filled-primary-500'
 			: 'hover:bg-surface-500/20'}"
-		onclick={() => ontoggle(key)}>{civicName.get(key) ?? key}</button
+		onclick={() => ontoggle(key)}
 	>
+		{civicName.get(key) ?? key}
+	</button>
 	<ConflictBadge reasons={reasons(key)} />
 {/snippet}
 
@@ -138,13 +143,13 @@
 	</summary>
 
 	<div class="mt-3 flex flex-wrap items-center gap-3 text-xs">
-		<label
-			><input type="checkbox" class="checkbox" bind:checked={hideConflicts} /> hide conflicting civics</label
-		>
-		<span class="opacity-50"
-			>Markers: who may build it — every MegaCorp, a Criminal Syndicate, a civic's — and what else
-			it needs.</span
-		>
+		<label>
+			<input type="checkbox" class="checkbox" bind:checked={hideConflicts} /> hide conflicting civics
+		</label>
+		<span class="opacity-50">
+			Markers: who may build it — every MegaCorp, a Criminal Syndicate, a civic's — and what else it
+			needs.
+		</span>
 	</div>
 	{#if allJobs.length}
 		<div class="mt-2 flex flex-wrap items-center gap-1 text-xs">
@@ -157,15 +162,19 @@
 					class="rounded-full border px-2 py-0.5 {on
 						? 'border-transparent preset-filled-primary-500'
 						: 'border-surface-400-500/40 hover:bg-surface-500/20'}"
-					onclick={() => toggleJob(name)}>{name}</button
+					onclick={() => toggleJob(name)}
 				>
+					{name}
+				</button>
 			{/each}
 			{#if jobFilter.length}
 				<button
 					type="button"
 					class="ml-1 underline opacity-60 hover:opacity-100"
-					onclick={() => (jobFilter = [])}>all ({shown.length} of {buildings.length} shown)</button
+					onclick={() => (jobFilter = [])}
 				>
+					all ({shown.length} of {buildings.length} shown)
+				</button>
 			{/if}
 		</div>
 	{/if}
@@ -208,9 +217,9 @@
 				{#if b.unlockedBy.length}
 					<div class="flex flex-wrap items-center gap-1">
 						<span class="text-[10px] uppercase opacity-45">Unlocked by</span>
-						{#each b.unlockedBy.filter(shownCivic) as key, i (key)}{#if i}<span class="opacity-40"
-									>or</span
-								>{/if}{@render civicButton(key)}{/each}
+						{#each b.unlockedBy.filter(shownCivic) as key, i (key)}{#if i}<span class="opacity-40">
+									or
+								</span>{/if}{@render civicButton(key)}{/each}
 					</div>
 				{/if}
 				{#if a.needs.length}
@@ -220,8 +229,10 @@
 								(t) => (t.name ?? t.key) === n
 							)}{i ? ' · ' : ''}{#if tech}<TechPopup
 									tech={tech.key}
-									class="underline decoration-dotted underline-offset-2">{n}</TechPopup
-								>{:else}{n}{/if}{/each}
+									class="underline decoration-dotted underline-offset-2"
+								>
+									{n}
+								</TechPopup>{:else}{n}{/if}{/each}
 					</div>
 				{/if}
 				{#if boostedBy.length}
@@ -239,25 +250,27 @@
 									: 'bg-surface-500/20'}"
 								title={[j.adds && 'gives these jobs', j.boosts && 'adds to their output']
 									.filter(Boolean)
-									.join(', ')}>{j.name}{j.adds ? '' : ' ↑'}</span
+									.join(', ')}
 							>
+								{j.name}{j.adds ? '' : ' ↑'}
+							</span>
 						{/each}
 					</div>
 				{/if}
 				{#if b.resources.length}
 					<div class="opacity-70">
 						{#each b.resources as r (r.kind + r.resource)}
-							<span class="mr-2"
-								>{r.kind === 'produces'
+							<span class="mr-2">
+								{r.kind === 'produces'
 									? `+${num(r.amount)}`
 									: r.kind === 'upkeep'
 										? `−${num(r.amount)}`
 										: num(r.amount)}
 								{title_(r.resource)}
-								<span class="opacity-50"
-									>{r.kind === 'produces' ? `to the ${ownerLabel}` : r.kind}</span
-								></span
-							>
+								<span class="opacity-50">
+									{r.kind === 'produces' ? `to the ${ownerLabel}` : r.kind}
+								</span>
+							</span>
 						{/each}
 					</div>
 				{/if}
@@ -271,8 +284,10 @@
 									class="font-mono"
 									title="{num(j.amount)} workforce: {num(j.amount / 100)} job{j.amount === 100
 										? ''
-										: 's'}">+{num(j.amount)}</span
+										: 's'}"
 								>
+									+{num(j.amount)}
+								</span>
 							</li>
 						{/each}
 						{#each s.colony as e, i (i)}{@render effect(e, false)}{/each}

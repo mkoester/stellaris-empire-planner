@@ -159,13 +159,15 @@
 							{#if p.requiredDlc}
 								<Tip
 									text={p.requiredDlc}
-									class="rounded border px-1 text-[10px] {dlcBadge(p.requiredDlc)}">DLC</Tip
+									class="rounded border px-1 text-[10px] {dlcBadge(p.requiredDlc)}"
 								>
+									DLC
+								</Tip>
 							{/if}
 							{#if p.isPath && v.tier !== null}
-								<span class="rounded bg-surface-500/20 px-1.5 text-[10px]"
-									>needs {v.tier} perks</span
-								>
+								<span class="rounded bg-surface-500/20 px-1.5 text-[10px]">
+									needs {v.tier} perks
+								</span>
 							{/if}
 						</header>
 
@@ -192,9 +194,9 @@
 									{#each e.otherSwaps as s (s.id)}
 										<li>
 											<span class="font-semibold">{s.name}</span>
-											<span class="opacity-60"
-												>— if {s.trigger ? triggerText(s.trigger, names) : 'always'}</span
-											>
+											<span class="opacity-60">
+												— if {s.trigger ? triggerText(s.trigger, names) : 'always'}
+											</span>
 										</li>
 									{/each}
 								</ul>

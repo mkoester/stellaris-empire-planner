@@ -67,14 +67,18 @@
 			{#if isHabitable(planet)}
 				<Tip
 					text="A colonizable world"
-					class="rounded bg-emerald-500/15 px-1 text-[10px] text-emerald-300/90">habitable</Tip
+					class="rounded bg-emerald-500/15 px-1 text-[10px] text-emerald-300/90"
 				>
+					habitable
+				</Tip>
 			{/if}
 			{#if isTerraformable(planet)}
 				<Tip
 					text="Terraformable into a colony (e.g. with the right ascension perk)"
-					class="rounded bg-sky-500/10 px-1 text-[10px] text-sky-300/80">terraformable</Tip
+					class="rounded bg-sky-500/10 px-1 text-[10px] text-sky-300/80"
 				>
+					terraformable
+				</Tip>
 			{/if}
 			{#each chips.resources as r, i (i)}
 				<span class="rounded bg-emerald-500/10 px-1 text-[10px] text-emerald-300/90">{r}</span>
@@ -120,9 +124,9 @@
 	<div class="border-surface-400-500/20 rounded border p-2">
 		<div class="flex flex-wrap items-baseline justify-between gap-x-2">
 			<span class="text-sm font-medium">{b.name ?? b.buildingKey}</span>
-			{#if buildingScopeLabel(b.scope)}<span class="text-[10px] opacity-40"
-					>{buildingScopeLabel(b.scope)}</span
-				>{/if}
+			{#if buildingScopeLabel(b.scope)}<span class="text-[10px] opacity-40">
+					{buildingScopeLabel(b.scope)}
+				</span>{/if}
 		</div>
 
 		<!-- Build restrictions -->
@@ -137,9 +141,9 @@
 			<div class="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs opacity-60">
 				{#if cost.length}<span>Cost: {cost.map(buildingResourceLabel).join(', ')}</span>{/if}
 				{#if upkeep.length}<span>Upkeep: {upkeep.map(buildingResourceLabel).join(', ')}</span>{/if}
-				{#if produces.length}<span class="text-emerald-400/80"
-						>Produces: {produces.map(buildingResourceLabel).join(', ')}</span
-					>{/if}
+				{#if produces.length}<span class="text-emerald-400/80">
+						Produces: {produces.map(buildingResourceLabel).join(', ')}
+					</span>{/if}
 			</div>
 		{/if}
 
@@ -147,8 +151,9 @@
 		{#if jobs.length}
 			<div class="mt-1 text-xs">
 				<span class="opacity-40">Jobs:</span>
-				{#each jobs as j (j.key)}<span class="ml-1 text-sky-300/80">{buildingJobLabel(j)}</span
-					>{/each}
+				{#each jobs as j (j.key)}<span class="ml-1 text-sky-300/80">
+						{buildingJobLabel(j)}
+					</span>{/each}
 			</div>
 		{/if}
 
@@ -158,21 +163,21 @@
 				{#each effects as e (e.buildingScope + e.key + (e.condition ?? ''))}
 					{@const cond = buildingConditionLabel(e.condition)}
 					<li class="flex items-baseline justify-between gap-3">
-						<span class="opacity-60"
-							>{e.label ?? e.key}{#if cond}<span class="text-primary-400/70">
-									({cond})</span
-								>{:else if e.buildingScope === 'country'}<span class="opacity-30">
-									(empire-wide)</span
-								>{/if}</span
-						>
+						<span class="opacity-60">
+							{e.label ?? e.key}{#if cond}<span class="text-primary-400/70">
+									({cond})
+								</span>{:else if e.buildingScope === 'country'}<span class="opacity-30">
+									(empire-wide)
+								</span>{/if}
+						</span>
 						<span class="shrink-0 font-mono {valueColor(e)}">{formatValue(e)}</span>
 					</li>
 					{#if e.aeValue != null}
 						<li class="flex items-baseline justify-between gap-3">
 							<span class="pl-3 text-primary-400/60">(with Archaeo-Engineers)</span>
-							<span class="shrink-0 font-mono {valueColor({ ...e, value: e.aeValue })}"
-								>{formatValue({ ...e, value: e.aeValue })}</span
-							>
+							<span class="shrink-0 font-mono {valueColor({ ...e, value: e.aeValue })}">
+								{formatValue({ ...e, value: e.aeValue })}
+							</span>
 						</li>
 					{/if}
 				{/each}
@@ -224,9 +229,9 @@
 			<h2 class="flex items-center gap-2 text-lg font-semibold">
 				{group.label}
 				{#if group.dlc}
-					<span class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(group.dlc)}"
-						>DLC</span
-					>
+					<span class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(group.dlc)}">
+						DLC
+					</span>
 				{/if}
 			</h2>
 
@@ -294,8 +299,10 @@
 													{#if q}<span
 															class="text-[10px] {applies === true
 																? 'text-primary-400'
-																: 'opacity-40'}">({q})</span
-														>{/if}
+																: 'opacity-40'}"
+														>
+															({q})
+														</span>{/if}
 												</span>
 												<span class="shrink-0 font-mono {valueColor(m)}">{formatValue(m)}</span>
 											</li>
@@ -331,11 +338,11 @@
 									<div
 										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
 									>
-										{@render hrule()}<span
-											>Relic — <span class="text-amber-300/80 normal-case"
-												>{p.relic.name ?? p.relic.relicKey}</span
-											></span
-										>{@render hrule()}
+										{@render hrule()}<span>
+											Relic — <span class="text-amber-300/80 normal-case">
+												{p.relic.name ?? p.relic.relicKey}
+											</span>
+										</span>{@render hrule()}
 									</div>
 									{#if p.relic.passives.length}
 										<ul class="space-y-0.5">
@@ -353,12 +360,14 @@
 														{#if cond}<span
 																class="text-[10px] {applies === true
 																	? 'text-primary-400'
-																	: 'opacity-40'}">({cond})</span
-															>{/if}
+																	: 'opacity-40'}"
+															>
+																({cond})
+															</span>{/if}
 													</span>
-													<span class="shrink-0 font-mono {valueColor(passive)}"
-														>{formatValue(passive)}</span
-													>
+													<span class="shrink-0 font-mono {valueColor(passive)}">
+														{formatValue(passive)}
+													</span>
 												</li>
 											{/each}
 										</ul>
@@ -372,8 +381,9 @@
 											{pt.text}
 											{#if cond}<span
 													class="text-[10px] {applies === true ? 'text-primary-400' : 'opacity-40'}"
-													>({cond})</span
-												>{/if}
+												>
+													({cond})
+												</span>{/if}
 										</p>
 									{/each}
 									{#if p.relic.activeEffect || p.relic.activeModifiers.length || p.relic.produces.length || p.relic.costs.length || p.relic.triumphCooldownDays}
@@ -396,9 +406,9 @@
 														{#each grp.modifiers as mod (mod.key)}
 															<li class="flex items-baseline justify-between gap-3 text-sm">
 																<span class="opacity-70">{modLabel(mod)}</span>
-																<span class="shrink-0 font-mono {valueColor(mod)}"
-																	>{formatValue(mod)}</span
-																>
+																<span class="shrink-0 font-mono {valueColor(mod)}">
+																	{formatValue(mod)}
+																</span>
 															</li>
 														{/each}
 													</ul>
@@ -409,9 +419,9 @@
 											{/if}
 											{#if p.relic.produces.length}
 												<p class="text-sm opacity-70">
-													Produces <span class="text-emerald-400"
-														>{relicResourceLabel(p.relic.produces)}</span
-													>
+													Produces <span class="text-emerald-400">
+														{relicResourceLabel(p.relic.produces)}
+													</span>
 												</p>
 											{/if}
 											{#if p.relic.costs.length || cd}
@@ -420,8 +430,9 @@
 												>
 													<span>
 														{#if p.relic.costs.length}Cost:
-															<span class="opacity-80">{relicResourceLabel(p.relic.costs)}</span
-															>{/if}
+															<span class="opacity-80">
+																{relicResourceLabel(p.relic.costs)}
+															</span>{/if}
 													</span>
 													{#if cd}<span class="shrink-0 opacity-80">{cd} cooldown</span>{/if}
 												</div>
@@ -438,8 +449,9 @@
 									<div
 										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
 									>
-										{@render hrule()}<span>Building{homeBuildings.length === 1 ? '' : 's'}</span
-										>{@render hrule()}
+										{@render hrule()}<span>
+											Building{homeBuildings.length === 1 ? '' : 's'}
+										</span>{@render hrule()}
 									</div>
 									<div class="space-y-3">
 										{#each homeBuildings as b (b.buildingKey)}{@render buildingDetail(b)}{/each}
@@ -460,16 +472,17 @@
 										{@render hrule()}<span>Technology</span>{@render hrule()}
 									</div>
 									<p class="mb-2 text-[11px] opacity-40">
-										A permanent research option from the <span class="opacity-70"
-											>Secrets of the {p.name}</span
-										> discovery project (can't appear in normal research draws), unlocking:
+										A permanent research option from the <span class="opacity-70">
+											Secrets of the {p.name}
+										</span> discovery project (can't appear in normal research draws), unlocking:
 									</p>
 									<div class="mb-2 flex flex-wrap items-baseline gap-x-2 text-sm">
 										<TechPopup
 											tech={tech.techKey}
 											class="font-medium underline decoration-dotted underline-offset-2"
-											>{tech.name ?? tech.techKey}</TechPopup
 										>
+											{tech.name ?? tech.techKey}
+										</TechPopup>
 										<span class="text-[10px] opacity-40">
 											{#if tech.cost != null}{tech.cost.toLocaleString('en-US')} research{/if}{#if tech.tier != null}
 												· tier {tech.tier}{/if}
@@ -485,8 +498,9 @@
 									<div
 										class="mb-2 flex items-center gap-2 text-xs font-semibold tracking-wide uppercase opacity-55"
 									>
-										{@render hrule()}<span>Home system{p.systems.length === 1 ? '' : 's'}</span
-										>{@render hrule()}
+										{@render hrule()}<span>
+											Home system{p.systems.length === 1 ? '' : 's'}
+										</span>{@render hrule()}
 									</div>
 									<div class="space-y-2">
 										{#each p.systems as sys (sys.initializer)}
@@ -507,8 +521,9 @@
 														<Tip
 															text="A Molten World here can host an Arc Furnace, which adds a mining deposit (1–4 minerals each, by furnace level) to every non-habitable body in the system"
 															class="rounded bg-orange-500/15 px-1.5 py-0.5 text-[10px] text-orange-300/90"
-															>Arc Furnace → {arcFurnaceDepositCount(sys)} mining deposits</Tip
 														>
+															Arc Furnace → {arcFurnaceDepositCount(sys)} mining deposits
+														</Tip>
 													{/if}
 												</div>
 												{#if relevant.length}
@@ -525,9 +540,9 @@
 														<summary
 															class="cursor-pointer list-none text-[11px] opacity-40 hover:opacity-70"
 														>
-															<span class="inline-block transition-transform group-open:rotate-90"
-																>▸</span
-															>
+															<span class="inline-block transition-transform group-open:rotate-90">
+																▸
+															</span>
 															{rest.length} more {rest.length === 1 ? 'body' : 'bodies'}
 														</summary>
 														<ul class="mt-1 space-y-1">

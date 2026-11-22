@@ -110,14 +110,14 @@
 								>
 									{pc.name ?? pc.key}
 									{#if pc.climate}
-										<span class="rounded px-1 text-[10px] {climateBadge(pc.climate)}"
-											>{pc.climate}</span
-										>
+										<span class="rounded px-1 text-[10px] {climateBadge(pc.climate)}">
+											{pc.climate}
+										</span>
 									{/if}
 									{#if pc.isStandard}
-										<Tip text="A default startable climate" class="text-[10px] opacity-40"
-											>start</Tip
-										>
+										<Tip text="A default startable climate" class="text-[10px] opacity-40">
+											start
+										</Tip>
 									{/if}
 								</PickCard>
 							{/snippet}

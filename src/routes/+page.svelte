@@ -32,9 +32,9 @@
 				</span>
 			{/if}
 			{#if data?.appVersion}
-				<span class="border-surface-400-500/30 rounded border px-2 py-0.5"
-					>planner v{data.appVersion}</span
-				>
+				<span class="border-surface-400-500/30 rounded border px-2 py-0.5">
+					planner v{data.appVersion}
+				</span>
 			{/if}
 		</div>
 	</header>
@@ -49,14 +49,14 @@
 				This is an <strong>early alpha</strong>. It's shared at this stage mainly to
 				<strong>gather feedback from other Stellaris players</strong> — what's useful, what's
 				confusing, and what's missing. Post it in the
-				<a href="https://discord.gg/7pcbj5abfE" target="_blank" rel="noopener" class="underline"
-					>empire-planner forum on Discord</a
-				> — bugs too.
+				<a href="https://discord.gg/7pcbj5abfE" target="_blank" rel="noopener" class="underline">
+					empire-planner forum on Discord
+				</a> — bugs too.
 			</p>
 			<p>
-				Most of the planned features are already here, but expect <strong
-					>rough edges and bugs</strong
-				>. The planner is also only as complete as the data behind it:
+				Most of the planned features are already here, but expect <strong>
+					rough edges and bugs
+				</strong>. The planner is also only as complete as the data behind it:
 				<strong>not everything is extracted from the game files yet</strong>, so there are known
 				gaps in what it can show.
 			</p>

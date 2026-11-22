@@ -18,7 +18,8 @@
 				e.stopPropagation();
 			}}
 			class="text-emerald-300 underline decoration-dotted underline-offset-2 hover:decoration-solid"
-			>{name}</a
 		>
+			{name}
+		</a>
 	{/snippet}
 </Tip>

@@ -112,9 +112,9 @@
 			<h2 class="flex items-center gap-2 text-lg font-semibold">
 				{group.label}
 				{#if group.dlc}
-					<span class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(group.dlc)}"
-						>DLC</span
-					>
+					<span class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(group.dlc)}">
+						DLC
+					</span>
 				{/if}
 				<span class="text-sm font-normal opacity-40">· {group.items.length}</span>
 			</h2>
@@ -161,9 +161,9 @@
 										text="This origin starts you on a specific world, overriding the Planets pick"
 										class="rounded bg-emerald-500/10 px-2 py-1 text-[11px] text-emerald-200/90"
 									>
-										Starts on: <span class="font-medium"
-											>{keyName(origin.startingColony, names)}</span
-										>
+										Starts on: <span class="font-medium">
+											{keyName(origin.startingColony, names)}
+										</span>
 									</Tip>
 								{/if}
 								{#if origin.forcesHomeSystem}
@@ -188,9 +188,9 @@
 							{#snippet modRow(mod: (typeof mods.main)[number], muted: boolean)}
 								<li class="flex items-baseline justify-between gap-3 {muted ? 'opacity-45' : ''}">
 									<span class="opacity-70">{modifierLabel(mod)}</span>
-									<span class="shrink-0 font-mono {muted ? '' : modifierColor(mod)}"
-										>{formatModifierValue(mod)}</span
-									>
+									<span class="shrink-0 font-mono {muted ? '' : modifierColor(mod)}">
+										{formatModifierValue(mod)}
+									</span>
 								</li>
 							{/snippet}
 							{#if mods.main.length}

@@ -389,8 +389,10 @@
 						<tr class="border-surface-400-500/40 border-b">
 							<th
 								class="sticky top-0 z-10 w-48 py-1.5 pr-4 text-left font-medium opacity-60"
-								style="background-color: var(--color-surface-50-950)">Modifier</th
+								style="background-color: var(--color-surface-50-950)"
 							>
+								Modifier
+							</th>
 							{#each tableEthicPairs as { regular, fanatic } (regular.key)}
 								{@const active =
 									selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
@@ -407,8 +409,10 @@
 						<tr class="border-surface-400-500/20 border-b">
 							<th
 								class="sticky top-7.5 z-10 pr-4 pb-1 text-left text-[10px] font-normal opacity-30"
-								style="background-color: var(--color-surface-50-950)">reg (fanatic)</th
+								style="background-color: var(--color-surface-50-950)"
 							>
+								reg (fanatic)
+							</th>
 							{#each tableEthicPairs as _, i (i)}<th
 									class="sticky top-7.5 z-10"
 									style="background-color: var(--color-surface-50-950)"
@@ -457,8 +461,10 @@
 						<tr class="border-surface-400-500/40 border-b">
 							<th
 								class="sticky top-0 z-10 w-64 py-1.5 pr-4 text-left font-medium opacity-60"
-								style="background-color: var(--color-surface-50-950)">Implication</th
+								style="background-color: var(--color-surface-50-950)"
 							>
+								Implication
+							</th>
 							{#each tableEthicPairs as { regular, fanatic } (regular.key)}
 								{@const active =
 									selected.has(regular.key) || !!(fanatic && selected.has(fanatic.key))}
@@ -491,13 +497,17 @@
 										{:else if hasReg}
 											<Tip
 												text="Regular only"
-												class={active ? 'font-bold text-primary-400' : 'opacity-50'}>reg</Tip
+												class={active ? 'font-bold text-primary-400' : 'opacity-50'}
 											>
+												reg
+											</Tip>
 										{:else if hasFan}
 											<Tip
 												text="Fanatic only"
-												class={active ? 'font-bold text-primary-400' : 'opacity-50'}>fan</Tip
+												class={active ? 'font-bold text-primary-400' : 'opacity-50'}
 											>
+												fan
+											</Tip>
 										{:else}
 											<span class="opacity-15">—</span>
 										{/if}
@@ -535,9 +545,9 @@
 							</tr>
 							{#each allPolicyRestrictions as pr (pr.policyKey + pr.optionKey)}
 								<tr class="border-surface-400-500/20 border-b hover:bg-surface-500/10">
-									<td class="py-1.5 pr-4 leading-tight opacity-70"
-										><Tip text="{pr.policyKey} policy">{pr.label}</Tip></td
-									>
+									<td class="py-1.5 pr-4 leading-tight opacity-70">
+										<Tip text="{pr.policyKey} policy">{pr.label}</Tip>
+									</td>
 									{#each tableEthicPairs as { regular, fanatic } (regular.key)}
 										{@const hasReg = regular.policyRestrictions.some(
 											(r: PolicyRestriction) =>
@@ -556,13 +566,17 @@
 											{:else if hasReg}
 												<Tip
 													text="Regular only"
-													class={active ? 'font-bold text-primary-400' : 'opacity-50'}>reg</Tip
+													class={active ? 'font-bold text-primary-400' : 'opacity-50'}
 												>
+													reg
+												</Tip>
 											{:else if hasFan}
 												<Tip
 													text="Fanatic only"
-													class={active ? 'font-bold text-primary-400' : 'opacity-50'}>fan</Tip
+													class={active ? 'font-bold text-primary-400' : 'opacity-50'}
 												>
+													fan
+												</Tip>
 											{:else}
 												<span class="opacity-15">—</span>
 											{/if}
@@ -608,20 +622,28 @@
 								class="sticky top-0 z-10 w-36 py-1.5 pr-4 text-left font-medium opacity-60 {side
 									? 'border-surface-400-500/30 border-l pl-3'
 									: ''}"
-								style="background-color: var(--color-surface-50-950)">Ethic</th
+								style="background-color: var(--color-surface-50-950)"
 							>
+								Ethic
+							</th>
 							<th
 								class="sticky top-0 z-10 px-3 py-1.5 text-left font-medium opacity-60"
-								style="background-color: var(--color-surface-50-950)">Effect</th
+								style="background-color: var(--color-surface-50-950)"
 							>
+								Effect
+							</th>
 							<th
 								class="sticky top-0 z-10 px-3 py-1.5 text-center font-medium opacity-60"
-								style="background-color: var(--color-surface-50-950)">Regular</th
+								style="background-color: var(--color-surface-50-950)"
 							>
+								Regular
+							</th>
 							<th
 								class="sticky top-0 z-10 px-3 py-1.5 text-center font-medium opacity-60"
-								style="background-color: var(--color-surface-50-950)">Fanatic</th
+								style="background-color: var(--color-surface-50-950)"
 							>
+								Fanatic
+							</th>
 						{/each}
 					</tr>
 				</thead>
@@ -656,8 +678,10 @@
 										<td
 											class="px-3 py-1.5 text-center font-mono {row.good
 												? 'text-emerald-400'
-												: 'text-red-400'} {active ? '' : 'opacity-70'}">{row.regular}</td
+												: 'text-red-400'} {active ? '' : 'opacity-70'}"
 										>
+											{row.regular}
+										</td>
 										<td
 											class="px-3 py-1.5 text-center font-mono {row.fanatic
 												? row.good

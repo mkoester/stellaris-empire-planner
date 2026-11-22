@@ -24,17 +24,18 @@
 					{#each row.effects as e, i (i)}
 						{@const jobs = jobCount(e)}
 						<li class="flex items-baseline justify-between gap-3">
-							<span class="opacity-70"
-								><span class="opacity-60">{e.scope === 'planet' ? 'colony' : 'capital'}:</span>
-								{modifierLabel(e.modifier)}</span
-							>
+							<span class="opacity-70">
+								<span class="opacity-60">{e.scope === 'planet' ? 'colony' : 'capital'}:</span>
+								{modifierLabel(e.modifier)}
+							</span>
 							<span
 								class="shrink-0 font-mono {modifierColor(e.modifier)}"
 								title={jobs === null
 									? undefined
 									: `${num(e.modifier.value)} workforce: ${num(jobs)} job${jobs === 1 ? '' : 's'}`}
-								>{formatModifierValue(e.modifier)}</span
 							>
+								{formatModifierValue(e.modifier)}
+							</span>
 						</li>
 					{/each}
 				</ul>

@@ -137,8 +137,10 @@
 			prerequisites), and the finisher. Names and effects switch to the variant your empire type
 			gets — pick one globally below, or per tree. Assumes all DLC: trees a DLC replaces aren't
 			shown, and DLC trees carry a badge. In the compact layout, click a tradition for its details; <span
-				class="text-primary-400">•</span
-			> marks a variant, ⇄ the number of variants other empire types get.
+				class="text-primary-400"
+			>
+				•
+			</span> marks a variant, ⇄ the number of variants other empire types get.
 		</p>
 	</div>
 
@@ -240,8 +242,10 @@
 									{#if tree.requiredDlc}
 										<Tip
 											text={tree.requiredDlc}
-											class="rounded border px-1 text-[10px] {dlcBadge(tree.requiredDlc)}">DLC</Tip
+											class="rounded border px-1 text-[10px] {dlcBadge(tree.requiredDlc)}"
 										>
+											DLC
+										</Tip>
 									{/if}
 									{#if links.unlockedBy[tree.key]?.length}
 										<span class="rounded bg-violet-500/15 px-1.5 text-[10px] text-violet-300">
@@ -278,8 +282,9 @@
 								{#each v.columns as rows, ci (ci)}
 									<div class="flex flex-col items-stretch {full ? 'gap-1' : 'gap-0.5'}">
 										{#each rows as row, ri (ri)}
-											{#if ri > 0}<span class="text-center text-xs leading-none opacity-40">↓</span
-												>{/if}
+											{#if ri > 0}<span class="text-center text-xs leading-none opacity-40">
+													↓
+												</span>{/if}
 											<div class="flex {full ? 'items-stretch gap-2' : 'gap-1'}">
 												{#each row as t (t.key)}
 													{#if full}
@@ -329,9 +334,9 @@
 				{#if e.swap}
 					<span class="text-primary-400" aria-label="variant">•</span>
 				{:else if e.otherSwaps.length}
-					<span class="opacity-40" aria-label="{e.otherSwaps.length} variants"
-						>⇄{e.otherSwaps.length}</span
-					>
+					<span class="opacity-40" aria-label="{e.otherSwaps.length} variants">
+						⇄{e.otherSwaps.length}
+					</span>
 				{/if}
 			</button>
 		{/snippet}
@@ -399,8 +404,10 @@
 				<button
 					class="text-xs opacity-50 hover:opacity-100"
 					aria-label="Close"
-					onclick={() => (selected[tree.key] = null)}>✕</button
+					onclick={() => (selected[tree.key] = null)}
 				>
+					✕
+				</button>
 			{/if}
 		</div>
 		<EffectList
@@ -428,8 +435,9 @@
 			{#each e.otherSwaps as s (s.id)}
 				<li>
 					<span class="font-semibold">{s.name}</span>
-					<span class="opacity-60">— if {s.trigger ? triggerText(s.trigger, names) : 'always'}</span
-					>
+					<span class="opacity-60">
+						— if {s.trigger ? triggerText(s.trigger, names) : 'always'}
+					</span>
 				</li>
 			{/each}
 		</ul>

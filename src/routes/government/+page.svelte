@@ -90,8 +90,10 @@
 							text={authority.requiredDlc}
 							class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(
 								authority.requiredDlc
-							)}">DLC</Tip
+							)}"
 						>
+							DLC
+						</Tip>
 					{/if}
 				</header>
 
@@ -99,9 +101,10 @@
 				{#if reqs.length}
 					<div class="flex flex-wrap gap-1">
 						{#each reqs as r, i (i)}
-							<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}"
-								>{r.type === 'require' ? 'needs' : 'excl.'} {r.text}</span
-							>
+							<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}">
+								{r.type === 'require' ? 'needs' : 'excl.'}
+								{r.text}
+							</span>
 						{/each}
 					</div>
 				{/if}
@@ -118,9 +121,9 @@
 						{#each authority.modifiers as mod (mod.key)}
 							<li class="flex items-baseline justify-between gap-3">
 								<span class="opacity-70">{modifierLabel(mod)}</span>
-								<span class="shrink-0 font-mono {modifierColor(mod)}"
-									>{formatModifierValue(mod)}</span
-								>
+								<span class="shrink-0 font-mono {modifierColor(mod)}">
+									{formatModifierValue(mod)}
+								</span>
 							</li>
 						{/each}
 					</ul>

@@ -363,10 +363,9 @@
 								</tr>
 							{/each}
 							{#if filteredPredefined.length === 0}
-								<tr
-									><td class="px-2 py-3 opacity-50" colspan="5">No empires match “{filter}”.</td
-									></tr
-								>
+								<tr>
+									<td class="px-2 py-3 opacity-50" colspan="5">No empires match “{filter}”.</td>
+								</tr>
 							{/if}
 						</tbody>
 					</table>
@@ -387,9 +386,9 @@
 			<p class="text-sm opacity-60">That file holds {fileEmpires.length} empires — pick one:</p>
 			<div class="flex flex-wrap gap-2">
 				{#each fileEmpires as e (e.key)}
-					<button class="btn preset-filled text-sm card-hover" onclick={() => tryLoad(e)}
-						>{e.name}</button
-					>
+					<button class="btn preset-filled text-sm card-hover" onclick={() => tryLoad(e)}>
+						{e.name}
+					</button>
 				{/each}
 			</div>
 		</div>
@@ -399,9 +398,9 @@
 	{#if pending}
 		<div class="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
 			<p class="text-sm">
-				Some sections already have selections (<span class="opacity-70"
-					>{empire.setSectionLabels().join(', ')}</span
-				>). How should <strong>{pending.name}</strong> be applied?
+				Some sections already have selections (<span class="opacity-70">
+					{empire.setSectionLabels().join(', ')}
+				</span>). How should <strong>{pending.name}</strong> be applied?
 			</p>
 			<div class="flex flex-wrap gap-2">
 				<button class="btn preset-filled-primary-500 text-sm" onclick={() => resolve('all')}>
@@ -505,8 +504,10 @@
 									class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs {traitChipClass(
 										k,
 										base
-									)}">{name(k)}</span
+									)}"
 								>
+									{name(k)}
+								</span>
 							{/each}
 						</div>
 					</div>
@@ -676,9 +677,9 @@
 				{#if gameplayEffects.length}
 					<div class="space-y-3">
 						<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">
-							Gameplay Effects <span class="font-normal opacity-60"
-								>(from civics &amp; origins)</span
-							>
+							Gameplay Effects <span class="font-normal opacity-60">
+								(from civics &amp; origins)
+							</span>
 						</h3>
 						{#each gameplayEffects as eff (eff.kind + eff.name)}
 							<div class="space-y-0.5">
@@ -720,8 +721,10 @@
 								<td
 									class="py-1.5 text-right font-mono {row.good
 										? 'text-emerald-400'
-										: 'text-red-400'}">{row.value}</td
+										: 'text-red-400'}"
 								>
+									{row.value}
+								</td>
 							</tr>
 						{/each}
 					</tbody>

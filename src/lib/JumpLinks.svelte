@@ -11,8 +11,10 @@
 				href="#{l.id}"
 				class="rounded px-1.5 py-0.5 hover:bg-surface-500/20 {l.strong
 					? 'font-semibold text-primary-400'
-					: 'opacity-70 hover:opacity-100'}">{l.label}</a
+					: 'opacity-70 hover:opacity-100'}"
 			>
+				{l.label}
+			</a>
 		{/each}
 	</nav>
 {/if}

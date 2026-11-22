@@ -14,8 +14,10 @@
 				kind: k.kind,
 				type: 'exclude',
 				text: ''
-			})}">{k.label}</span
+			})}"
 		>
+			{k.label}
+		</span>
 	{/each}
 	<span class="opacity-40">lighter = needs · stronger = excludes</span>
 </div>

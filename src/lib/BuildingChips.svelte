@@ -30,8 +30,10 @@
 				onclick={(e) => {
 					e.stopPropagation();
 					open = !open;
-				}}>{open ? 'less' : `+${buildings.length - FOLD} more`}</button
+				}}
 			>
+				{open ? 'less' : `+${buildings.length - FOLD} more`}
+			</button>
 		{/if}
 	</div>
 {/if}

@@ -144,8 +144,10 @@
 										text={civic.requiredDlc}
 										class="rounded border px-1.5 py-0.5 text-[10px] font-normal {dlcBadge(
 											civic.requiredDlc
-										)}">DLC</Tip
+										)}"
 									>
+										DLC
+									</Tip>
 								{/if}
 								<AscensionChips lock={civic.ascensionLock} blocks={civic.ascensionBlocks} />
 								{#if civic.locked}<LockIcon />{/if}
@@ -173,9 +175,9 @@
 							{#snippet modRow(mod: (typeof mods.main)[number], muted: boolean)}
 								<li class="flex items-baseline justify-between gap-3 {muted ? 'opacity-45' : ''}">
 									<span class="opacity-70">{modifierLabel(mod)}</span>
-									<span class="shrink-0 font-mono {muted ? '' : modifierColor(mod)}"
-										>{formatModifierValue(mod)}</span
-									>
+									<span class="shrink-0 font-mono {muted ? '' : modifierColor(mod)}">
+										{formatModifierValue(mod)}
+									</span>
 								</li>
 							{/snippet}
 							{#if mods.main.length}
