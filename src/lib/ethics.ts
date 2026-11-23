@@ -52,8 +52,9 @@ export function combinePolicyRestrictions(ethics: Ethic[]): SourcedItem[] {
 // (`scripted_ethics_weight_mult`; common/inline_scripts/jobs/ethic_job_resources.txt and
 // ethic_job_modifiers.txt). Those buildings also add Culture Worker jobs, whose own ethic bonuses
 // scale ×1/×2/×4 (`culture_worker`, common/pop_jobs/02_specialist_jobs.txt). Absolute ethics are
-// only gained in play. Gestalts have none: civilians are non-gestalt, maintenance drones get no
-// ethic bonus.
+// only gained in play. Confirmed in game (4.6.0, 2026-11-23): a fanatic xenophile's 1958 civilian
+// workforce gave Pop Upkeep −24.47 % (19.58 × 1.25 %) despite the patch notes. Gestalts have
+// none: civilians are non-gestalt, maintenance drones get no ethic bonus.
 export type MonumentJob = 'Civilians' | 'Culture Workers';
 export type MonumentRow = {
 	job: MonumentJob;
