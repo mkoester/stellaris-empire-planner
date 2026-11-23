@@ -708,7 +708,8 @@
 				<h2 class="text-xl font-semibold">Ethic Bonuses on Monument Planets</h2>
 				<p class="text-sm opacity-50">
 					Per 100 workforce, on a colony with a monument, memorial, artist patron or lifecrypt. The
-					building also adds the Culture Worker jobs.
+					building also adds the Culture Worker jobs. Civilians still get theirs in 4.6.0, although
+					the patch notes say otherwise (checked in game).
 				</p>
 				<table class="w-full text-sm">
 					<thead>

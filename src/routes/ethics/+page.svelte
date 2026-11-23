@@ -615,6 +615,11 @@
 			which have ethic bonuses of their own on top of 3 unity, 500 amenities and +10% governing
 			ethics attraction. Absolute ethics are only gained in play.
 		</p>
+		<p class="mb-4 text-sm opacity-50">
+			The 4.6.0 patch notes say monuments now add Culture Workers "instead of" the civilian ethic
+			bonuses. The game files and a test in game say otherwise: civilians on a monument planet still
+			get them (a fanatic xenophile's 1958 civilian workforce: Pop Upkeep −24.47%).
+		</p>
 		<div class="max-h-128 overflow-auto">
 			<table class="w-full text-xs">
 				<thead>
