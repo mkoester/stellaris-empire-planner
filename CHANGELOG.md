@@ -4,22 +4,28 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.7] - 2026-11-23
 
 ### Changed
 
-- Stellaris 4.6.0 and Willpower, with stellaris-data-extraction's next release: the new civics and
+- Stellaris 4.6.0 and Willpower, with stellaris-data-extraction 0.1.25: the new civics and
   origins with their DLC, MegaCorps with a fanatic Authoritarian or Egalitarian ethic, Worker
   Cooperative only for fanatic Egalitarians, the policies each ethic rules out.
 - The monument table is now "Ethic Bonuses on Monument Planets": per 100 civilians and per 100
   of the Culture Workers that 4.6's monuments add, with an Absolute column, from the 4.6 game
   files. Materialist civilians give +0.1 of each research, not +0.1 research. The gestalt row is
-  gone: gestalt empires get no such bonus.
+  gone: gestalt empires get no such bonus. Both tables note that civilians still get their ethic
+  bonuses in 4.6.0, although the patch notes say monuments add Culture Workers "instead" (checked
+  in game).
 
 ### Fixed
 
 - Absolute ethics in requirements read "Absolute Pacifist", and `is_pacifist` counts them. They
   are not offered as a choice: they are only gained in play.
+
+### Dependencies
+
+- SvelteKit 3.4, Svelte 5.59, Skeleton 5.0.6 and the development tools.
 
 ## [0.1.6] - 2026-11-15
 
