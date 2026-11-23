@@ -74,9 +74,9 @@
 						{#if b.unlockedBy.length}
 							<div class="flex flex-wrap gap-1 text-[10px]">
 								{#each b.unlockedBy as o (o)}
-									<span class="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-200/90"
-										>needs {keyName(o, data.names)}</span
-									>
+									<span class="rounded bg-amber-500/15 px-1.5 py-0.5 text-amber-200/90">
+										needs {keyName(o, data.names)}
+									</span>
 								{/each}
 							</div>
 						{/if}

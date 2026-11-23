@@ -10,6 +10,7 @@
 	<Tip
 		text={reasons.join('\n')}
 		class="inline-flex shrink-0 items-center gap-0.5 rounded bg-red-500/20 px-1 py-0.5 text-[10px] leading-tight font-medium text-red-300 {cls}"
-		>⚠ Conflict</Tip
 	>
+		⚠ Conflict
+	</Tip>
 {/if}

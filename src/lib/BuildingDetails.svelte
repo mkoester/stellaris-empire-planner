@@ -70,8 +70,8 @@
 					{modifierLabel(m)}
 					{#if SCOPE_NOTE[m.scope]}<span class="opacity-50">({SCOPE_NOTE[m.scope]})</span>{/if}
 					{#if m.condition}<span class="opacity-50">
-							(with {ascensionPerkName(m.condition)})</span
-						>{/if}
+							(with {ascensionPerkName(m.condition)})
+						</span>{/if}
 				</span>
 				<span class="shrink-0 font-mono {modifierColor(m)}">{formatModifierValue(m)}</span>
 			</li>

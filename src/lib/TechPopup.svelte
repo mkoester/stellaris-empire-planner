@@ -29,8 +29,8 @@
 	};
 </script>
 
-<span role="presentation" onpointerenter={load} onfocusin={load}
-	><InfoPopup class={cls}>
+<span role="presentation" onpointerenter={load} onfocusin={load}>
+	<InfoPopup class={cls}>
 		{@render children()}
 		{#snippet content()}
 			{#if card === null || card === 'loading'}
@@ -46,9 +46,9 @@
 					<ul class="space-y-0.5">
 						{#each card.modifiers as m (m.key)}
 							<li class="flex items-baseline gap-1.5">
-								<span class="font-mono font-semibold {modifierColor(m)}"
-									>{formatModifierValue(m)}</span
-								>
+								<span class="font-mono font-semibold {modifierColor(m)}">
+									{formatModifierValue(m)}
+								</span>
 								<span class="opacity-75">{modifierLabel(m)}</span>
 							</li>
 						{/each}
@@ -62,5 +62,5 @@
 				{#if card.description}<p class="italic opacity-60">{card.description}</p>{/if}
 			{/if}
 		{/snippet}
-	</InfoPopup></span
->
+	</InfoPopup>
+</span>

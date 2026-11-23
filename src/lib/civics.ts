@@ -30,7 +30,16 @@ export function groupCivicsByType(
 // Only the leading category prefix is stripped — the corporate/machine/hive part of
 // a civic key is kept so distinct civics don't collapse to the same name (e.g.
 // civic_anglers → "Anglers", civic_corporate_anglers → "Corporate Anglers").
-const PREFIXES = ['ethic_fanatic_', 'ethic_', 'auth_', 'civic_', 'origin_', 'trait_', 'pc_'];
+const PREFIXES = [
+	'ethic_fanatic_',
+	'ethic_absolute_',
+	'ethic_',
+	'auth_',
+	'civic_',
+	'origin_',
+	'trait_',
+	'pc_'
+];
 export function prettyKey(value: string): string {
 	let s = value;
 	for (const p of PREFIXES) {
@@ -41,6 +50,7 @@ export function prettyKey(value: string): string {
 	}
 	s = s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 	if (value.startsWith('ethic_fanatic_')) s = `Fanatic ${s}`;
+	if (value.startsWith('ethic_absolute_')) s = `Absolute ${s}`;
 	return s;
 }
 

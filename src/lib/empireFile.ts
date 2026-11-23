@@ -299,6 +299,7 @@ export function serializeEmpire(e: SerializableEmpire, key?: string): string {
 // ── Key → display name ───────────────────────────────────────────────────────
 const PREFIXES = [
 	'ethic_fanatic_',
+	'ethic_absolute_',
 	'ethic_',
 	'trait_',
 	'civic_',
@@ -321,7 +322,8 @@ export function keyName(key: string | null, names: Record<string, string>): stri
 		}
 	}
 	s = s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-	return key.startsWith('ethic_fanatic_') ? `Fanatic ${s}` : s;
+	if (key.startsWith('ethic_fanatic_')) return `Fanatic ${s}`;
+	return key.startsWith('ethic_absolute_') ? `Absolute ${s}` : s;
 }
 
 // Ship type from a graphical_culture: the biogenesis appearances are organic bio-ships.

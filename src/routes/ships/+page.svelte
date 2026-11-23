@@ -120,8 +120,8 @@
 				{#each organicCivics as c (c.key)}
 					<span class="rounded border border-emerald-500/30 px-2 py-1 text-sm">
 						{c.name ?? c.key}<span class="text-[10px] opacity-40">
-							{civicTypeLabel(c.civicType)}</span
-						>
+							{civicTypeLabel(c.civicType)}
+						</span>
 					</span>
 				{/each}
 			</div>
@@ -135,9 +135,9 @@
 		</h2>
 		<div class="flex flex-wrap gap-2">
 			{#each lockedOrigins as o (o.key)}
-				<span class="border-surface-400-500/30 rounded border px-2 py-1 text-sm"
-					>{o.name ?? o.key}</span
-				>
+				<span class="border-surface-400-500/30 rounded border px-2 py-1 text-sm">
+					{o.name ?? o.key}
+				</span>
 			{/each}
 		</div>
 	</section>

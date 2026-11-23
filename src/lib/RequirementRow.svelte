@@ -22,15 +22,15 @@
 	<div class="flex items-start gap-1">
 		<div class="flex grow flex-wrap items-center gap-1">
 			{#each needs as r, i (i)}
-				<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}"
-					>needs {r.text}</span
-				>
+				<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}">
+					needs {r.text}
+				</span>
 			{/each}
 			{#if show}
 				{#each excls as r, i (i)}
-					<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}"
-						>excl. {r.text}</span
-					>
+					<span class="rounded px-1.5 py-0.5 text-[10px] {requirementChipClass(r)}">
+						excl. {r.text}
+					</span>
 				{/each}
 			{/if}
 		</div>

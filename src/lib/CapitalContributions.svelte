@@ -67,21 +67,21 @@
 </script>
 
 {#snippet cells(row: ContributionRow | undefined)}
-	<td class="py-1.5 pr-4 font-medium {row?.active ? 'text-primary-400' : 'opacity-70'}"
-		>{row?.label ?? ''}</td
-	>
+	<td class="py-1.5 pr-4 font-medium {row?.active ? 'text-primary-400' : 'opacity-70'}">
+		{row?.label ?? ''}
+	</td>
 	<td class="px-3 py-1.5">
 		{#if row?.items.length}
 			<div class="flex flex-wrap items-center gap-1.5">
 				{#each row.items as c, i (i)}
-					<span class="rounded px-1.5 py-0.5 {CHIP[c.kind]}"
-						>{#if c.kind === 'building'}<BuildingName
+					<span class="rounded px-1.5 py-0.5 {CHIP[c.kind]}">
+						{#if c.kind === 'building'}<BuildingName
 								building={buildings[c.key]}
 								label={itemText(c)}
 							/>{:else}{itemText(c)}{/if}{#if c.also.length}<span class="opacity-60">
-								· with {c.also.map((r) => reasonText(r, names)).join(' + ')}</span
-							>{/if}</span
-					>
+								· with {c.also.map((r) => reasonText(r, names)).join(' + ')}
+							</span>{/if}
+					</span>
 				{/each}
 			</div>
 		{:else}

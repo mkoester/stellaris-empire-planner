@@ -158,8 +158,10 @@
 										href={speciesUrl(c.label)}
 										target="_blank"
 										rel="external noopener noreferrer"
-										class="hover:underline">{c.label}</a
+										class="hover:underline"
 									>
+										{c.label}
+									</a>
 								{:else}
 									<span>{c.label}</span>
 								{/if}
@@ -168,8 +170,9 @@
 						{#if g.classes.length > 1}
 							<span
 								class="rounded bg-sky-500/15 px-1.5 py-0.5 text-[10px] font-medium tracking-wide text-sky-300/90 uppercase"
-								>Multi-class</span
 							>
+								Multi-class
+							</span>
 						{/if}
 					</h2>
 					<span class="text-xs opacity-50">{g.portraits.length} portraits</span>
@@ -199,8 +202,9 @@
 										target="_blank"
 										rel="external noopener noreferrer"
 										class="rounded bg-amber-500/15 px-2 py-0.5 font-mono text-xs text-amber-200/90 ring-1 ring-amber-500/30 hover:underline"
-										>{p.id}</a
 									>
+										{p.id}
+									</a>
 									<span class="text-[11px] opacity-40">+</span>
 									{#each sortTraits(p.bonusTraitKeys) as t (t)}{@render traitChip(t)}{/each}
 								</div>
@@ -221,8 +225,9 @@
 									target="_blank"
 									rel="external noopener noreferrer"
 									class="rounded bg-surface-500/15 px-2 py-0.5 font-mono text-xs hover:underline"
-									>{p.id}</a
 								>
+									{p.id}
+								</a>
 							{/each}
 						</div>
 					</div>

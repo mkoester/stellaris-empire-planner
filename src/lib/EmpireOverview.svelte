@@ -110,9 +110,9 @@
 					<div class="text-[10px] uppercase opacity-40">{label}</div>
 					<div class="flex flex-wrap gap-x-2 gap-y-0.5">
 						{#each keys as k (k)}
-							<Tip text={tip(k)} class="inline-flex items-center gap-0.5"
-								>{name(k)}{#if lockSet?.has(k)}<LockIcon size={10} />{/if}</Tip
-							>
+							<Tip text={tip(k)} class="inline-flex items-center gap-0.5">
+								{name(k)}{#if lockSet?.has(k)}<LockIcon size={10} />{/if}
+							</Tip>
 						{/each}
 					</div>
 				</div>

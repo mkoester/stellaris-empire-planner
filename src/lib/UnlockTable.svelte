@@ -48,14 +48,14 @@
 <details class="border-surface-400-500/30 rounded-lg border p-3">
 	<summary class="cursor-pointer font-semibold">
 		Agendas and edicts
-		<span class="text-sm font-normal opacity-40"
-			>· {rows.length} — the council agendas and edicts a civic, origin or authority opens</span
-		>
+		<span class="text-sm font-normal opacity-40">
+			· {rows.length} — the council agendas and edicts a civic, origin or authority opens
+		</span>
 	</summary>
 	<div class="mt-3 flex flex-wrap items-center gap-3 text-xs">
-		<label
-			><input type="checkbox" class="checkbox" bind:checked={hideConflicts} /> hide conflicting picks</label
-		>
+		<label>
+			<input type="checkbox" class="checkbox" bind:checked={hideConflicts} /> hide conflicting picks
+		</label>
 		<span class="opacity-50">Hover a chip for what it gives and what else it needs.</span>
 	</div>
 	<table class="mt-2 w-full text-left text-xs">
@@ -76,14 +76,16 @@
 							class="rounded px-1.5 py-0.5 text-left {on
 								? 'preset-filled-primary-500'
 								: 'hover:bg-surface-500/20'}"
-							onclick={() => ontoggle(r.pick)}>{names[r.pick.key] ?? r.pick.key}</button
+							onclick={() => ontoggle(r.pick)}
 						>
+							{names[r.pick.key] ?? r.pick.key}
+						</button>
 						<span class="opacity-40">{LABEL[r.pick.kind]}</span>
 						<ConflictBadge reasons={reasons(r.pick)} />
 					</td>
-					<td class="py-1"
-						><div class="flex flex-wrap gap-1"><UnlockChips unlocks={r.unlocks} {names} /></div></td
-					>
+					<td class="py-1">
+						<div class="flex flex-wrap gap-1"><UnlockChips unlocks={r.unlocks} {names} /></div>
+					</td>
 				</tr>
 			{/each}
 		</tbody>

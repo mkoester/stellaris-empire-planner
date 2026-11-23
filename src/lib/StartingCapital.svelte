@@ -48,12 +48,12 @@
 	{:else}
 		{#snippet row(label: string, source: string, cls = '', building?: string)}
 			<li class="flex items-baseline gap-3 {cls}">
-				<span class="flex-1"
-					>{#if building}<BuildingName
+				<span class="flex-1">
+					{#if building}<BuildingName
 							building={data.capitalBuildings[building]}
 							{label}
-						/>{:else}{label}{/if}</span
-				>
+						/>{:else}{label}{/if}
+				</span>
 				<span class="shrink-0 text-right text-xs opacity-50">{source}</span>
 			</li>
 		{/snippet}

@@ -103,13 +103,18 @@
 										<span class="opacity-60">needs</span>
 										{#each tech.needs as n, i (n.key)}{i ? ', ' : ''}<TechPopup
 												tech={n.key}
-												class="underline decoration-dotted underline-offset-2">{n.name}</TechPopup
-											>{/each}{#each tech.needsAny as group, gi (gi)}{tech.needs.length || gi
+												class="underline decoration-dotted underline-offset-2"
+											>
+												{n.name}
+											</TechPopup>{/each}{#each tech.needsAny as group, gi (gi)}{tech.needs
+												.length || gi
 												? ', '
 												: ''}{#each group as n, i (n.key)}{i ? ' or ' : ''}<TechPopup
 													tech={n.key}
-													class="underline decoration-dotted underline-offset-2">{n.name}</TechPopup
-												>{/each}{/each}
+													class="underline decoration-dotted underline-offset-2"
+												>
+													{n.name}
+												</TechPopup>{/each}{/each}
 									</p>
 								{/if}
 

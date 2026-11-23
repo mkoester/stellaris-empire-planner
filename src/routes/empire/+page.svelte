@@ -249,10 +249,16 @@
 			.map((o) => ({ kind: 'origin', name: o.name ?? o.key, description: o.description! }))
 	]);
 
-	// Monument bonuses for exactly the ethics this empire holds (regular vs fanatic).
+	// Monument-planet ethic bonuses for exactly the ethics this empire holds (regular vs fanatic).
 	const monumentRows = $derived.by(() => {
-		const out: { ethic: string; effect: string; value: string; good: boolean; fanatic: boolean }[] =
-			[];
+		const out: {
+			ethic: string;
+			job: string;
+			effect: string;
+			value: string;
+			good: boolean;
+			fanatic: boolean;
+		}[] = [];
 		for (const { ethicKey, rows } of MONUMENT_BONUSES) {
 			const e = ethicMap.get(ethicKey);
 			const hasFanatic = !!(e?.fanatic_variant && draft.ethics.includes(e.fanatic_variant));
@@ -264,8 +270,9 @@
 			for (const row of rows) {
 				out.push({
 					ethic: ethicName,
+					job: row.job,
 					effect: row.label,
-					value: hasFanatic ? (row.fanatic ?? row.regular) : row.regular,
+					value: hasFanatic ? row.fanatic : row.regular,
 					good: row.good,
 					fanatic: hasFanatic
 				});
@@ -363,10 +370,9 @@
 								</tr>
 							{/each}
 							{#if filteredPredefined.length === 0}
-								<tr
-									><td class="px-2 py-3 opacity-50" colspan="5">No empires match “{filter}”.</td
-									></tr
-								>
+								<tr>
+									<td class="px-2 py-3 opacity-50" colspan="5">No empires match “{filter}”.</td>
+								</tr>
 							{/if}
 						</tbody>
 					</table>
@@ -387,9 +393,9 @@
 			<p class="text-sm opacity-60">That file holds {fileEmpires.length} empires — pick one:</p>
 			<div class="flex flex-wrap gap-2">
 				{#each fileEmpires as e (e.key)}
-					<button class="btn preset-filled text-sm card-hover" onclick={() => tryLoad(e)}
-						>{e.name}</button
-					>
+					<button class="btn preset-filled text-sm card-hover" onclick={() => tryLoad(e)}>
+						{e.name}
+					</button>
 				{/each}
 			</div>
 		</div>
@@ -399,9 +405,9 @@
 	{#if pending}
 		<div class="space-y-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-4">
 			<p class="text-sm">
-				Some sections already have selections (<span class="opacity-70"
-					>{empire.setSectionLabels().join(', ')}</span
-				>). How should <strong>{pending.name}</strong> be applied?
+				Some sections already have selections (<span class="opacity-70">
+					{empire.setSectionLabels().join(', ')}
+				</span>). How should <strong>{pending.name}</strong> be applied?
 			</p>
 			<div class="flex flex-wrap gap-2">
 				<button class="btn preset-filled-primary-500 text-sm" onclick={() => resolve('all')}>
@@ -505,8 +511,10 @@
 									class="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs {traitChipClass(
 										k,
 										base
-									)}">{name(k)}</span
+									)}"
 								>
+									{name(k)}
+								</span>
 							{/each}
 						</div>
 					</div>
@@ -676,9 +684,9 @@
 				{#if gameplayEffects.length}
 					<div class="space-y-3">
 						<h3 class="text-xs font-semibold tracking-wide uppercase opacity-50">
-							Gameplay Effects <span class="font-normal opacity-60"
-								>(from civics &amp; origins)</span
-							>
+							Gameplay Effects <span class="font-normal opacity-60">
+								(from civics &amp; origins)
+							</span>
 						</h3>
 						{#each gameplayEffects as eff (eff.kind + eff.name)}
 							<div class="space-y-0.5">
@@ -694,17 +702,20 @@
 			</section>
 		{/if}
 
-		<!-- Monument bonuses per 100 civilians, from the empire's ethics -->
+		<!-- Ethic bonuses on a monument planet, per 100 civilians and culture workers -->
 		{#if monumentRows.length}
 			<section class="border-surface-400-500/30 space-y-3 rounded-lg border p-4">
-				<h2 class="text-xl font-semibold">Monument Bonuses per 100 Civilians</h2>
+				<h2 class="text-xl font-semibold">Ethic Bonuses on Monument Planets</h2>
 				<p class="text-sm opacity-50">
-					Monument buildings grant these per-100-civilian bonuses based on the empire's ethics.
+					Per 100 workforce, on a colony with a monument, memorial, artist patron or lifecrypt. The
+					building also adds the Culture Worker jobs. Civilians still get theirs in 4.6.0, although
+					the patch notes say otherwise (checked in game).
 				</p>
 				<table class="w-full text-sm">
 					<thead>
 						<tr class="border-surface-400-500/40 border-b text-left">
 							<th class="py-1.5 pr-4 font-medium opacity-60">Ethic</th>
+							<th class="py-1.5 pr-4 font-medium opacity-60">Job</th>
 							<th class="py-1.5 pr-4 font-medium opacity-60">Effect</th>
 							<th class="py-1.5 text-right font-medium opacity-60">Per 100</th>
 						</tr>
@@ -716,12 +727,15 @@
 									{row.ethic}
 									{#if row.fanatic}<span class="text-xs opacity-40">(fanatic)</span>{/if}
 								</td>
+								<td class="py-1.5 pr-4 opacity-70">{row.job}</td>
 								<td class="py-1.5 pr-4 opacity-70">{row.effect}</td>
 								<td
 									class="py-1.5 text-right font-mono {row.good
 										? 'text-emerald-400'
-										: 'text-red-400'}">{row.value}</td
+										: 'text-red-400'}"
 								>
+									{row.value}
+								</td>
 							</tr>
 						{/each}
 					</tbody>

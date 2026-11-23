@@ -98,9 +98,9 @@
 				<header class="flex flex-wrap items-baseline gap-2">
 					<h2 class="text-lg font-semibold">{t.name ?? t.key}</h2>
 					{#if t.baseIntel !== null}
-						<Tip text="Intel members share with each other" class="text-[11px] opacity-50"
-							>base intel {t.baseIntel}</Tip
-						>
+						<Tip text="Intel members share with each other" class="text-[11px] opacity-50">
+							base intel {t.baseIntel}
+						</Tip>
 					{/if}
 				</header>
 				{#if t.description}<p class="text-xs opacity-60">{t.description}</p>{/if}
@@ -115,8 +115,10 @@
 						<span class="opacity-50">Also unlocked by finishing</span>
 						{#each v.trees as f, i (f.tree)}{i > 0 ? ', ' : ''}<a
 								href="{resolve('/traditions')}#{f.tree}"
-								class="text-violet-300 underline decoration-dotted underline-offset-2">{f.name}</a
-							>{/each}
+								class="text-violet-300 underline decoration-dotted underline-offset-2"
+							>
+								{f.name}
+							</a>{/each}
 					</p>
 				{/if}
 
@@ -137,15 +139,17 @@
 										{#each p.modifiers as m, i (i)}
 											<div class="flex items-baseline gap-1.5">
 												<span class="text-[10px] opacity-45">{SCOPE_LABELS[m.scope]}</span>
-												<span class="font-mono font-semibold {modifierColor(m)}"
-													>{formatModifierValue(m)}</span
-												>
+												<span class="font-mono font-semibold {modifierColor(m)}">
+													{formatModifierValue(m)}
+												</span>
 												<span class="opacity-75">{modifierLabel(m)}</span>
 												{#if m.potential}
 													<Tip
 														text={`Only if: ${triggerText(m.potential, names)}`}
-														class="text-[10px] opacity-60">(if …)</Tip
+														class="text-[10px] opacity-60"
 													>
+														(if …)
+													</Tip>
 												{/if}
 											</div>
 										{/each}
@@ -197,8 +201,10 @@
 										class="py-1 pr-3 text-right font-mono {l.cohesionGrowth !== null &&
 										l.cohesionGrowth < 0
 											? 'text-red-400'
-											: ''}">{l.cohesionGrowth !== null ? fmt(l.cohesionGrowth) : '—'}</td
+											: ''}"
 									>
+										{l.cohesionGrowth !== null ? fmt(l.cohesionGrowth) : '—'}
+									</td>
 									<td class="py-1">
 										{#each l.types as k, i (k)}{i > 0
 												? ', '

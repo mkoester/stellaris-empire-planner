@@ -35,8 +35,10 @@
 			text={u.tip}
 			class="underline decoration-dotted underline-offset-2 {u.kind === 'edict'
 				? 'text-sky-300'
-				: 'text-amber-300'}">{text}</Tip
+				: 'text-amber-300'}"
 		>
+			{text}
+		</Tip>
 	{/if}
 {/snippet}
 
@@ -47,9 +49,12 @@
 				<span class="font-mono font-semibold {modifierColor(mod)}">{formatModifierValue(mod)}</span>
 				<span class="opacity-75">{modifierLabel(mod)}</span>
 				{#if state === null && mod.potential}
-					<Tip text={`Only if: ${triggerText(mod.potential, names)}`} class="text-[10px] opacity-60"
-						>(if …)</Tip
+					<Tip
+						text={`Only if: ${triggerText(mod.potential, names)}`}
+						class="text-[10px] opacity-60"
 					>
+						(if …)
+					</Tip>
 				{/if}
 			</li>
 		{/each}

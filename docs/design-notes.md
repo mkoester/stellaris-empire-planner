@@ -236,7 +236,7 @@ Navigation (`+layout.svelte`): a `NAV` list (Home · Empire · Species Builder �
 3. Selected effects — flat modifier list (`max-w-sm`) + "Gameplay Implications" (tags + policy restrictions), both with source annotation.
 4. **Effects by Ethic** table — `overflow-auto max-h-128`, 8 paired columns, rows = all modifier keys, cell = `+5% (+10%)`.
 5. **Gameplay Implications by Ethic** table — same columns. Tag rows (● / reg / fan / —) then "Policy restrictions" sub-section. Policy key shown as `title` on hover.
-6. **Monument Bonuses per 100 Civilians** — hard-coded from wiki (game building scripts too complex to parse). Each axis is one row group, an ethic and its opposite side by side (Ethic / Effect / Regular / Fanatic twice); the Starting Capital table above it is paired the same way.
+6. **Ethic Bonuses on Monument Planets** — hard-coded from the 4.6.0 game files (`MONUMENT_BONUSES` in `src/lib/ethics.ts`, sources in its comment; the extractor does not read ethic-gated job outputs): per 100 civilians (×1/×2/×3, only on a colony with a monument) and per 100 culture workers (×1/×2/×4), with an Absolute column. Each axis is one row group, an ethic and its opposite side by side (Ethic / Effect / Regular / Fanatic / Absolute twice); the Starting Capital table above it is paired the same way.
 
 **Sticky headers:** Apply `sticky top-0 z-10` + `style="background-color: …"` to each `<th>` individually — NOT to `<thead>`. Required for Firefox. Tables must be in `overflow-auto max-h-128` scroll containers (not `overflow-x-auto`) for sticky to work cross-browser.
 

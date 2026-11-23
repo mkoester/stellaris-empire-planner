@@ -30,7 +30,7 @@
 </Tooltip>
 
 {#snippet trigger(attrs: Record<string, unknown>)}
-	<span {...attrs} class="cursor-help {cls}" onclick={(e) => e.stopPropagation()}
-		>{@render children()}</span
-	>
+	<span {...attrs} class="cursor-help {cls}" onclick={(e) => e.stopPropagation()}>
+		{@render children()}
+	</span>
 {/snippet}

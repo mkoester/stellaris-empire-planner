@@ -130,6 +130,7 @@ describe('scripted ethic leaves', () => {
 	it('match the plain or fanatic ethic', () => {
 		expect(evaluate(L('is_militarist'), withEthics(['ethic_fanatic_militarist']))).toBe(true);
 		expect(evaluate(L('is_militarist'), withEthics(['ethic_militarist']))).toBe(true);
+		expect(evaluate(L('is_militarist'), withEthics(['ethic_absolute_militarist']))).toBe(true);
 		expect(evaluate(L('is_militarist'), withEthics(['ethic_pacifist']))).toBe(false);
 		expect(evaluate(L('is_militarist', 'no'), withEthics(['ethic_pacifist']))).toBe(true);
 		expect(evaluate(L('is_militarist'), ANY_PROFILE)).toBe(null);

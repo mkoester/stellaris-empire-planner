@@ -60,6 +60,9 @@ a DB from an older extraction: that is the "release the extraction first" rule, 
 both with the same `APP_VERSION` and `STELLARIS_DB`, and diff every route. Normalise what
 `scripts/snapshot.mjs` normalises **plus the build's own `version: "<timestamp>"` stamp**, which
 differs between any two builds.
+Between builds of different code, also mask the content hashes in `_app/immutable/*.<hash>.js`
+/ `.css` and the `__sveltekit_<hash>` global; then collapse whitespace runs to compare a reformat
+(prettier-plugin-svelte 4.2, 2026-11-22: all 22 routes identical).
 
 **Open checks (2026-11-15), none of them possible in the sandbox:**
 

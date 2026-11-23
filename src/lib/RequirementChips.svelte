@@ -25,12 +25,14 @@
 		{#if label}<span class="opacity-50">{label}</span>{/if}
 		{#each shown as l, i (i)}
 			<span class="rounded border px-1.5 py-0.5 {tone(l)}">
-				{#if l.type === 'excludes'}<span class="opacity-60"
-						>no
+				{#if l.type === 'excludes'}<span class="opacity-60">
+						no
 					</span>{/if}{#if l.leaf === 'has_technology' && l.value}<TechPopup
 						tech={l.value}
-						class="underline decoration-dotted underline-offset-2">{l.text}</TechPopup
-					>{:else}{l.text}{/if}
+						class="underline decoration-dotted underline-offset-2"
+					>
+						{l.text}
+					</TechPopup>{:else}{l.text}{/if}
 			</span>
 		{/each}
 		{#if lines.length > FOLD}

@@ -40,29 +40,29 @@
 <details class="border-surface-400-500/30 rounded-lg border p-3">
 	<summary class="cursor-pointer font-semibold">
 		Council seats
-		<span class="text-sm font-normal opacity-40"
-			>· {rows.length} — choose a civic by the seat it opens</span
-		>
+		<span class="text-sm font-normal opacity-40">
+			· {rows.length} — choose a civic by the seat it opens
+		</span>
 	</summary>
 	<div class="mt-3 flex flex-wrap items-center gap-3 text-xs">
-		<label
-			>Leader
+		<label>
+			Leader
 			<select class="select w-auto py-0.5 text-xs" bind:value={leaderClass}>
 				<option value={null}>any</option>
 				{#each classes as c (c)}<option value={c}>{cap(c)}</option>{/each}
-			</select></label
-		>
-		<label
-			>Sort by
+			</select>
+		</label>
+		<label>
+			Sort by
 			<select class="select w-auto py-0.5 text-xs" bind:value={sort}>
 				<option value="seat">seat</option>
 				<option value="civic">civic</option>
 				<option value="group">civic type</option>
-			</select></label
-		>
-		<label
-			><input type="checkbox" class="checkbox" bind:checked={hideConflicts} /> hide conflicting civics</label
-		>
+			</select>
+		</label>
+		<label>
+			<input type="checkbox" class="checkbox" bind:checked={hideConflicts} /> hide conflicting civics
+		</label>
 		<span class="opacity-50">The filter above searches seats and their effects too.</span>
 	</div>
 	<table class="mt-2 w-full text-left text-xs">
@@ -86,8 +86,10 @@
 							class="rounded px-1.5 py-0.5 text-left {on
 								? 'preset-filled-primary-500'
 								: 'hover:bg-surface-500/20'}"
-							onclick={() => ontoggle(r.civic.key)}>{r.civic.name ?? r.civic.key}</button
+							onclick={() => ontoggle(r.civic.key)}
 						>
+							{r.civic.name ?? r.civic.key}
+						</button>
 						<span class="opacity-40">{r.group}</span>
 						<ConflictBadge reasons={reasons(r.civic.key)} />
 					</td>
@@ -97,8 +99,9 @@
 							{#each r.seat.modifiers as m (m.key)}
 								<li class="flex items-baseline justify-between gap-3">
 									<span class="opacity-70">{modifierLabel(m)}</span>
-									<span class="shrink-0 font-mono {modifierColor(m)}">{formatModifierValue(m)}</span
-									>
+									<span class="shrink-0 font-mono {modifierColor(m)}">
+										{formatModifierValue(m)}
+									</span>
 								</li>
 							{/each}
 						</ul>
