@@ -37,6 +37,8 @@ describe('prettyKey', () => {
 		expect(prettyKey('ethic_materialist')).toBe('Materialist');
 		expect(prettyKey('civic_shared_burden')).toBe('Shared Burden');
 		expect(prettyKey('origin_lithoid')).toBe('Lithoid');
+		expect(prettyKey('ethic_fanatic_xenophile')).toBe('Fanatic Xenophile');
+		expect(prettyKey('ethic_absolute_pacifist')).toBe('Absolute Pacifist');
 	});
 	it('keeps the Fanatic qualifier on fanatic ethics', () => {
 		expect(prettyKey('ethic_fanatic_materialist')).toBe('Fanatic Materialist');

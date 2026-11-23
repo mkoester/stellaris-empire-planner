@@ -25,12 +25,14 @@ export interface Ethic {
 	policyRestrictions: PolicyRestriction[];
 }
 
+// Regular, fanatic and gestalt ethics: the ones an empire is created with. 4.6's absolute ethics
+// (cost 3) are only gained in play, so the planner leaves them out.
 export function loadEthics(): Ethic[] {
 	const rows = db()
 		.prepare(
 			`SELECT key, label, cost, gestalt, fanatic_variant, regular_variant
 			 FROM ethic
-			 WHERE cost >= 1
+			 WHERE cost BETWEEN 1 AND 2
 			 ORDER BY gestalt ASC, cost DESC, key ASC`
 		)
 		.all() as Array<{

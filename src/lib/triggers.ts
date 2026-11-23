@@ -201,7 +201,9 @@ function leafValue(
 	const ethic = ETHIC_LEAVES[leaf];
 	if (ethic) {
 		if (!p.ethics) return o.assumeAbsent ? yes(false) : null;
-		return yes(p.ethics.some((e) => e === `ethic_${ethic}` || e === `ethic_fanatic_${ethic}`));
+		// `is_<ethic>` holds for every tier: regular, fanatic and (4.6) absolute.
+		const tiers = [`ethic_${ethic}`, `ethic_fanatic_${ethic}`, `ethic_absolute_${ethic}`];
+		return yes(p.ethics.some((e) => tiers.includes(e)));
 	}
 	if (leaf === 'has_valid_civic' || leaf === 'has_civic') return known(p.civics);
 	if (leaf === 'has_origin')

@@ -606,12 +606,14 @@
 		paired
 	/>
 
-	<!-- Monument bonuses per 100 civilians -->
+	<!-- Ethic bonuses on a monument planet, per 100 civilians and per 100 culture workers -->
 	<section>
-		<h2 class="mb-1 text-lg font-semibold">Monument Bonuses per 100 Civilians</h2>
+		<h2 class="mb-1 text-lg font-semibold">Ethic Bonuses on Monument Planets</h2>
 		<p class="mb-4 text-sm opacity-50">
-			All monument buildings apply these per-100-civilian bonuses based on the empire's governing
-			ethics.
+			Per 100 workforce. Civilians get theirs only on a colony with a monument, memorial, artist
+			patron or lifecrypt; those buildings also add Culture Worker jobs (100 / 200 / 300 by tier),
+			which have ethic bonuses of their own on top of 3 unity, 500 amenities and +10% governing
+			ethics attraction. Absolute ethics are only gained in play.
 		</p>
 		<div class="max-h-128 overflow-auto">
 			<table class="w-full text-xs">
@@ -644,6 +646,12 @@
 							>
 								Fanatic
 							</th>
+							<th
+								class="sticky top-0 z-10 px-3 py-1.5 text-center font-medium opacity-60"
+								style="background-color: var(--color-surface-50-950)"
+							>
+								Absolute
+							</th>
 						{/each}
 					</tr>
 				</thead>
@@ -674,25 +682,21 @@
 										</td>
 									{/if}
 									{#if row}
-										<td class="px-3 py-1.5 opacity-70">{row.label}</td>
-										<td
-											class="px-3 py-1.5 text-center font-mono {row.good
-												? 'text-emerald-400'
-												: 'text-red-400'} {active ? '' : 'opacity-70'}"
-										>
-											{row.regular}
+										<td class="px-3 py-1.5 opacity-70">
+											<span class="opacity-60">{row.job}:</span>
+											{row.label}
 										</td>
-										<td
-											class="px-3 py-1.5 text-center font-mono {row.fanatic
-												? row.good
+										{#each [row.regular, row.fanatic, row.absolute] as value, tier (tier)}
+											<td
+												class="px-3 py-1.5 text-center font-mono {row.good
 													? 'text-emerald-400'
-													: 'text-red-400'
-												: 'opacity-20'} {active ? '' : 'opacity-70'}"
-										>
-											{row.fanatic ?? '—'}
-										</td>
+													: 'text-red-400'} {active ? '' : 'opacity-70'}"
+											>
+												{value}
+											</td>
+										{/each}
 									{:else}
-										<td class="px-3 py-1.5 opacity-20" colspan="3">—</td>
+										<td class="px-3 py-1.5 opacity-20" colspan="4">—</td>
 									{/if}
 								{/each}
 							</tr>

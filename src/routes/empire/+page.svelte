@@ -249,10 +249,16 @@
 			.map((o) => ({ kind: 'origin', name: o.name ?? o.key, description: o.description! }))
 	]);
 
-	// Monument bonuses for exactly the ethics this empire holds (regular vs fanatic).
+	// Monument-planet ethic bonuses for exactly the ethics this empire holds (regular vs fanatic).
 	const monumentRows = $derived.by(() => {
-		const out: { ethic: string; effect: string; value: string; good: boolean; fanatic: boolean }[] =
-			[];
+		const out: {
+			ethic: string;
+			job: string;
+			effect: string;
+			value: string;
+			good: boolean;
+			fanatic: boolean;
+		}[] = [];
 		for (const { ethicKey, rows } of MONUMENT_BONUSES) {
 			const e = ethicMap.get(ethicKey);
 			const hasFanatic = !!(e?.fanatic_variant && draft.ethics.includes(e.fanatic_variant));
@@ -264,8 +270,9 @@
 			for (const row of rows) {
 				out.push({
 					ethic: ethicName,
+					job: row.job,
 					effect: row.label,
-					value: hasFanatic ? (row.fanatic ?? row.regular) : row.regular,
+					value: hasFanatic ? row.fanatic : row.regular,
 					good: row.good,
 					fanatic: hasFanatic
 				});
@@ -695,17 +702,19 @@
 			</section>
 		{/if}
 
-		<!-- Monument bonuses per 100 civilians, from the empire's ethics -->
+		<!-- Ethic bonuses on a monument planet, per 100 civilians and culture workers -->
 		{#if monumentRows.length}
 			<section class="border-surface-400-500/30 space-y-3 rounded-lg border p-4">
-				<h2 class="text-xl font-semibold">Monument Bonuses per 100 Civilians</h2>
+				<h2 class="text-xl font-semibold">Ethic Bonuses on Monument Planets</h2>
 				<p class="text-sm opacity-50">
-					Monument buildings grant these per-100-civilian bonuses based on the empire's ethics.
+					Per 100 workforce, on a colony with a monument, memorial, artist patron or lifecrypt. The
+					building also adds the Culture Worker jobs.
 				</p>
 				<table class="w-full text-sm">
 					<thead>
 						<tr class="border-surface-400-500/40 border-b text-left">
 							<th class="py-1.5 pr-4 font-medium opacity-60">Ethic</th>
+							<th class="py-1.5 pr-4 font-medium opacity-60">Job</th>
 							<th class="py-1.5 pr-4 font-medium opacity-60">Effect</th>
 							<th class="py-1.5 text-right font-medium opacity-60">Per 100</th>
 						</tr>
@@ -717,6 +726,7 @@
 									{row.ethic}
 									{#if row.fanatic}<span class="text-xs opacity-40">(fanatic)</span>{/if}
 								</td>
+								<td class="py-1.5 pr-4 opacity-70">{row.job}</td>
 								<td class="py-1.5 pr-4 opacity-70">{row.effect}</td>
 								<td
 									class="py-1.5 text-right font-mono {row.good
