@@ -4,6 +4,26 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.1.8] - 2026-11-24
+
+### Added
+
+- Information → **Ideologies** (Willpower): the eight ideologies, one per ethic (Xenophobe's
+  militarist and pacifist variants), and every tenet each can codify, with its values at
+  Intensity I, II and III side by side; which tenets every ideology has a version of, and which
+  come from an origin or civic. How tenets work (three, a fourth from the Force of Will
+  ambition's Codification), what each Ideological Strength level gives an adopter, where
+  strength comes from, and the ideological buildings. Which strength level opens a tenet slot is
+  not in the game files and the page says so.
+- Information → **Ambitions**: every ambition path with its levels, the currency and
+  requirements each needs, the perks it offers, and the objectives with their reward formula.
+- Both need the data from stellaris-data-extraction 0.1.26.
+
+### Dependencies
+
+- typescript-eslint 8.74. TypeScript stays on 6 until svelte-check, typescript-eslint and
+  SvelteKit accept 7.
+
 ## [0.1.7] - 2026-11-23
 
 ### Changed
