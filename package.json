@@ -1,7 +1,7 @@
 {
 	"name": "stellaris-empire-planner",
 	"private": true,
-	"version": "0.1.7",
+	"version": "0.1.8",
 	"license": "AGPL-3.0-only",
 	"type": "module",
 	"imports": {
@@ -41,7 +41,7 @@
 		"svelte-check": "^4.7.8",
 		"tailwindcss": "^4.3.5",
 		"typescript": "^6.0.3",
-		"typescript-eslint": "^8.73.0",
+		"typescript-eslint": "^8.74.0",
 		"vite": "^8.3.8",
 		"vitest": "^5.1.1"
 	},

@@ -43,6 +43,11 @@ real game start.** Start 3–4 contrasting empires on Linux (default materialist
 nomads), save on day 1, and compare each capital's districts, zones and buildings with the
 card. Nomads come out with no capital building: confirm that in game.
 
+**Open check (2026-11-24): which Ideological Strength level opens each tenet slot and raises its
+Intensity.** The game files do not say (engine logic), so `/ideologies` states no mapping. In a 4.6
+game: adopt an ideology, and at each strength level (0–250, 250–500, 500–750, 750–1000) note how
+many tenets can be codified and each one's Intensity; then write it on the page's "How it works".
+
 After changing the extraction script, regenerate the DB from the sibling repo — the two are only
 consistent if you do.
 

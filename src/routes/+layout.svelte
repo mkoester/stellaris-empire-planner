@@ -34,6 +34,8 @@
 		{ href: '/precursors', label: 'Precursors' },
 		{ href: '/traditions', label: 'Tradition Trees' },
 		{ href: '/ascension-perks', label: 'Ascension Perks' },
+		{ href: '/ambitions', label: 'Ambitions' },
+		{ href: '/ideologies', label: 'Ideologies' },
 		{ href: '/federations', label: 'Federations' },
 		{ href: '/jobs', label: 'Jobs' },
 		{ href: '/buildings', label: 'Buildings' },

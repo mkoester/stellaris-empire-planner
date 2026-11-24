@@ -13,3 +13,5 @@ export * from './federations';
 export * from './compat';
 export * from './gameStart';
 export * from './unlocks';
+export * from './ideologies';
+export * from './ambitions';
