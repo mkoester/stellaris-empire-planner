@@ -47,6 +47,10 @@ card. Nomads come out with no capital building: confirm that in game.
 Intensity.** The game files do not say (engine logic), so `/ideologies` states no mapping. In a 4.6
 game: adopt an ideology, and at each strength level (0–250, 250–500, 500–750, 750–1000) note how
 many tenets can be codified and each one's Intensity; then write it on the page's "How it works".
+A throwaway game gets an ideology fast with DevTools' `devtools.20`/`.21` (the dashboard's
+`docs/save-format.md`, "Ideologies"). The save's ideology blocks hold no strength or tenets; a
+top-level `tenets = { }` sits after `contracts` (empty in a game with none adopted), the place to
+look for codified tenets and their tiers.
 
 After changing the extraction script, regenerate the DB from the sibling repo — the two are only
 consistent if you do.
