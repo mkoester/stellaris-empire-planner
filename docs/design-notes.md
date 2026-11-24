@@ -122,6 +122,15 @@ federation_perk         — key, name, description, effect
 federation_perk_modifier — perk_key, scope (members/federation/leader/envoy), modifier_key, modifier_value, potential_json
 federation_law_category — key, name, description, potential_json
 federation_law          — key, category_key, name, description, potential_json, allow_json, types_json (only for these types), required_centralization, cohesion_growth
+crisis_path (+ _perk, _level, _objective), crisis_level (+ _perk), crisis_objective, menace_perk (+ _modifier) — ambitions; reward_json = formula steps
+ideology                — key, ethic, secondary_ethic, opposed_secondary_ethic, faction, faction_name, reach, type_name
+ideology_strength_level — ideology_key, level (0-based), start_value, end_value
+ideology_modifier       — ideology_key, scope (country/system/pop_group), level, header, modifier_key, modifier_value, scaled_by, potential_json
+ideology_strength_source — category, label, op, value (NULL = formula), value_ref, condition_json
+ideology_concept        — key, name, text (the game's concept tooltips)
+tenet                   — key, name, description, ethics_json ([] = any), priority, source_civic, potential_json, first_tier, unlock_text, lock_text
+tenet_swap / tenet_tier / tenet_tier_modifier / tenet_unlock — gestalt variants; tier texts; per-tier modifiers (scope, potential_json, possible_json); linked edicts/policies/agendas
+ideology_building       — building_key, potential_json
 ```
 
 `*_json` columns hold normalised trigger trees (`{"op":"and|or|not","args":[…]}` | `{"leaf":k,"value":v,"cmp"?}`) — see the extraction's design notes.
@@ -147,6 +156,9 @@ tech.ts        one tech's card (loadTechCard, for /api/tech/[key]), repeatable +
 traditions.ts  tradition trees, ascension perks, defines, profile inputs (loadTraditionTrees,
                loadAscensionPerks, loadGameDefines, loadProfileInputs) + the Trigger type
 federations.ts federation types with their level perks, law categories + laws (loadFederations)
+ideologies.ts  ideology types, strength levels + adoption effects, strength sources, concept texts,
+               tenets with tiers/swaps/unlocks, ideological buildings, extra-tenet perks (loadIdeologies)
+ambitions.ts   ambition paths with levels, perks and objectives (loadAmbitions)
 ```
 
 Key exports: `Trait`, `Archetype`, `TraitCategory`, `SpeciesClass`, `Modifier`, `Ethic`, `EthicImplication`, `PolicyRestriction`, `Precursor` (+ `PrecursorRelic`, `RelicModifier`, `ActiveModifier`, `RelicResource`, `RelicPassiveText`, `PrecursorReward`, `PrecursorBuilding`, `PrecursorSystem`, `PrecursorPlanet`, `PlanetDeposit`, `DepositResource`, `PrecursorMegastructure`).
@@ -351,6 +363,19 @@ Both evaluate the stored trigger trees against an **`EmpireProfile`** ([`src/lib
 - `EmpireProfileBar` like the tradition pages; a type whose `allow` is definitely false greys/hides. The scripted ethic leaves (`is_militarist` …) evaluate against the profile's ethics (plain or fanatic) in `evaluate`.
 - Laws: one table per category (law, description, centralization needed, cohesion/month, "only for" type links); event-only Imperial Loyalists laws are dropped at extraction.
 - **Linked from elsewhere** via [`FederationLink.svelte`](src/lib/FederationLink.svelte) (link to `/federations#<key>` + `federationTip` hover; stops click propagation so it works inside selectable cards): tradition/perk effect text through `unlocksFor(…, federationTypes)` (`Unlock.kind = 'federation'`, `linkify` finds "Grants access to the **Trade League** Federation type"), civic cards through [`FederationAccess.svelte`](src/lib/FederationAccess.svelte) (`federationsFor` → "Can form / Cannot form federation"), and the ethics page (a "Can form federation" row in the implications table + a line in the selected-ethics summary).
+
+### `/ideologies` — Ideologies (Information, 4.6)
+
+`loadIdeologies()` (tables `ideology*`, `tenet*`, from the extractor's `ideologies.py`) + `loadGameDefines()` + the ideological buildings' `ReferenceBuilding`s for `BuildingName` popups.
+
+- _How it works_: the game's `concept_ideology` text; tenet count from `TENETS_SELECTION_AMOUNT`, the extra slot from every menace perk with `additional_tenet_add` (Codification, linked to `/ambitions#<path>`, its level from `crisis_path_level`), Intensity range, reroll and amendment costs (`TENET_*` defines, `TENET_AMENDMENT_INFLUENCE_COST_<n>`). **Which strength level opens a slot or raises Intensity is not in the files** and the page says so (open in-game check in `AGENTS.md`).
+- Strength levels table: the adoption modifiers common to every ideology (ids equal across all types), per `level`; the scope column shows the game's own tooltip header ("Inside Ideological Reach", "Inside Owned Systems"). Ungated ones (rivalry, disruption, advocates) below with "(if …)".
+- Strength sources: the `concept_ideological_strength_sources` text (per-unit rates) beside every `monthly_increase` entry — most values are script-value formulas, shown as "varies".
+- One section per ethic (`ethicSections`, xenophobe with both variants and their secondary ethic), then _Any ideology_ (`ethics = []`) and the ideological buildings. A tenet card: gestalt names, priority / "every ideology" (`sharedFamilies`: Strategism, Propagandism) / source civic badges, a modifier table with one column per Intensity (`tierRows`: a stat lined up by scope, key and conditions), tier texts shown once until they change (`tierEffects`), unlock text and chips, lock text. Search filters tenets (`tenetSearchText`).
+
+### `/ambitions` — Ambitions (Information)
+
+`loadAmbitions()`: per path (`crisis_path`) its currency, starting perks (`crisis_path_perk`), levels with required currency, requirement tooltips and perks (`menace_perk` + modifiers), objectives with the reward formula (`rewardText` in `src/lib/ambitions.ts`, steps in file order).
 
 ### `/jobs` + `/buildings` — Information reference tables
 

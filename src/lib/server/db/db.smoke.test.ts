@@ -57,4 +57,19 @@ describe('the game DB fits the loaders', () => {
 			[...variants].filter((v) => !(REWARD_VARIANTS as readonly string[]).includes(v))
 		).toEqual([]);
 	});
+
+	it('loadIdeologies: 8 ethics, three-tier tenets, the extra tenet slot found', () => {
+		const d = loaders.loadIdeologies();
+		expect(new Set(d.ideologies.map((i) => i.ethic)).size).toBe(8);
+		expect(d.ideologies.every((i) => i.levels.length >= 1)).toBe(true);
+		const stability = d.tenets.find((t) => t.key === 'tenet_stability');
+		expect(stability?.tiers.map((t) => t.tier)).toEqual([1, 2, 3]);
+		expect(d.extraTenetPerks.length).toBeGreaterThan(0);
+		expect(d.extraTenetPerks.every((p) => p.pathKey !== null)).toBe(true);
+	});
+
+	it('loadAmbitions: every path is named and has levels', () => {
+		const a = loaders.loadAmbitions();
+		expect(a.filter((p) => !p.name || !p.levels.length).map((p) => p.key)).toEqual([]);
+	});
 });
