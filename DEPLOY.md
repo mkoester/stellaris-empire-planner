@@ -4,11 +4,9 @@ Follows [quadlet-my-guidelines/new_quadlet_with_ai_assistance.md](https://github
 
 ## What's different from the generic guide
 
-This image is **self-contained and read-only**:
-
-- The SQLite game DB is **baked into the image** at `/app/data/stellaris.sqlite`, so there are **no volumes, no `~/data` or `~/config` dirs, and no `chown`/`keep-id` permission setup**. Updating the game DB means rebuilding + reshipping the image.
-- The container runs as the image's own `node` user (UID 1000).
-- It's fronted by a reverse proxy, so it publishes on `127.0.0.1:3000` only.
+- The SQLite game DB is **baked into the image** at `/app/data/stellaris.sqlite` (read-only). Updating the game DB means rebuilding and reshipping the image.
+- **One writable volume:** `~stellaris-empire-planner/analytics/` → `/app/analytics`, holding the analytics DB (`docs/analytics.md`). It survives image rebuilds. The container runs as the image's `node` user (UID 1000), mapped to the service user with `UserNS=keep-id:uid=1000,gid=1000`, so the DB belongs to the service user on the host.
+- It's fronted by a reverse proxy, so it publishes on `127.0.0.1:3000` only. `/api/stats` must be behind `basic_auth` there (step 7).
 
 Quadlet files (symlinked into place by the steps below):
 
@@ -37,8 +35,10 @@ REPO_URL=https://github.com/mkoester/stellaris-empire-planner.git
 REPO=~stellaris-empire-planner/stellaris-empire-planner
 
 sudo -u stellaris-empire-planner git clone -b main $REPO_URL $REPO
-sudo -u stellaris-empire-planner mkdir -p ~stellaris-empire-planner/.config/containers/systemd
+sudo -u stellaris-empire-planner mkdir -p ~stellaris-empire-planner/.config/containers/systemd ~stellaris-empire-planner/analytics
 ```
+
+On an existing deployment, only the `analytics` directory is new: run the `mkdir` for it before restarting with the new unit.
 
 ## 3. Load the image on the VPS (needs the user from step 2)
 
@@ -82,6 +82,28 @@ curl -sS -o /dev/null -w "%{http_code}\n" http://127.0.0.1:3000/   # -> 200
 ```
 
 Then point your reverse proxy at `http://127.0.0.1:3000`, passing the `Host` header through (Caddy does by default; nginx needs `proxy_set_header Host $host;`). The planner takes its origin from it.
+
+## 7. Protect `/api/stats` and back up the analytics DB
+
+`/api/stats` serves the aggregates to stats-board (`workspace_homelab/stats-board`). The app does not authenticate it, so Caddy must. Inside the planner's site block, with the hash from `caddy hash-password` (a credential only stats-board uses, kept in its `override.env`):
+
+```caddy
+basic_auth /api/stats* {
+	stats-board <hash>
+}
+```
+
+`/api/pv` (the page-view beacon) stays public.
+
+Check that the guard holds and that the beacon counts:
+
+```sh
+curl -s -o /dev/null -w '%{http_code}\n' https://<planner host>/api/stats     # -> 401
+curl -s -X POST -d /civics https://<planner host>/api/pv -o /dev/null -w '%{http_code}\n'   # -> 204
+sudo -u stellaris-empire-planner sqlite3 ~stellaris-empire-planner/analytics/analytics.sqlite 'SELECT * FROM page_views'
+```
+
+Backups follow the house rule: a host-side `sqlite3 ~stellaris-empire-planner/analytics/analytics.sqlite ".backup /var/backups/stellaris-empire-planner/analytics.sqlite"` from a unit with `UMask=0027`, into `/var/backups/stellaris-empire-planner/` (`backup-readers` ACL). Never copy the live file with `cp` or `rsync`.
 
 ## Updating a running deployment
 

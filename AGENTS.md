@@ -90,7 +90,12 @@ not done: a root-owned copy outside the clone. It changes the server layout in `
   game's `launcher-settings.json`), surfaced by `loadGameVersion()` → `+layout.server.ts`. Never
   hardcode a version string.
 - DB access stays inside `src/lib/server/db/`; routes consume its functions rather than issuing
-  their own SQL.
+  their own SQL. That package is the read-only **game** DB. The writable analytics DB is
+  `src/lib/server/analytics.ts`, deliberately separate (`docs/analytics.md`).
+- **The analytics beacon is checked against an `https` origin.** adapter-node 6 assumes https,
+  so a local `curl -X POST` to `/api/pv` with an `http://` Origin gets 403 ("Cross-site POST
+  form submissions are forbidden"). That is the CSRF check working, not a broken endpoint: test
+  with `-H 'Origin: https://127.0.0.1:<port>'`.
 - **The stores (`empire.svelte.ts`, `settings.svelte.ts`) are module-level `$state`: on the server
   one copy for every visitor.** Write to them only from event handlers and effects, never while a
   component initialises or in a `load`. The layout's game data is likewise read once per server

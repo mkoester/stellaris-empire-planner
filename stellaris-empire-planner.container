@@ -11,13 +11,17 @@ AutoUpdate=local
 # Never reach out to a registry — the image is supplied locally via `podman load`.
 Pull=never
 
-# No UserNS/User/Group override: the image already runs as its own `node` user
-# (UID 1000) and there are NO host-mounted writable paths to match ownership with,
-# so the keep-id/chown dance from the guide does not apply here.
+# The image runs as `node` (UID 1000). keep-id maps that UID to the service user, so the
+# analytics DB written in the volume belongs to the service user on the host. Without it,
+# rootless podman maps UID 1000 to a subuid and the directory is not writable from inside.
+UserNS=keep-id:uid=1000,gid=1000
+User=1000
+Group=1000
 
-# The SQLite game DB is baked into the image at /app/data/stellaris.sqlite, so this
-# container is read-only/stateless — no Volume mounts and no persistent dirs needed.
-# (Updating the game DB = rebuild + reship the image.)
+# The game DB is baked into the image (/app/data/stellaris.sqlite, read-only; updating it
+# means a rebuild). The one writable path is the analytics DB (docs/analytics.md): mount the
+# directory, not the file, because SQLite writes its -wal/-shm files next to it.
+Volume=%h/analytics:/app/analytics:Z
 
 # Environment: committed defaults + per-deployment overrides.
 EnvironmentFile=%h/.config/containers/systemd/stellaris-empire-planner.env

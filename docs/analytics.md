@@ -1,6 +1,17 @@
 # Analytics: page statistics and recurring visitors
 
-**Status: planned, not implemented (2026-11-25).** Nothing below exists in the code yet.
+**Status: implemented (2026-11-25).**
+
+- Code: `src/lib/analytics.ts` (pure, tested), `src/lib/server/analytics.ts` (the DB),
+  `src/routes/api/{pv,stats}/+server.ts`, `src/lib/ConsentBanner.svelte` +
+  `consent.svelte.ts`, and the beacon in `+layout.svelte`.
+- The analytics module sits outside `src/lib/server/db/` on purpose: that package is the
+  read-only game DB. This is a separate, writable file.
+- Deviation from the plan below: `/api/stats` also returns `returning-per-day` (visitors on a
+  day whose id was seen on an earlier day), a series instead of a share, so the board can draw
+  it next to `visitors-per-day`.
+- **Still open before going live:** the privacy policy page and the imprint (§1). The banner has
+  no link to a privacy policy yet, because none exists.
 
 Goal: know which pages are used and how many visitors come back. No individual's path through the
 site is recorded, and the setup stays small enough to need no third-party tool.

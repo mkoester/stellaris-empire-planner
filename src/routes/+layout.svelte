@@ -7,8 +7,20 @@
 	import EmpireOverview from '#lib/EmpireOverview.svelte';
 	import Tip from '#lib/Tip.svelte';
 	import { settings } from '#lib/settings.svelte.ts';
+	import ConsentBanner from '#lib/ConsentBanner.svelte';
+	import { checkConsent, reopen } from '#lib/consent.svelte.ts';
+	import { afterNavigate } from '$app/navigation';
+	import { onMount } from 'svelte';
 
 	let { children, data } = $props();
+
+	onMount(checkConsent);
+	// One beacon per page shown, the first load included. It sends the route id, never the URL
+	// (the query string is the empire); the server counts it without any visitor id
+	// (docs/analytics.md).
+	afterNavigate(({ to }) => {
+		if (to?.route.id) navigator.sendBeacon('/api/pv', to.route.id);
+	});
 
 	// Global navigation — every section reachable from every page (order matters).
 	const NAV = [
@@ -153,7 +165,11 @@
 	</a>
 	·
 	<a href="https://discord.gg/7pcbj5abfE" class="underline">Bugs &amp; feedback (Discord)</a>
+	·
+	<button type="button" class="underline" onclick={reopen}>Cookie settings</button>
 </footer>
+
+<ConsentBanner />
 
 <!-- Floating running summary of the current empire (hidden on /empire, which shows its
      own, and on the / landing page, which isn't part of empire creation). -->
