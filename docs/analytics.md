@@ -10,8 +10,13 @@
 - Deviation from the plan below: `/api/stats` also returns `returning-per-day` (visitors on a
   day whose id was seen on an earlier day), a series instead of a share, so the board can draw
   it next to `visitors-per-day`.
-- **Still open before going live:** the privacy policy page and the imprint (§1). The banner has
-  no link to a privacy policy yet, because none exists.
+- `/privacy` and `/imprint` (2026-11-25), with the operator's details from `OPERATOR_*` in the
+  server's `override.env`, so no name or address sits in the public repo. The imprint follows
+  § 18(1) MStV (name and address); § 5 DDG does not apply to a free, non-commercial site.
+- Withdrawing consent ("Cookie settings") sends the id to `/api/forget`, which deletes its
+  `visitor_days` rows (GDPR Art. 17(1)(b)), then deletes the cookie.
+- The privacy policy states the Caddy log settings of §7 (masked IPs, 7 days): they must be live
+  before the release that carries it. Change the page whenever the logging or the data changes.
 
 Goal: know which pages are used and how many visitors come back. No individual's path through the
 site is recorded, and the setup stays small enough to need no third-party tool.

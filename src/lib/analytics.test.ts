@@ -6,6 +6,7 @@ import {
 	daysBefore,
 	parseConsent,
 	routeIds,
+	operatorFrom,
 	statsDoc
 } from '#lib/analytics.ts';
 
@@ -78,5 +79,18 @@ describe('statsDoc', () => {
 		]);
 		expect(doc.data[0]).toMatchObject({ kind: 'series', points: [{ t: '2026-11-24', v: 7 }] });
 		expect(doc.data[3]).toMatchObject({ kind: 'table', rows: [{ route: '/civics', views: 7 }] });
+	});
+});
+
+describe('operatorFrom', () => {
+	it('needs name, address and email', () => {
+		expect(operatorFrom('A B', 'Street 1; 12345 Town', 'a@b.de')).toEqual({
+			name: 'A B',
+			address: ['Street 1', '12345 Town'],
+			email: 'a@b.de'
+		});
+		expect(operatorFrom(undefined, 'Street 1', 'a@b.de')).toBeNull();
+		expect(operatorFrom('A B', ' ; ', 'a@b.de')).toBeNull();
+		expect(operatorFrom('A B', 'Street 1', '')).toBeNull();
 	});
 });

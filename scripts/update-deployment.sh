@@ -77,6 +77,10 @@ main() {
 	page=$(curl -s http://127.0.0.1:3000/)
 	grep -qF "$want" <<<"$page" || die "the site is up but does not report $want — the old image may still be running"
 	echo "    200 OK, reporting $want"
+	# The imprint is a legal duty (§ 18(1) MStV): its details come from override.env.
+	curl -s http://127.0.0.1:3000/imprint | grep -qF 'not configured on this server' &&
+		die "/imprint names no operator — set OPERATOR_NAME, OPERATOR_ADDRESS, OPERATOR_EMAIL in $planner/$SVC.override.env"
+	echo "    imprint configured"
 	echo "    planner $(as_svc git -C "$planner" rev-parse --short HEAD), extraction $(as_svc git -C "$extraction" rev-parse --short HEAD)"
 }
 

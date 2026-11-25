@@ -16,8 +16,11 @@ export function answer(ok: boolean) {
 	consent.open = false;
 }
 
-/** "Cookie settings": withdraw the answer (and the id with it) and ask again. */
+/** "Cookie settings": withdraw the answer, have the server delete what it stored for the id,
+ * and ask again. */
 export function reopen() {
+	const given = parseConsent(consentFrom(document.cookie));
+	if (typeof given === 'object') navigator.sendBeacon('/api/forget', given.vid);
 	document.cookie = consentCookie('', secure(), 0);
 	consent.open = true;
 }

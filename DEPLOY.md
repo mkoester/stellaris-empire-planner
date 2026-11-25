@@ -14,7 +14,7 @@ Quadlet files (symlinked into place by the steps below):
 |------|---------|
 | `stellaris-empire-planner.container` | the Quadlet unit |
 | `stellaris-empire-planner.env` | committed, non-secret defaults |
-| `stellaris-empire-planner.override.env.template` | copy → `.override.env`, per-deployment overrides (none required) |
+| `stellaris-empire-planner.override.env.template` | copy → `.override.env`, per-deployment overrides: the operator for imprint and privacy policy |
 
 ## 1. Build and ship the image (run on your dev box)
 
@@ -48,13 +48,13 @@ sudo -u stellaris-empire-planner podman load -i /tmp/stellaris-empire-planner_la
 
 (Run this again to update — `AutoUpdate=local` + `podman auto-update` will pick up the newer local image, or just `systemctl --user restart stellaris-empire-planner`.)
 
-## 4. Create the per-deployment override (nothing to set by default)
+## 4. Create the per-deployment override (the operator's details)
 
 ```sh
 sudo -u stellaris-empire-planner cp \
   $REPO/stellaris-empire-planner.override.env.template \
   $REPO/stellaris-empire-planner.override.env
-sudo -u stellaris-empire-planner nano $REPO/stellaris-empire-planner.override.env   # optional overrides
+sudo -u stellaris-empire-planner nano $REPO/stellaris-empire-planner.override.env   # set OPERATOR_NAME, OPERATOR_ADDRESS, OPERATOR_EMAIL
 ```
 
 ## 5. Symlink the unit + env files into the Quadlet dir

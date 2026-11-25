@@ -93,3 +93,8 @@ export function stats(now = Date.now()) {
 		.all(daysBefore(today, TOP_ROUTES_DAYS)) as { route: string; views: number }[];
 	return statsDoc(today, views, visitors, returning, top);
 }
+
+/** Consent withdrawn: delete every day stored for this visitor id. */
+export function forget(vid: string) {
+	db()?.prepare('DELETE FROM visitor_days WHERE vid = ?').run(vid);
+}

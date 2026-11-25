@@ -89,3 +89,17 @@ export function statsDoc(
 		]
 	};
 }
+
+/** The operator's details from the env (imprint, privacy policy), or null if any is missing. */
+export function operatorFrom(
+	name: string | undefined,
+	address: string | undefined,
+	email: string | undefined
+): { name: string; address: string[]; email: string } | null {
+	const lines = (address ?? '')
+		.split(';')
+		.map((l) => l.trim())
+		.filter(Boolean);
+	if (!name?.trim() || !lines.length || !email?.trim()) return null;
+	return { name: name.trim(), address: lines, email: email.trim() };
+}

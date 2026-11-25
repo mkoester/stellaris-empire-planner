@@ -2,6 +2,7 @@
 	// Two equal buttons: refusing must be as easy as accepting, or the consent is not valid.
 	// No cookie exists before a click.
 	import { answer, consent } from '#lib/consent.svelte.ts';
+	import { resolve } from '$app/paths';
 </script>
 
 {#if consent.open}
@@ -14,6 +15,7 @@
 			<p class="min-w-0 flex-1">
 				May we set one cookie to count returning visitors? It holds a random id and nothing else.
 				Page views are counted anonymously either way.
+				<a href={resolve('/privacy')} class="underline">Privacy policy</a>
 			</p>
 			<div class="flex gap-2">
 				<button

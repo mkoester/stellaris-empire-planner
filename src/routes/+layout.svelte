@@ -167,6 +167,10 @@
 	<a href="https://discord.gg/7pcbj5abfE" class="underline">Bugs &amp; feedback (Discord)</a>
 	·
 	<button type="button" class="underline" onclick={reopen}>Cookie settings</button>
+	·
+	<a href={resolve('/privacy')} class="underline">Privacy</a>
+	·
+	<a href={resolve('/imprint')} class="underline">Imprint</a>
 </footer>
 
 <ConsentBanner />
