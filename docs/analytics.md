@@ -134,8 +134,10 @@ SELECT COUNT(*) FROM (
 
 Unique and returning counts cover consenting visitors only. Page views cover everyone.
 
-Phase 2 (optional): a `/stats` route with these tables and maybe one chart. Protect it in Caddy
-with `basic_auth` on `/stats*`, not in app code.
+Phase 2: no `/stats` page in the planner. `GET /api/stats` returns the aggregates in
+stats-board's native format, protected by Caddy `basic_auth` on `/api/stats*` (its own
+credential). The stats-board displays them (`workspace_homelab/docs/stats-board.md`). The queries
+above stay as the fallback.
 
 ## 7. Caddy access logs
 
