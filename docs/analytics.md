@@ -24,7 +24,7 @@ site is recorded, and the setup stays small enough to need no third-party tool.
 - **GDPR**: server logs and counters are processing too, but legitimate interest
   (Art. 6(1)(f)) covers them without consent. They still go into the privacy policy.
 - **An "OK"-only banner is not valid consent.** Refusing must be as easy as accepting (CJEU
-  *Planet49*; German courts have struck down banners without a reject button). So: **two equal
+  _Planet49_; German courts have struck down banners without a reject button). So: **two equal
   buttons, "OK" and "No thanks"**, and no cookie before a click.
 - **Before this goes live:** a privacy policy page (Datenschutzerklärung) naming the cookie, the
   counters and the Caddy logs, and probably an imprint (Impressum).
@@ -109,6 +109,7 @@ site is recorded, and the setup stays small enough to need no third-party tool.
     user's directory is then not writable from inside, and the first beacon fails with
     `SQLITE_CANTOPEN` / `EACCES`. The unit's current comment ("no host-mounted writable paths")
     becomes wrong. Replace it.
+
   - **Mount the directory, not the file.** SQLite writes `-wal`/`-journal` files next to the DB,
     and a single-file mount has nowhere to put them.
   - env: `ANALYTICS_DB=/app/analytics/analytics.sqlite`. The app creates the file and runs the
@@ -118,9 +119,10 @@ site is recorded, and the setup stays small enough to need no third-party tool.
     the "no volumes / stateless" statements.
   - Updating the game DB is still a rebuild and reship of the image. The analytics data survives
     that, because it lives on the host.
-  - Backup per house rule: a host-side `sqlite3 ~stellaris-empire-planner/analytics/analytics.sqlite
-    ".backup …"` into `/var/backups/stellaris-empire-planner/` (`UMask=0027`, the
-    `backup-readers` ACL). Never copy the live file with `cp`/`rsync`.
+  - Backup per house rule: a host-side `sqlite3 <db> ".backup …"` of
+    `~stellaris-empire-planner/analytics/analytics.sqlite` into
+    `/var/backups/stellaris-empire-planner/` (`UMask=0027`, the `backup-readers` ACL). Never
+    copy the live file with `cp`/`rsync`.
   - Check after the first deploy: the file is owned by `stellaris-empire-planner` on the host
     (`ls -ln ~stellaris-empire-planner/analytics`), and a page view grows `page_views`.
 
