@@ -169,8 +169,7 @@ in the logs. Leave `log_credentials` off.
 ```caddy
 log {
 	output file /var/log/caddy/access.log {
-		roll_interval 24h
-		roll_keep_for 168h
+		roll_disabled
 	}
 	format filter {
 		request>remote_ip ip_mask {
@@ -186,7 +185,26 @@ log {
 }
 ```
 
-- If `caddy validate` rejects `roll_interval` (older Caddy), use `roll_size 1MiB` instead.
+- Rotation is logrotate's, daily, because the privacy policy promises 7 days. The VPS's Caddy
+  (2026-11-25) rejects `roll_interval`, and `roll_size` + `roll_keep_for` gives no time bound: only
+  rotated files expire, and a small site may not fill one for months.
+  `/etc/logrotate.d/caddy-access`:
+
+  ```
+  /var/log/caddy/access.log {
+  	daily
+  	rotate 6
+  	maxage 7
+  	missingok
+  	notifempty
+  	copytruncate
+  	nocompress
+  }
+  ```
+
+  `copytruncate` because Caddy keeps the file open. Check with `sudo logrotate -d
+/etc/logrotate.d/caddy-access` and that `logrotate.timer` is active.
+
 - Use `ip_mask`, not `hash`: Caddy's `hash` is an unsalted, truncated SHA-256, and anyone can
   reverse it by trying every IPv4 address.
 - Once it works, delete the old `access.log*` files that still hold full IPs.
