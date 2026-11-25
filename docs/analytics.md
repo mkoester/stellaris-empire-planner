@@ -81,12 +81,37 @@ site is recorded, and the setup stays small enough to need no third-party tool.
     routes so arbitrary strings cannot fill the table, then return 204.
   - Pure helpers (day bucketing in UTC, parsing the `consent` value) get unit tests like the rest
     of `src/lib`.
-- Deployment: the container stops being stateless.
-  - `stellaris-empire-planner.container`: `Volume=%h/analytics:/app/analytics:Z`
-  - env: `ANALYTICS_DB=/app/analytics/analytics.sqlite`
-  - `DEPLOY.md`: a new volumes step (create the directory as the service user), and remove the
-    "no volumes" statements.
-  - Backup per house rule: `sqlite3 .backup` into `/var/backups/stellaris-empire-planner/`.
+- Deployment: the container stops being stateless. Model it on `quadlet-joplin`'s bind mounts.
+  - `stellaris-empire-planner.container`:
+
+    ```ini
+    # The image runs as `node` (UID 1000). keep-id maps that UID to the service user, so
+    # files written in the volume belong to the service user on the host.
+    UserNS=keep-id:uid=1000,gid=1000
+    User=1000
+    Group=1000
+
+    Volume=%h/analytics:/app/analytics:Z
+    ```
+
+    Without `UserNS=keep-id`, rootless podman maps container UID 1000 to a subuid. The service
+    user's directory is then not writable from inside, and the first beacon fails with
+    `SQLITE_CANTOPEN` / `EACCES`. The unit's current comment ("no host-mounted writable paths")
+    becomes wrong. Replace it.
+  - **Mount the directory, not the file.** SQLite writes `-wal`/`-journal` files next to the DB,
+    and a single-file mount has nowhere to put them.
+  - env: `ANALYTICS_DB=/app/analytics/analytics.sqlite`. The app creates the file and runs the
+    migrations on first start.
+  - `DEPLOY.md`: a new step,
+    `sudo -u stellaris-empire-planner mkdir -p ~stellaris-empire-planner/analytics`, and remove
+    the "no volumes / stateless" statements.
+  - Updating the game DB is still a rebuild and reship of the image. The analytics data survives
+    that, because it lives on the host.
+  - Backup per house rule: a host-side `sqlite3 ~stellaris-empire-planner/analytics/analytics.sqlite
+    ".backup …"` into `/var/backups/stellaris-empire-planner/` (`UMask=0027`, the
+    `backup-readers` ACL). Never copy the live file with `cp`/`rsync`.
+  - Check after the first deploy: the file is owned by `stellaris-empire-planner` on the host
+    (`ls -ln ~stellaris-empire-planner/analytics`), and a page view grows `page_views`.
 
 ## 6. Reading the numbers
 
