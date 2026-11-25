@@ -16,7 +16,7 @@
 
 	onMount(checkConsent);
 	// One beacon per page shown, the first load included. It sends the route id, never the URL
-	// (the query string is the empire); the server counts it without any visitor id
+	// (nothing a URL may carry reaches the counter); the server counts it without any visitor id
 	// (docs/analytics.md).
 	afterNavigate(({ to }) => {
 		if (to?.route.id) navigator.sendBeacon('/api/pv', to.route.id);

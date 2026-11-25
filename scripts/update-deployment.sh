@@ -60,6 +60,10 @@ main() {
 	as_svc "$planner/scripts/build-container.sh" --db "$extraction/sqlite/stellaris.sqlite"
 
 	step "Restarting the service"
+	# The analytics volume's host side (DEPLOY.md); podman refuses to start without it.
+	as_svc mkdir -p "$home/analytics"
+	# The unit is a symlink into the clone just pulled: regenerate it before the restart.
+	as_svc systemctl --user daemon-reload
 	as_svc systemctl --user restart "$SVC"
 
 	step "Checking the live site"

@@ -38,7 +38,7 @@ sudo -u stellaris-empire-planner git clone -b main $REPO_URL $REPO
 sudo -u stellaris-empire-planner mkdir -p ~stellaris-empire-planner/.config/containers/systemd ~stellaris-empire-planner/analytics
 ```
 
-On an existing deployment, only the `analytics` directory is new: run the `mkdir` for it before restarting with the new unit.
+On an existing deployment, only the `analytics` directory is new. `scripts/update-deployment.sh` creates it and reloads the unit.
 
 ## 3. Load the image on the VPS (needs the user from step 2)
 
@@ -99,7 +99,7 @@ Check that the guard holds and that the beacon counts:
 
 ```sh
 curl -s -o /dev/null -w '%{http_code}\n' https://<planner host>/api/stats     # -> 401
-curl -s -X POST -d /civics https://<planner host>/api/pv -o /dev/null -w '%{http_code}\n'   # -> 204
+curl -s -X POST -H 'Origin: https://<planner host>' -d /civics https://<planner host>/api/pv -o /dev/null -w '%{http_code}\n'   # -> 204 (403 without the Origin: SvelteKit's CSRF check)
 sudo -u stellaris-empire-planner sqlite3 ~stellaris-empire-planner/analytics/analytics.sqlite 'SELECT * FROM page_views'
 ```
 

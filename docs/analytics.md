@@ -51,7 +51,9 @@ site is recorded, and the setup stays small enough to need no third-party tool.
   });
   ```
 
-- Send the **route id** (`/civics`), never the URL: the query string carries the empire state.
+- Send the **route id** (`/civics`), never the URL: the counter then holds a fixed set of pages,
+  and nothing a URL may carry later (a query string, a shared empire) can reach it. The empire
+  itself lives in memory, not in the URL.
 - The server only increments an aggregate counter: `page_views(day, route, count)`, with no
   per-request rows. **This write never sees the visitor id**, so no one's navigation can be
   rebuilt from the data.
