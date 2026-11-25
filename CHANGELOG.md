@@ -4,6 +4,18 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [0.2.0] - 2026-11-25
+
+### Added
+
+- Anonymous page statistics: each page shown is counted per day, by page only, with no
+  identifier, IP address or URL stored.
+- A cookie banner that asks, with two equal buttons, whether the planner may count you as a
+  returning visitor. "OK" sets one cookie holding a random id; "No thanks" only remembers the
+  answer. Nothing is set before a click. "Cookie settings" at the bottom of every page withdraws
+  the answer and deletes what was stored for the id.
+- A privacy policy and an imprint, linked from the bottom of every page.
+
 ## [0.1.8] - 2026-11-24
 
 ### Added
