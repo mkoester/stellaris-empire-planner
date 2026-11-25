@@ -95,7 +95,15 @@ not done: a root-owned copy outside the clone. It changes the server layout in `
 - **The analytics beacon is checked against an `https` origin.** adapter-node 6 assumes https,
   so a local `curl -X POST` to `/api/pv` with an `http://` Origin gets 403 ("Cross-site POST
   form submissions are forbidden"). That is the CSRF check working, not a broken endpoint: test
-  with `-H 'Origin: https://127.0.0.1:<port>'`.
+  with `-H 'Origin: https://127.0.0.1:<port>'`. The Origin's host must be the one curl requests:
+  `curl localhost:…` with an `https://127.0.0.1` Origin is a 403 too. No Origin at all is a 403
+  as well (`curl -d` sends a form content type).
+- **`/privacy` describes what the code and the server do** (the cookie, both analytics tables,
+  the Caddy log's masking and 7-day rotation, "loads nothing from other websites"). A change to
+  any of them changes that page in the same session. The operator's name and address come from
+  `OPERATOR_*` in the server's `override.env`, never from git (`docs/analytics.md`).
+- **Whatever a `load` returns is in the page's HTML** (SvelteKit's hydration data), shown or
+  not. Return only what the page displays: the imprint's loader drops the operator's email.
 - **The stores (`empire.svelte.ts`, `settings.svelte.ts`) are module-level `$state`: on the server
   one copy for every visitor.** Write to them only from event handlers and effects, never while a
   component initialises or in a `load`. The layout's game data is likewise read once per server

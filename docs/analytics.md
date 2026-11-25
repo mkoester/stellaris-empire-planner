@@ -202,11 +202,13 @@ log {
   }
   ```
 
-  `copytruncate` because Caddy keeps the file open. Check with `sudo logrotate -d
-/etc/logrotate.d/caddy-access` and that `logrotate.timer` is active.
+  `copytruncate` because Caddy keeps the file open. Check with
+  `sudo logrotate -d /etc/logrotate.d/caddy-access` and that `logrotate.timer` is active.
 
 - Use `ip_mask`, not `hash`: Caddy's `hash` is an unsalted, truncated SHA-256, and anyone can
   reverse it by trying every IPv4 address.
 - Once it works, delete the old `access.log*` files that still hold full IPs.
 - Check: `sudo tail -n1 /var/log/caddy/access.log | jq '.request.remote_ip, .request.client_ip'`
-  should end in `.0`.
+  should end in `.0`. Seen 2026-11-25: a link-local `fe80::…%ens18` `remote_ip` (a VMware MAC,
+  so Contabo's host or router) stays unmasked while its `client_ip` is masked, apparently because
+  `ip_mask` cannot parse the zone suffix. No visitor's address has one.
