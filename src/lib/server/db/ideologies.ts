@@ -38,6 +38,8 @@ export interface Tenet {
 	swaps: { trigger: Trigger | null; name: string | null; description: string | null }[];
 	tiers: TenetTier[];
 	unlocks: TenetUnlock[];
+	// while active, this leader class of this ethic may take any non-enclave council position
+	councilBypass: { leaderClass: string | null; ethic: string | null }[];
 }
 
 export interface IdeologyModifier extends ConditionalModifier {
@@ -155,7 +157,8 @@ function loadTenets(): Tenet[] {
 				lockText: r.lock_text,
 				swaps: [],
 				tiers: [],
-				unlocks: []
+				unlocks: [],
+				councilBypass: []
 			}
 		])
 	);
@@ -230,6 +233,10 @@ function loadTenets(): Tenet[] {
 			description: n?.description ?? null
 		});
 	}
+	for (const r of db()
+		.prepare(`SELECT tenet_key, leader_class, ethic FROM tenet_council_bypass ORDER BY rowid`)
+		.all() as Array<{ tenet_key: string; leader_class: string | null; ethic: string | null }>)
+		tenets.get(r.tenet_key)?.councilBypass.push({ leaderClass: r.leader_class, ethic: r.ethic });
 	return [...tenets.values()];
 }
 

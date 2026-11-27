@@ -1,24 +1,29 @@
 <script lang="ts">
 	import type { PageData } from './$types';
-	import type { IdeologyModifier, Tenet } from '#lib/server/db/index.ts';
+	import type { IdeologyModifier, Tenet, TenetScope } from '#lib/server/db/index.ts';
 	import { resolve } from '$app/paths';
 	import BuildingName from '#lib/BuildingName.svelte';
 	import JumpLinks from '#lib/JumpLinks.svelte';
 	import Tip from '#lib/Tip.svelte';
 	import { formatModifierValue, modifierColor, modifierLabel } from '#lib/civics.ts';
+	import { empire } from '#lib/empire.svelte.ts';
 	import {
 		anyIdeologyTenets,
+		BADGE_LABELS,
+		empireFit,
+		empireKind,
 		ethicSections,
 		PRIORITY_TIPS,
 		ROMAN,
 		sharedFamilies,
 		TENET_SCOPE_LABELS,
 		tenetFamily,
-		tenetSearchText,
+		tenetVisible,
 		tierEffects,
-		tierRows
+		tierRows,
+		type Badge,
+		type Kind
 	} from '#lib/ideologies.ts';
-	import { matches } from '#lib/traditions.ts';
 	import { triggerText } from '#lib/triggers.ts';
 
 	let { data }: { data: PageData } = $props();
@@ -36,7 +41,44 @@
 			sections.map((s) => s.ethic)
 		)
 	);
-	const visible = (t: Tenet) => !query || matches(tenetSearchText(t), query);
+
+	// Filters: badges (all picked), scopes (any picked), regular / gestalt, the planned empire.
+	let badges = $state<Badge[]>([]);
+	let scopes = $state<TenetScope[]>([]);
+	let kindPick = $state<Kind | null>(null);
+	let mine = $state(false);
+	const fit = $derived(empireFit(empire.draft));
+	const hasEmpire = $derived(fit.ethics.length > 0);
+	const useEmpire = $derived(mine && hasEmpire);
+	const kind = $derived(useEmpire ? empireKind(fit) : kindPick);
+	const filter = $derived({
+		query,
+		badges: new Set(badges),
+		scopes: new Set(scopes),
+		kind,
+		empire: useEmpire ? fit : null
+	});
+	const visible = (t: Tenet) => tenetVisible(t, filter, shared);
+	const shownSections = $derived(
+		useEmpire ? sections.filter((s) => fit.ethics.includes(s.ethic)) : sections
+	);
+	const anyShown = $derived(anyTenets.filter(visible));
+	const toggle = <T,>(list: T[], v: T): T[] =>
+		list.includes(v) ? list.filter((x) => x !== v) : [...list, v];
+	const chip = (on: boolean) =>
+		`rounded px-2 py-0.5 text-xs ${on ? 'preset-filled-primary-500' : 'preset-tonal hover:preset-filled-surface-500'}`;
+	const LEADER_PLURAL: Record<string, string> = {
+		official: 'Officials',
+		commander: 'Commanders',
+		scientist: 'Scientists'
+	};
+	const bypassText = (t: Tenet) =>
+		t.councilBypass
+			.map(
+				(b) =>
+					`${b.ethic ? ethicName(b.ethic) + ' ' : ''}${b.leaderClass ? (LEADER_PLURAL[b.leaderClass] ?? b.leaderClass) : 'Leaders'} can occupy any non-enclave council position, whatever its requirements`
+			)
+			.join('; ');
 
 	// Adoption effects every ideology has (the common data) vs. those of one ethic.
 	const modId = (m: IdeologyModifier) =>
@@ -94,7 +136,7 @@
 {/snippet}
 
 {#snippet tenetCard(t: Tenet)}
-	{@const grid = tierRows(t)}
+	{@const grid = tierRows(t, kind)}
 	{@const effects = tierEffects(t)}
 	<article
 		id={t.key}
@@ -121,6 +163,14 @@
 					class="rounded bg-sky-500/15 px-1.5 text-[10px] text-sky-300"
 				>
 					every ideology
+				</Tip>
+			{/if}
+			{#if t.councilBypass.length}
+				<Tip
+					text={bypassText(t)}
+					class="rounded bg-emerald-500/15 px-1.5 text-[10px] text-emerald-300"
+				>
+					council seat
 				</Tip>
 			{/if}
 			{#if t.sourceCivic}
@@ -227,7 +277,7 @@
 		links={[
 			{ id: 'how', label: 'How it works', strong: true },
 			{ id: 'strength', label: 'Strength', strong: true },
-			...sections.map((s) => ({ id: s.ethic, label: ethicName(s.ethic) })),
+			...shownSections.map((s) => ({ id: s.ethic, label: ethicName(s.ethic) })),
 			{ id: 'any', label: 'Any ideology' },
 			{ id: 'buildings', label: 'Buildings' }
 		]}
@@ -383,17 +433,69 @@
 		</div>
 	</section>
 
-	<label class="block max-w-md">
-		<span class="sr-only">Search tenets</span>
-		<input
-			bind:value={query}
-			type="search"
-			placeholder="Search tenets…"
-			class="input w-full rounded border px-3 py-1.5 text-sm"
-		/>
-	</label>
+	<div class="space-y-2">
+		<label class="block max-w-md">
+			<span class="sr-only">Search tenets</span>
+			<input
+				bind:value={query}
+				type="search"
+				placeholder="Search tenets…"
+				class="input w-full rounded border px-3 py-1.5 text-sm"
+			/>
+		</label>
+		<div class="flex flex-wrap items-center gap-1">
+			<Tip
+				text={hasEmpire
+					? "Only the tenets of the planned empire's ethics, civics and origin"
+					: 'Pick ethics for your empire first'}
+			>
+				{#snippet trigger(a)}
+					<button
+						{...a}
+						class="{chip(useEmpire)} {hasEmpire ? '' : 'opacity-40'}"
+						aria-pressed={useEmpire}
+						disabled={!hasEmpire}
+						onclick={() => (mine = !mine)}
+					>
+						My empire
+					</button>
+				{/snippet}
+			</Tip>
+			<span class="mx-0.5 opacity-30">|</span>
+			{#each [null, 'regular', 'gestalt'] as const as k (k)}
+				<button
+					class="{chip(kind === k)} {useEmpire ? 'opacity-40' : ''}"
+					aria-pressed={kind === k}
+					disabled={useEmpire}
+					onclick={() => (kindPick = k)}
+				>
+					{k === null ? 'Any empire' : k === 'regular' ? 'Regular' : 'Gestalt'}
+				</button>
+			{/each}
+			<span class="mx-0.5 opacity-30">|</span>
+			{#each Object.entries(BADGE_LABELS) as [b, label] (b)}
+				<button
+					class={chip(badges.includes(b as Badge))}
+					aria-pressed={badges.includes(b as Badge)}
+					onclick={() => (badges = toggle(badges, b as Badge))}
+				>
+					{label}
+				</button>
+			{/each}
+			<span class="mx-0.5 opacity-30">|</span>
+			{#each Object.entries(TENET_SCOPE_LABELS) as [sc, label] (sc)}
+				<button
+					class={chip(scopes.includes(sc as TenetScope))}
+					aria-pressed={scopes.includes(sc as TenetScope)}
+					onclick={() => (scopes = toggle(scopes, sc as TenetScope))}
+				>
+					{label}
+				</button>
+			{/each}
+		</div>
+	</div>
 
-	{#each sections as s (s.ethic)}
+	{#each shownSections as s (s.ethic)}
 		{@const shown = s.tenets.filter(visible)}
 		<section id={s.ethic} class="scroll-mt-16 space-y-2">
 			<div class="flex flex-wrap items-baseline gap-x-3 gap-y-1">
@@ -428,7 +530,7 @@
 			<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
 				{#each shown as t (t.key)}{@render tenetCard(t)}{/each}
 			</div>
-			{#if !shown.length}<p class="text-xs opacity-50">No tenet matches the search.</p>{/if}
+			{#if !shown.length}<p class="text-xs opacity-50">No tenet matches the filters.</p>{/if}
 		</section>
 	{/each}
 
@@ -439,8 +541,9 @@
 			empires).
 		</p>
 		<div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-			{#each anyTenets.filter(visible) as t (t.key)}{@render tenetCard(t)}{/each}
+			{#each anyShown as t (t.key)}{@render tenetCard(t)}{/each}
 		</div>
+		{#if !anyShown.length}<p class="text-xs opacity-50">No tenet matches the filters.</p>{/if}
 	</section>
 
 	<section id="buildings" class="scroll-mt-16 space-y-2">

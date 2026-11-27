@@ -1,6 +1,7 @@
 // Pure helpers for the Ideologies page: tenets grouped per ethic, a tenet's modifiers lined up
 // across its tiers (the "how it grows" view), and which tenets every ideology has a version of.
-import type { Ideology, Tenet, TenetModifier, TenetScope } from '#lib/server/db/index.ts';
+import type { Ideology, Tenet, TenetModifier, TenetScope, Trigger } from '#lib/server/db/index.ts';
+import { matches } from '#lib/traditions.ts';
 
 export const TENET_SCOPE_LABELS: Record<TenetScope, string> = {
 	country: 'Empire',
@@ -66,11 +67,16 @@ export interface TierRow {
 	values: (number | null)[];
 }
 
-export function tierRows(t: Tenet): { tiers: number[]; rows: TierRow[] } {
+// Rows whose potential rules the chosen empire kind out are left out (gestalt null = any).
+export function tierRows(
+	t: Tenet,
+	gestalt: Kind | null = null
+): { tiers: number[]; rows: TierRow[] } {
 	const tiers = t.tiers.map((x) => x.tier);
 	const rows = new Map<string, TierRow>();
 	t.tiers.forEach((tier, i) => {
 		for (const m of tier.modifiers) {
+			if (!fits(m.potential, gestalt)) continue;
 			const id = JSON.stringify([m.scope, m.key, m.potential, m.possible]);
 			if (!rows.has(id)) rows.set(id, { mod: m, values: tiers.map(() => null) });
 			const row = rows.get(id)!;
@@ -106,4 +112,98 @@ export function tenetSearchText(t: Tenet): string {
 		.filter(Boolean)
 		.join(' ')
 		.toLowerCase();
+}
+
+// ── Filters ──
+
+export type Kind = 'gestalt' | 'regular';
+
+// Whether a trigger asks for a gestalt or a regular empire, or neither (null).
+export function gestaltFit(tr: Trigger | null): Kind | null {
+	if (!tr) return null;
+	if ('leaf' in tr) {
+		const yes = tr.value === 'yes';
+		if (tr.leaf === 'is_gestalt') return yes ? 'gestalt' : tr.value === 'no' ? 'regular' : null;
+		if ((tr.leaf === 'is_hive_empire' || tr.leaf === 'is_machine_empire') && yes) return 'gestalt';
+		return null;
+	}
+	const kinds = tr.args.map(gestaltFit);
+	if (tr.op === 'and') return kinds.find((k) => k !== null) ?? null;
+	if (tr.op === 'or') return kinds.every((k) => k !== null && k === kinds[0]) ? kinds[0] : null;
+	const k = kinds.length === 1 ? kinds[0] : null; // not
+	return k === 'gestalt' ? 'regular' : k === 'regular' ? 'gestalt' : null;
+}
+
+const fits = (tr: Trigger | null, kind: Kind | null) => {
+	const k = kind && gestaltFit(tr);
+	return !k || k === kind;
+};
+
+export type Badge = 'council' | 'high' | 'every' | 'civic';
+
+export const BADGE_LABELS: Record<Badge, string> = {
+	council: 'council seat',
+	high: 'high priority',
+	every: 'every ideology',
+	civic: 'from a civic or origin'
+};
+
+export function tenetBadges(t: Tenet, shared: Set<string>): Set<Badge> {
+	const out = new Set<Badge>();
+	if (t.councilBypass.length) out.add('council');
+	if (t.priority === 'high') out.add('high');
+	if (shared.has(tenetFamily(t))) out.add('every');
+	if (t.sourceCivic) out.add('civic');
+	return out;
+}
+
+// The scopes a tenet's modifiers apply in.
+export const tenetScopes = (t: Tenet): Set<TenetScope> =>
+	new Set(t.tiers.flatMap((x) => x.modifiers.map((m) => m.scope)));
+
+// The planned empire as the filters see it: its ethics without "fanatic", civics and origin.
+export interface EmpireFit {
+	ethics: string[];
+	picks: string[]; // civics and origin
+}
+
+export const empireFit = (draft: {
+	ethics: string[];
+	civics: string[];
+	origin: string | null;
+}): EmpireFit => ({
+	ethics: draft.ethics.map((e) => e.replace(/^ethic_fanatic_/, 'ethic_')),
+	picks: [...draft.civics, ...(draft.origin ? [draft.origin] : [])]
+});
+
+export const empireKind = (fit: EmpireFit): Kind | null =>
+	fit.ethics.length === 0
+		? null
+		: fit.ethics.includes('ethic_gestalt_consciousness')
+			? 'gestalt'
+			: 'regular';
+
+export interface TenetFilter {
+	query: string;
+	badges: Set<Badge>; // all must be present
+	scopes: Set<TenetScope>; // any
+	kind: Kind | null;
+	empire: EmpireFit | null; // only tenets this empire can get
+}
+
+export function tenetVisible(t: Tenet, f: TenetFilter, shared: Set<string>): boolean {
+	if (f.query && !matches(tenetSearchText(t), f.query)) return false;
+	const badges = tenetBadges(t, shared);
+	if ([...f.badges].some((b) => !badges.has(b))) return false;
+	if (f.scopes.size) {
+		const scopes = tenetScopes(t);
+		if (![...f.scopes].some((s) => scopes.has(s))) return false;
+	}
+	if (!fits(t.potential, f.kind)) return false;
+	if (f.empire) {
+		const { ethics, picks } = f.empire;
+		if (t.ethics.length && !t.ethics.some((e) => ethics.includes(e))) return false;
+		if (t.sourceCivic && !picks.includes(t.sourceCivic)) return false;
+	}
+	return true;
 }

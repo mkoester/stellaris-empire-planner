@@ -2,7 +2,13 @@ import { describe, it, expect } from 'vitest';
 import type { Ideology, Tenet, TenetModifier } from '#lib/server/db/index.ts';
 import {
 	anyIdeologyTenets,
+	empireFit,
+	empireKind,
 	ethicSections,
+	gestaltFit,
+	tenetBadges,
+	tenetVisible,
+	type TenetFilter,
 	sharedFamilies,
 	tenetFamily,
 	tierEffects,
@@ -22,6 +28,7 @@ const tenet = (key: string, ethics: string[], extra: Partial<Tenet> = {}): Tenet
 	swaps: [],
 	tiers: [],
 	unlocks: [],
+	councilBypass: [],
 	...extra
 });
 
@@ -123,5 +130,87 @@ describe('tierEffects', () => {
 			{ tier: 1, text: 'Allows X' },
 			{ tier: 3, text: 'Allows X and Y' }
 		]);
+	});
+});
+
+describe('gestaltFit', () => {
+	const leaf = (l: string, v = 'yes') => ({ leaf: l, value: v });
+	it('reads gestalt and regular from the leaves and their combinations', () => {
+		expect(gestaltFit(leaf('is_gestalt'))).toBe('gestalt');
+		expect(gestaltFit(leaf('is_gestalt', 'no'))).toBe('regular');
+		expect(gestaltFit(leaf('is_hive_empire'))).toBe('gestalt');
+		expect(gestaltFit(leaf('is_nomadic'))).toBeNull();
+		expect(gestaltFit({ op: 'and', args: [leaf('is_nomadic'), leaf('is_machine_empire')] })).toBe(
+			'gestalt'
+		);
+		expect(
+			gestaltFit({ op: 'or', args: [leaf('is_gestalt', 'no'), leaf('has_valid_civic')] })
+		).toBeNull();
+		expect(gestaltFit({ op: 'not', args: [leaf('is_gestalt')] })).toBe('regular');
+		expect(gestaltFit(null)).toBeNull();
+	});
+});
+
+describe('tierRows with a kind', () => {
+	it('drops the rows of the other kind', () => {
+		const t = tenet('t', [], {
+			tiers: [
+				{
+					tier: 1,
+					effect: null,
+					modifiers: [
+						mod('a', 1),
+						mod('g', 1, { potential: { leaf: 'is_gestalt', value: 'yes' } }),
+						mod('r', 1, { potential: { leaf: 'is_gestalt', value: 'no' } })
+					]
+				}
+			]
+		});
+		expect(tierRows(t, 'regular').rows.map((r) => r.mod.key)).toEqual(['a', 'r']);
+		expect(tierRows(t, null).rows).toHaveLength(3);
+	});
+});
+
+describe('tenetVisible', () => {
+	const none: TenetFilter = {
+		query: '',
+		badges: new Set(),
+		scopes: new Set(),
+		kind: null,
+		empire: null
+	};
+	const council = tenet('tenet_rationality', ['ethic_materialist'], {
+		councilBypass: [{ leaderClass: 'scientist', ethic: 'ethic_materialist' }],
+		tiers: [
+			{ tier: 1, effect: null, modifiers: [mod('scientist_skill_add', 1, { scope: 'leader' })] }
+		]
+	});
+	const civic = tenet('tenet_c', [], { sourceCivic: 'civic_x' });
+	const hive = tenet('tenet_h', ['ethic_gestalt_consciousness'], {
+		potential: { leaf: 'is_hive_empire', value: 'yes' }
+	});
+
+	it('badges: every picked badge must be present', () => {
+		expect([...tenetBadges(council, new Set())]).toEqual(['council']);
+		expect(tenetVisible(council, { ...none, badges: new Set(['council']) }, new Set())).toBe(true);
+		expect(tenetVisible(civic, { ...none, badges: new Set(['council']) }, new Set())).toBe(false);
+	});
+
+	it('scopes: any picked scope', () => {
+		const f = { ...none, scopes: new Set(['leader', 'colony'] as const) };
+		expect(tenetVisible(council, f, new Set())).toBe(true);
+		expect(tenetVisible(civic, f, new Set())).toBe(false);
+	});
+
+	it('kind and empire', () => {
+		expect(tenetVisible(hive, { ...none, kind: 'regular' }, new Set())).toBe(false);
+		const fit = empireFit({ ethics: ['ethic_fanatic_materialist'], civics: [], origin: null });
+		expect(empireKind(fit)).toBe('regular');
+		const f = { ...none, empire: fit };
+		expect(tenetVisible(council, f, new Set())).toBe(true);
+		expect(tenetVisible(civic, f, new Set())).toBe(false);
+		expect(
+			tenetVisible(civic, { ...none, empire: { ...fit, picks: ['civic_x'] } }, new Set())
+		).toBe(true);
 	});
 });

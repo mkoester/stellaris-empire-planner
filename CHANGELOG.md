@@ -4,6 +4,21 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/); versions follow
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Ideologies: a "council seat" badge on the tenets that let one leader class sit on any council
+  seat, and filters for the tenets: your empire's (ethics, civics, origin), regular or gestalt
+  (also hiding the other kind's rows), badges and where the effects apply. Needs extraction
+  0.1.28.
+
+### Fixed
+
+- Ideologies: Council Agenda Cooldown, Border Friction, Maximum Market Price Increase, Pop
+  Amenities Usage (gestalt) and Empire Size from System reductions show as the bonuses they are
+  (extraction 0.1.28).
+
 ## [0.2.0] - 2026-11-25
 
 ### Added

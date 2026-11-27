@@ -130,6 +130,7 @@ ideology_strength_source — category, label, op, value (NULL = formula), value_
 ideology_concept        — key, name, text (the game's concept tooltips)
 tenet                   — key, name, description, ethics_json ([] = any), priority, source_civic, potential_json, first_tier, unlock_text, lock_text
 tenet_swap / tenet_tier / tenet_tier_modifier / tenet_unlock — gestalt variants; tier texts; per-tier modifiers (scope, potential_json, possible_json); linked edicts/policies/agendas
+tenet_council_bypass    — tenet_key, leader_class, ethic: that leader class of that ethic may take any non-enclave council seat
 ideology_building       — building_key, potential_json
 ```
 
@@ -371,7 +372,7 @@ Both evaluate the stored trigger trees against an **`EmpireProfile`** ([`src/lib
 - _How it works_: the game's `concept_ideology` text; tenet count from `TENETS_SELECTION_AMOUNT`, the extra slot from every menace perk with `additional_tenet_add` (Codification, linked to `/ambitions#<path>`, its level from `crisis_path_level`), Intensity range, reroll and amendment costs (`TENET_*` defines, `TENET_AMENDMENT_INFLUENCE_COST_<n>`). **Which strength level opens a slot or raises Intensity is not in the files** and the page says so (open in-game check in `AGENTS.md`).
 - Strength levels table: the adoption modifiers common to every ideology (ids equal across all types), per `level`; the scope column shows the game's own tooltip header ("Inside Ideological Reach", "Inside Owned Systems"). Ungated ones (rivalry, disruption, advocates) below with "(if …)".
 - Strength sources: the `concept_ideological_strength_sources` text (per-unit rates) beside every `monthly_increase` entry — most values are script-value formulas, shown as "varies".
-- One section per ethic (`ethicSections`, xenophobe with both variants and their secondary ethic), then _Any ideology_ (`ethics = []`) and the ideological buildings. A tenet card: gestalt names, priority / "every ideology" (`sharedFamilies`: Strategism, Propagandism) / source civic badges, a modifier table with one column per Intensity (`tierRows`: a stat lined up by scope, key and conditions), tier texts shown once until they change (`tierEffects`), unlock text and chips, lock text. Search filters tenets (`tenetSearchText`).
+- One section per ethic (`ethicSections`, xenophobe with both variants and their secondary ethic), then _Any ideology_ (`ethics = []`) and the ideological buildings. A tenet card: gestalt names, priority / "every ideology" (`sharedFamilies`: Strategism, Propagandism) / source civic / council seat (`councilBypass`) badges, a modifier table with one column per Intensity (`tierRows`: a stat lined up by scope, key and conditions), tier texts shown once until they change (`tierEffects`), unlock text and chips, lock text. Search and filters (`tenetVisible`): _My empire_ (the draft's ethics, fanatic folded in, hide the other sections, and its civics/origin for civic-bound tenets; sets the kind from Gestalt Consciousness), Any / Regular / Gestalt (`gestaltFit` on the tenet's and each row's `potential`; `tierRows(t, kind)` drops the other kind's rows), badge chips (all picked must be present) and scope chips (any).
 
 ### `/ambitions` — Ambitions (Information)
 
