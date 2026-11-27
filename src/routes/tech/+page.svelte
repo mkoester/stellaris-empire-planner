@@ -5,6 +5,7 @@
 	import type { RepeatableTech } from '#lib/server/db/index.ts';
 	import { formatModifierValue, modifierLabel, modifierColor } from '#lib/civics.ts';
 	import TechPopup from '#lib/TechPopup.svelte';
+	import { repeatableLimit } from '#lib/techCard.ts';
 
 	let { data }: { data: PageData } = $props();
 
@@ -54,7 +55,7 @@
 		<h1 class="text-2xl font-bold">Repeatable Technologies</h1>
 		<p class="text-sm opacity-60">
 			Technologies that can be researched multiple times, each level applying the same effect again.
-			Unlimited (∞) techs scale indefinitely; capped techs list their maximum level.
+			Most repeat without limit (∞); a few stop after a number of levels (max 5).
 		</p>
 	</div>
 
@@ -80,8 +81,9 @@
 										class="shrink-0 rounded px-1.5 py-0.5 font-mono text-[11px] {AREA_BADGE[
 											tech.area
 										] ?? 'bg-surface-500/20'}"
+										title={repeatableLimit(tech.levels).fact}
 									>
-										{tech.levels === -1 ? '∞' : `×${tech.levels}`}
+										{repeatableLimit(tech.levels).badge}
 									</span>
 								</div>
 
